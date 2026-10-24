@@ -1,0 +1,12 @@
+[toolchain]
+
+[features]
+resolution = true
+skip-lint = true
+
+[programs.mainnet]
+fused_fee = "AZY2uXFPUfgTkhoNaXNL3oaZMdb4r3NfHYymA3s4mMw9"
+
+[provider]
+cluster = "mainnet"
+wallet = "~/.config/solana/id.json"

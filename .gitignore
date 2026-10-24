@@ -1,0 +1,10 @@
+target/
+node_modules/
+.anchor/
+.env
+.env.*
+*.pem
+*keypair*.json
+id.json
+**/keys/
+.DS_Store
