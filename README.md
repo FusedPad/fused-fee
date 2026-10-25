@@ -20,3 +20,10 @@ The two hashes must match.
 ## Security
 
 Email hello@fusedpad.com.
+
+## Links
+
+- Website: https://fusedpad.com
+- X: https://x.com/FusedPad
+- Telegram: https://t.me/FusedPad
+- Discord: https://fusedpad.com/discord
