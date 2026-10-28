@@ -21,6 +21,12 @@ const DAMM_PROGRAM_ID: Pubkey = pubkey!("cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn
 const DAMM_POOL_AUTHORITY: Pubkey = pubkey!("HLnpSz9h2S4hiLQ43rnSD9XkcUThA7B8hQMKmDaiTLcC");
 /// sha256("global:claim_position_fee")[..8]
 const CLAIM_POSITION_FEE_DISC: [u8; 8] = [180, 38, 154, 17, 133, 33, 162, 211];
+/// V5 auto-LP: sha256("global:add_liquidity")[..8]
+const ADD_LIQUIDITY_DISC: [u8; 8] = [181, 157, 89, 67, 143, 182, 52, 72];
+/// V5 auto-LP: sha256("global:permanent_lock_position")[..8]
+const PERMANENT_LOCK_DISC: [u8; 8] = [165, 176, 125, 6, 231, 171, 186, 213];
+/// V5: default share of the 0.20% burn pot that becomes locked $FUSED LP (50%).
+const DEFAULT_AUTO_LP_BPS: u16 = 5_000;
 
 /// FIX: DBC account layouts (Meteora DBC IDL; checked against live mainnet accounts 21 Oct 2026).
 /// sha256("account:VirtualPool")[..8]
@@ -853,6 +859,152 @@ pub mod fused_fee {
         ctx.accounts.pool_record.burn_pot = 0;
         Ok(())
     }
+
+    /// V5: create the AutoLpConfig PDA (once). Default share is 50% of the burn pot to locked LP.
+    /// Targets (DAMM pool / position) stay unset until admin calls set_auto_lp after $FUSED graduates.
+    pub fn init_auto_lp(ctx: Context<InitAutoLp>) -> Result<()> {
+        let a = &mut ctx.accounts.auto_lp;
+        a.damm_pool = Pubkey::default();
+        a.position = Pubkey::default();
+        a.position_nft_account = Pubkey::default();
+        a.token_a_mint = Pubkey::default();
+        a.token_b_mint = Pubkey::default();
+        a.lp_share_bps = DEFAULT_AUTO_LP_BPS;
+        a.bump = ctx.bumps.auto_lp;
+        Ok(())
+    }
+
+    /// V5: admin sets the $FUSED DAMM v2 pool + Global-owned position that auto-LP tops up.
+    /// Call this once $FUSED has graduated and the migration position is known.
+    pub fn set_auto_lp(
+        ctx: Context<SetAutoLp>,
+        damm_pool: Pubkey,
+        position: Pubkey,
+        position_nft_account: Pubkey,
+        token_a_mint: Pubkey,
+        token_b_mint: Pubkey,
+    ) -> Result<()> {
+        require!(damm_pool != Pubkey::default(), FusedError::BadPool);
+        require!(position != Pubkey::default(), FusedError::BadPool);
+        require!(position_nft_account != Pubkey::default(), FusedError::BadPool);
+        require!(
+            token_a_mint != Pubkey::default() && token_b_mint != Pubkey::default(),
+            FusedError::BadMint
+        );
+        require!(token_a_mint != token_b_mint, FusedError::BadMint);
+        let a = &mut ctx.accounts.auto_lp;
+        a.damm_pool = damm_pool;
+        a.position = position;
+        a.position_nft_account = position_nft_account;
+        a.token_a_mint = token_a_mint;
+        a.token_b_mint = token_b_mint;
+        Ok(())
+    }
+
+    /// V5: admin sets how much of the 0.20% burn share goes to locked $FUSED LP (0..=10000 bps).
+    /// 5000 = half burn / half LP. 0 = burn only (today's behaviour). 10000 = all LP, no burn.
+    pub fn set_auto_lp_share(ctx: Context<SetAutoLpShare>, lp_share_bps: u16) -> Result<()> {
+        require!(lp_share_bps <= 10_000, FusedError::BadAutoLpShare);
+        ctx.accounts.auto_lp.lp_share_bps = lp_share_bps;
+        Ok(())
+    }
+
+    /// V5: add SOL+$FUSED (already in Global's ATAs) to the configured DAMM position and permanently lock.
+    /// Crank (or admin) only. Fails with AutoLpNotReady until set_auto_lp has been called
+    /// (pre-graduation = crank keeps burning 100%, never calls this).
+    /// Args match Meteora DAMM v2 add_liquidity; liquidity_delta is also the permanent_lock amount.
+    /// Accounts (remaining): [global, auto_lp, payer(signer), damm_pool, position, position_nft_account,
+    ///   token_a_account, token_b_account, token_a_vault, token_b_vault, token_a_mint, token_b_mint,
+    ///   token_a_program, token_b_program, event_authority, damm_program]
+    pub fn crank_auto_lp<'info>(
+        ctx: Context<'_, '_, 'info, 'info, CrankAutoLp>,
+        liquidity_delta: u128,
+        token_a_amount_threshold: u64,
+        token_b_amount_threshold: u64,
+    ) -> Result<()> {
+        let a = ctx.remaining_accounts;
+        require!(a.len() >= 16, FusedError::BadAutoLpAccounts);
+        let global: Account<Global> = Account::try_from(&a[0])?;
+        require_keys_eq!(
+            a[0].key(),
+            Pubkey::find_program_address(&[b"global"], ctx.program_id).0,
+            FusedError::BadAutoLpAccounts
+        );
+        require!(!global.paused, FusedError::Paused);
+        require_keys_eq!(
+            a[1].key(),
+            Pubkey::find_program_address(&[b"autolp"], ctx.program_id).0,
+            FusedError::BadAutoLpAccounts
+        );
+        let auto_lp: Account<AutoLpConfig> = Account::try_from(&a[1])?;
+        require!(auto_lp.damm_pool != Pubkey::default(), FusedError::AutoLpNotReady);
+        let payer = &a[2];
+        require!(payer.is_signer, FusedError::NotCrank);
+        require!(
+            payer.key() == global.admin || payer.key() == CRANK_AUTHORITY,
+            FusedError::NotCrank
+        );
+
+        let (
+            damm_pool, position, nft, tok_a, tok_b, vault_a, vault_b, mint_a, mint_b, prog_a, prog_b, ev, damm,
+        ) = (
+            &a[3], &a[4], &a[5], &a[6], &a[7], &a[8], &a[9], &a[10], &a[11], &a[12], &a[13], &a[14], &a[15],
+        );
+        require_keys_eq!(damm_pool.key(), auto_lp.damm_pool, FusedError::BadPool);
+        require_keys_eq!(position.key(), auto_lp.position, FusedError::BadPool);
+        require_keys_eq!(nft.key(), auto_lp.position_nft_account, FusedError::BadPool);
+        require_keys_eq!(mint_a.key(), auto_lp.token_a_mint, FusedError::BadMint);
+        require_keys_eq!(mint_b.key(), auto_lp.token_b_mint, FusedError::BadMint);
+        require_keys_eq!(damm.key(), DAMM_PROGRAM_ID, FusedError::BadAutoLpAccounts);
+        require!(damm_pool.is_writable && position.is_writable, FusedError::BadAutoLpAccounts);
+        require!(tok_a.is_writable && tok_b.is_writable, FusedError::BadAutoLpAccounts);
+        require!(vault_a.is_writable && vault_b.is_writable, FusedError::BadAutoLpAccounts);
+
+        let aprog = *mint_a.owner;
+        let bprog = *mint_b.owner;
+        require_keys_eq!(prog_a.key(), aprog, FusedError::WrongTokenProgram);
+        require_keys_eq!(prog_b.key(), bprog, FusedError::WrongTokenProgram);
+        require!(is_token_program(&aprog) && is_token_program(&bprog), FusedError::WrongTokenProgram);
+
+        let gkey = global.key();
+        // Token accounts must be Global's own ATAs — funds never leave to a caller-chosen wallet.
+        require_keys_eq!(
+            tok_a.key(),
+            get_associated_token_address_with_program_id(&gkey, &auto_lp.token_a_mint, &aprog),
+            FusedError::BadVault
+        );
+        require_keys_eq!(
+            tok_b.key(),
+            get_associated_token_address_with_program_id(&gkey, &auto_lp.token_b_mint, &bprog),
+            FusedError::BadVault
+        );
+        // Position NFT must be owned by Global (migration partner position).
+        // DAMM position NFTs are Token-2022; fall back to classic SPL just in case.
+        let nft_info = match read_token_account(nft, &TOKEN_2022_ID) {
+            Ok(v) => v,
+            Err(_) => read_token_account(nft, &anchor_spl::token::ID)
+                .map_err(|_| error!(FusedError::BadAutoLpAccounts))?,
+        };
+        require_keys_eq!(nft_info.owner, gkey, FusedError::BadAutoLpAccounts);
+        require!(nft_info.amount == 1, FusedError::BadAutoLpAccounts);
+
+        require!(liquidity_delta > 0, FusedError::BadAutoLpAmounts);
+        require!(
+            token_a_amount_threshold > 0 && token_b_amount_threshold > 0,
+            FusedError::BadAutoLpAmounts
+        );
+
+        let bump = global.bump;
+        let seeds: &[&[u8]] = &[b"global", &[bump]];
+        cpi_add_liquidity(
+            damm_pool, position, tok_a, tok_b, vault_a, vault_b, mint_a, mint_b, nft, &a[0],
+            prog_a, prog_b, ev, damm, seeds, liquidity_delta, token_a_amount_threshold,
+            token_b_amount_threshold,
+        )?;
+        cpi_permanent_lock(damm_pool, position, nft, &a[0], ev, damm, seeds, liquidity_delta)?;
+        msg!("auto_lp_added={}", liquidity_delta);
+        Ok(())
+    }
 }
 
 /// FIX: read (config, base_mint, is_migrated) from a Meteora DBC VirtualPool account.
@@ -1330,6 +1482,124 @@ fn cpi_claim_position_fee<'info>(ctx: &Context<CrankClaimDamm<'info>>) -> Result
     Ok(())
 }
 
+
+
+/// V5: DAMM v2 add_liquidity, signed by Global.
+fn cpi_add_liquidity<'info>(
+    pool: &AccountInfo<'info>,
+    position: &AccountInfo<'info>,
+    token_a_account: &AccountInfo<'info>,
+    token_b_account: &AccountInfo<'info>,
+    token_a_vault: &AccountInfo<'info>,
+    token_b_vault: &AccountInfo<'info>,
+    token_a_mint: &AccountInfo<'info>,
+    token_b_mint: &AccountInfo<'info>,
+    position_nft_account: &AccountInfo<'info>,
+    global: &AccountInfo<'info>,
+    token_a_program: &AccountInfo<'info>,
+    token_b_program: &AccountInfo<'info>,
+    event_authority: &AccountInfo<'info>,
+    damm_program: &AccountInfo<'info>,
+    seeds: &[&[u8]],
+    liquidity_delta: u128,
+    token_a_amount_threshold: u64,
+    token_b_amount_threshold: u64,
+) -> Result<()> {
+    let mut data = Vec::with_capacity(8 + 16 + 8 + 8);
+    data.extend_from_slice(&ADD_LIQUIDITY_DISC);
+    data.extend_from_slice(&liquidity_delta.to_le_bytes());
+    data.extend_from_slice(&token_a_amount_threshold.to_le_bytes());
+    data.extend_from_slice(&token_b_amount_threshold.to_le_bytes());
+
+    let account_metas = vec![
+        AccountMeta::new(pool.key(), false),
+        AccountMeta::new(position.key(), false),
+        AccountMeta::new(token_a_account.key(), false),
+        AccountMeta::new(token_b_account.key(), false),
+        AccountMeta::new(token_a_vault.key(), false),
+        AccountMeta::new(token_b_vault.key(), false),
+        AccountMeta::new_readonly(token_a_mint.key(), false),
+        AccountMeta::new_readonly(token_b_mint.key(), false),
+        AccountMeta::new_readonly(position_nft_account.key(), false),
+        AccountMeta::new_readonly(global.key(), true),
+        AccountMeta::new_readonly(token_a_program.key(), false),
+        AccountMeta::new_readonly(token_b_program.key(), false),
+        AccountMeta::new_readonly(event_authority.key(), false),
+        AccountMeta::new_readonly(damm_program.key(), false),
+    ];
+    let infos = vec![
+        pool.clone(),
+        position.clone(),
+        token_a_account.clone(),
+        token_b_account.clone(),
+        token_a_vault.clone(),
+        token_b_vault.clone(),
+        token_a_mint.clone(),
+        token_b_mint.clone(),
+        position_nft_account.clone(),
+        global.clone(),
+        token_a_program.clone(),
+        token_b_program.clone(),
+        event_authority.clone(),
+        damm_program.clone(),
+    ];
+    anchor_lang::solana_program::program::invoke_signed(
+        &anchor_lang::solana_program::instruction::Instruction {
+            program_id: DAMM_PROGRAM_ID,
+            accounts: account_metas,
+            data,
+        },
+        &infos,
+        &[seeds],
+    )
+    .map_err(|_| error!(FusedError::AutoLpCpiFailed))?;
+    Ok(())
+}
+
+/// V5: DAMM v2 permanent_lock_position, signed by Global.
+fn cpi_permanent_lock<'info>(
+    pool: &AccountInfo<'info>,
+    position: &AccountInfo<'info>,
+    position_nft_account: &AccountInfo<'info>,
+    global: &AccountInfo<'info>,
+    event_authority: &AccountInfo<'info>,
+    damm_program: &AccountInfo<'info>,
+    seeds: &[&[u8]],
+    permanent_lock_liquidity: u128,
+) -> Result<()> {
+    let mut data = Vec::with_capacity(8 + 16);
+    data.extend_from_slice(&PERMANENT_LOCK_DISC);
+    data.extend_from_slice(&permanent_lock_liquidity.to_le_bytes());
+
+    let account_metas = vec![
+        AccountMeta::new(pool.key(), false),
+        AccountMeta::new(position.key(), false),
+        AccountMeta::new_readonly(position_nft_account.key(), false),
+        AccountMeta::new_readonly(global.key(), true),
+        AccountMeta::new_readonly(event_authority.key(), false),
+        AccountMeta::new_readonly(damm_program.key(), false),
+    ];
+    let infos = vec![
+        pool.clone(),
+        position.clone(),
+        position_nft_account.clone(),
+        global.clone(),
+        event_authority.clone(),
+        damm_program.clone(),
+    ];
+    anchor_lang::solana_program::program::invoke_signed(
+        &anchor_lang::solana_program::instruction::Instruction {
+            program_id: DAMM_PROGRAM_ID,
+            accounts: account_metas,
+            data,
+        },
+        &infos,
+        &[seeds],
+    )
+    .map_err(|_| error!(FusedError::AutoLpCpiFailed))?;
+    Ok(())
+}
+
 #[account]
 pub struct Global {
     pub admin: Pubkey,
@@ -1337,6 +1607,22 @@ pub struct Global {
     pub burn_mint_set: bool,
     pub paused: bool,
     pub bump: u8,
+}
+
+/// V5: one PDA, seeds [b"autolp"]. Holds the $FUSED DAMM target and the burn/LP split.
+/// damm_pool == default means "not ready" (pre-graduation); crank must keep burning 100%.
+#[account]
+pub struct AutoLpConfig {
+    pub damm_pool: Pubkey,
+    pub position: Pubkey,
+    pub position_nft_account: Pubkey,
+    pub token_a_mint: Pubkey,
+    pub token_b_mint: Pubkey,
+    pub lp_share_bps: u16,
+    pub bump: u8,
+}
+impl AutoLpConfig {
+    pub const LEN: usize = 32 + 32 + 32 + 32 + 32 + 2 + 1;
 }
 
 /// V2: one per pool, seeds [b"paycur", pool]. Tracks who was paid in the current round.
@@ -1810,6 +2096,17 @@ pub enum FusedError {
     NoCreatorShare,
     #[msg("the creator's token account is missing, frozen or not usable; create it and try again")]
     CreatorAtaUnusable,
+    // V5 auto-LP: appended (6043+).
+    #[msg("auto-LP is not configured yet (set the $FUSED DAMM pool after graduation)")]
+    AutoLpNotReady,
+    #[msg("auto-LP share must be 0..=10000 basis points")]
+    BadAutoLpShare,
+    #[msg("auto-LP accounts are missing or do not match the configured pool/position")]
+    BadAutoLpAccounts,
+    #[msg("auto-LP liquidity delta or thresholds must be greater than zero")]
+    BadAutoLpAmounts,
+    #[msg("DAMM add_liquidity or permanent_lock_position CPI failed")]
+    AutoLpCpiFailed,
 }
 
 #[derive(Accounts)]
@@ -1835,6 +2132,45 @@ pub struct ReleaseBurnPot<'info> {
     pub operator_token: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
 }
+
+#[derive(Accounts)]
+pub struct InitAutoLp<'info> {
+    #[account(mut)]
+    pub admin: Signer<'info>,
+    #[account(seeds = [b"global"], bump = global.bump, has_one = admin)]
+    pub global: Account<'info, Global>,
+    #[account(
+        init,
+        payer = admin,
+        space = 8 + AutoLpConfig::LEN,
+        seeds = [b"autolp"],
+        bump
+    )]
+    pub auto_lp: Account<'info, AutoLpConfig>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct SetAutoLp<'info> {
+    #[account(seeds = [b"global"], bump = global.bump, has_one = admin)]
+    pub global: Account<'info, Global>,
+    pub admin: Signer<'info>,
+    #[account(mut, seeds = [b"autolp"], bump = auto_lp.bump)]
+    pub auto_lp: Account<'info, AutoLpConfig>,
+}
+
+#[derive(Accounts)]
+pub struct SetAutoLpShare<'info> {
+    #[account(seeds = [b"global"], bump = global.bump, has_one = admin)]
+    pub global: Account<'info, Global>,
+    pub admin: Signer<'info>,
+    #[account(mut, seeds = [b"autolp"], bump = auto_lp.bump)]
+    pub auto_lp: Account<'info, AutoLpConfig>,
+}
+
+/// V5: accounts passed as remaining_accounts (keeps the binary small, same pattern as claim_creator_share).
+#[derive(Accounts)]
+pub struct CrankAutoLp {}
 
 #[derive(Accounts)]
 pub struct MigrateGlobal<'info> {

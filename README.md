@@ -5,6 +5,8 @@ Source code of the FusedPad fee program on Solana mainnet:
 
 Anchor 0.31.1, built with Solana/Agave 2.3 platform tools v1.58 (`opt-level = "z"`, fat LTO).
 
+This revision adds optional auto-LP: after `$FUSED` graduates, half of the 0.20% burn share can be added as locked SOL+$FUSED liquidity to the main `$FUSED` DAMM v2 pool. Until that is configured, behaviour matches the previous live build.
+
 ## Verifiable build
 
 ```
