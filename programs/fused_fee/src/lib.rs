@@ -351,7 +351,17 @@ pub mod fused_fee {
         require_keys_eq!(tprog.key(), qprog, FusedError::WrongTokenProgram);
         let mi = mint_policy(mint)?;
         let vault_amount = check_vault(vault, &global.key(), &pool.quote_mint, &qprog)?;
-        require!(owed <= vault_amount, FusedError::VaultShort);
+        // L2 harden (Crank review): owed alone <= vault still lets a claim eat THIS pool's
+        // holder_pot/burn_pot when the shared vault is already short. Require this pool's
+        // full reserved (owed + holder + burn) fits before paying. Cross-pool residual after
+        // a prior shortfall still needs a QuoteStat full-set check (same class as auto-LP);
+        // not added here to keep claimer UX permissionless without scanning every pool.
+        let this_reserved = owed
+            .checked_add(pool.holder_pot)
+            .ok_or(FusedError::Math)?
+            .checked_add(pool.burn_pot)
+            .ok_or(FusedError::Math)?;
+        require!(this_reserved <= vault_amount, FusedError::VaultShort);
         require_keys_eq!(
             dest.key(),
             get_associated_token_address_with_program_id(&creator, &pool.quote_mint, &qprog),
