@@ -159,6 +159,14 @@ pub mod fused_fee {
         p.holder_pot = 0;
         p.burn_pot = 0;
         p.bump = ctx.bumps.pool_record;
+        // PERFECT: track pool count per quote mint so crank_auto_lp can require the full set.
+        let qs = &mut ctx.accounts.quote_stat;
+        if qs.quote_mint == Pubkey::default() {
+            qs.quote_mint = quote_mint;
+            qs.bump = ctx.bumps.quote_stat;
+        }
+        require_keys_eq!(qs.quote_mint, quote_mint, FusedError::QuoteMismatch);
+        qs.pool_count = qs.pool_count.checked_add(1).ok_or(FusedError::Math)?;
         Ok(())
     }
 
@@ -184,6 +192,9 @@ pub mod fused_fee {
         require!(!ctx.accounts.global.paused, FusedError::Paused);
         let pot = ctx.accounts.pool_record.burn_pot;
         require!(pot > 0, FusedError::EmptyPot);
+        // DEEP-FIX: legacy v1 lacked VaultShort; without it a short vault can still
+        // release this pool's burn and leave other pools' holder pots uncovered.
+        require!(pot <= ctx.accounts.quote_vault.amount, FusedError::VaultShort);
         let bump = ctx.accounts.global.bump;
         let seeds: &[&[u8]] = &[b"global", &[bump]];
         token::transfer(
@@ -499,6 +510,8 @@ pub mod fused_fee {
             .ok_or(FusedError::Math)?;
         let total = lamport_total.checked_add(token_total).ok_or(FusedError::Math)?;
         require!(total <= pot, FusedError::Math);
+        // DEEP-FIX: mirror v3 — refuse if the shared vault cannot cover this page.
+        require!(total <= ctx.accounts.quote_vault.amount, FusedError::VaultShort);
 
         let gbump = ctx.accounts.global.bump;
         let gseeds: &[&[u8]] = &[b"global", &[gbump]];
@@ -840,6 +853,8 @@ pub mod fused_fee {
         );
         let amount = ctx.accounts.pool_record.burn_pot;
         require!(amount > 0, FusedError::EmptyPot);
+        // DEEP-FIX: refuse if vault cannot cover the burn (same class as release_burn_pot).
+        require!(amount <= ctx.accounts.quote_vault.amount, FusedError::VaultShort);
 
         let bump = ctx.accounts.global.bump;
         let seeds: &[&[u8]] = &[b"global", &[bump]];
@@ -906,6 +921,18 @@ pub mod fused_fee {
     pub fn set_auto_lp_share(ctx: Context<SetAutoLpShare>, lp_share_bps: u16) -> Result<()> {
         require!(lp_share_bps <= 10_000, FusedError::BadAutoLpShare);
         ctx.accounts.auto_lp.lp_share_bps = lp_share_bps;
+        Ok(())
+    }
+
+    /// PERFECT: admin sets/repairs QuoteStat.pool_count after upgrade (existing pools were
+    /// registered before the counter existed). New registers increment via register_pool.
+    pub fn sync_quote_stat(ctx: Context<SyncQuoteStat>, quote_mint: Pubkey, pool_count: u64) -> Result<()> {
+        require!(quote_mint != Pubkey::default(), FusedError::BadMint);
+        let qs = &mut ctx.accounts.quote_stat;
+        qs.quote_mint = quote_mint;
+        qs.pool_count = pool_count;
+        qs.bump = ctx.bumps.quote_stat;
+        msg!("quote_stat mint={} count={}", quote_mint, pool_count);
         Ok(())
     }
 
@@ -993,6 +1020,156 @@ pub mod fused_fee {
             token_a_amount_threshold > 0 && token_b_amount_threshold > 0,
             FusedError::BadAutoLpAmounts
         );
+        // FIX (KupiaSec + Crank design + PERFECT M3): LP funded FROM burn_pot;
+        // on-chain QuoteStat forces the full PoolRecord set for each quote mint.
+        //
+        // remaining_accounts layout (Crank MUST match exactly):
+        //   [0]  global PDA
+        //   [1]  auto_lp PDA
+        //   [2]  payer signer (admin | CRANK_AUTHORITY)
+        //   [3]  damm_pool
+        //   [4]  position
+        //   [5]  position_nft_account
+        //   [6]  token_a_account  (Global ATA)
+        //   [7]  token_b_account  (Global ATA)
+        //   [8]  token_a_vault
+        //   [9]  token_b_vault
+        //   [10] token_a_mint
+        //   [11] token_b_mint
+        //   [12] token_a_program
+        //   [13] token_b_program
+        //   [14] event_authority
+        //   [15] damm_program
+        //   [16] QuoteStat PDA seeds=["qstat", token_a_mint]
+        //   [17] QuoteStat PDA seeds=["qstat", token_b_mint]
+        //   [18..] writable PoolRecords for EVERY pool with quote in {token_a, token_b}
+        //          (count per mint MUST equal QuoteStat.pool_count), then CreatorOwed PDAs
+        //          (each AFTER its PoolRecord).
+        //
+        // Per PoolRecord: lp_budget = burn_pot * lp_share_bps / 10000.
+        // Spend from burn is capped by sum(budgets) on-chain (C2). Surplus (unbooked) may
+        // also be spent (e.g. pre-bought $FUSED) without touching burn_pot.
+        // After add+lock: decrement burn_pots by from_burn; holder/owed untouched;
+        // vault >= sum(holder + remaining_burn + owed) else VaultShort.
+        let lp_share_bps = auto_lp.lp_share_bps;
+        require!(lp_share_bps <= 10_000, FusedError::BadAutoLpShare);
+        msg!("auto_lp_share_bps={}", lp_share_bps);
+
+        let before_a = token_amount(tok_a)?;
+        let before_b = token_amount(tok_b)?;
+
+        // Need quote stats + at least room for them; pools may be zero if both counts are 0.
+        require!(a.len() >= 18, FusedError::BadAutoLpAccounts);
+
+        let qs_a_ai = &a[16];
+        let qs_b_ai = &a[17];
+        require_keys_eq!(*qs_a_ai.owner, *ctx.program_id, FusedError::BadAutoLpAccounts);
+        require_keys_eq!(*qs_b_ai.owner, *ctx.program_id, FusedError::BadAutoLpAccounts);
+        let (qs_a_key, _) = Pubkey::find_program_address(&[b"qstat", auto_lp.token_a_mint.as_ref()], ctx.program_id);
+        let (qs_b_key, _) = Pubkey::find_program_address(&[b"qstat", auto_lp.token_b_mint.as_ref()], ctx.program_id);
+        require_keys_eq!(qs_a_ai.key(), qs_a_key, FusedError::BadAutoLpAccounts);
+        require_keys_eq!(qs_b_ai.key(), qs_b_key, FusedError::BadAutoLpAccounts);
+        let qs_a: Account<QuoteStat> = Account::try_from(qs_a_ai)?;
+        let qs_b: Account<QuoteStat> = Account::try_from(qs_b_ai)?;
+        require_keys_eq!(qs_a.quote_mint, auto_lp.token_a_mint, FusedError::BadMint);
+        require_keys_eq!(qs_b.quote_mint, auto_lp.token_b_mint, FusedError::BadMint);
+        let expect_a = qs_a.pool_count;
+        let expect_b = qs_b.pool_count;
+
+        let mut pool_ais: Vec<&AccountInfo<'info>> = Vec::new();
+        let mut pool_keys: Vec<Pubkey> = Vec::new();
+        let mut pool_quotes: Vec<Pubkey> = Vec::new();
+        let mut pool_budgets: Vec<u64> = Vec::new();
+        let mut holder_a: u64 = 0;
+        let mut holder_b: u64 = 0;
+        let mut burn_a: u64 = 0;
+        let mut burn_b: u64 = 0;
+        let mut owed_a: u64 = 0;
+        let mut owed_b: u64 = 0;
+        let mut budget_a: u64 = 0;
+        let mut budget_b: u64 = 0;
+        let mut count_a: u64 = 0;
+        let mut count_b: u64 = 0;
+        let mut seen_pools: Vec<(Pubkey, Pubkey)> = Vec::new();
+
+        for ai in a.iter().skip(18) {
+            require_keys_eq!(*ai.owner, *ctx.program_id, FusedError::BadAutoLpAccounts);
+            let is_owed = {
+                let d = ai.try_borrow_data()?;
+                d.len() == OWED_LEN && d[..8] == OWED_TAG
+            };
+            if is_owed {
+                let (pool, owed) = {
+                    let d = ai.try_borrow_data()?;
+                    let pool = Pubkey::try_from(&d[8..40]).map_err(|_| error!(FusedError::BadCreator))?;
+                    let owed = u64::from_le_bytes(d[40..48].try_into().unwrap());
+                    (pool, owed)
+                };
+                require_keys_eq!(ai.key(), creator_owed_key(&pool, ctx.program_id), FusedError::BadAutoLpAccounts);
+                let quote = seen_pools
+                    .iter()
+                    .find(|(p, _)| *p == pool)
+                    .map(|(_, q)| *q)
+                    .ok_or_else(|| error!(FusedError::BadAutoLpAccounts))?;
+                if quote == auto_lp.token_a_mint {
+                    owed_a = owed_a.checked_add(owed).ok_or(FusedError::Math)?;
+                } else if quote == auto_lp.token_b_mint {
+                    owed_b = owed_b.checked_add(owed).ok_or(FusedError::Math)?;
+                } else {
+                    return err!(FusedError::BadMint);
+                }
+            } else {
+                require!(ai.is_writable, FusedError::BadAutoLpAccounts);
+                let pr: Account<PoolRecord> = Account::try_from(ai)?;
+                let (expected, _) = Pubkey::find_program_address(&[b"pool", pr.pool.as_ref()], ctx.program_id);
+                require_keys_eq!(ai.key(), expected, FusedError::BadAutoLpAccounts);
+                let budget = (pr.burn_pot as u128)
+                    .checked_mul(lp_share_bps as u128)
+                    .ok_or(FusedError::Math)?
+                    .checked_div(10_000u128)
+                    .ok_or(FusedError::Math)? as u64;
+                if pr.quote_mint == auto_lp.token_a_mint {
+                    holder_a = holder_a.checked_add(pr.holder_pot).ok_or(FusedError::Math)?;
+                    burn_a = burn_a.checked_add(pr.burn_pot).ok_or(FusedError::Math)?;
+                    budget_a = budget_a.checked_add(budget).ok_or(FusedError::Math)?;
+                    count_a = count_a.checked_add(1).ok_or(FusedError::Math)?;
+                } else if pr.quote_mint == auto_lp.token_b_mint {
+                    holder_b = holder_b.checked_add(pr.holder_pot).ok_or(FusedError::Math)?;
+                    burn_b = burn_b.checked_add(pr.burn_pot).ok_or(FusedError::Math)?;
+                    budget_b = budget_b.checked_add(budget).ok_or(FusedError::Math)?;
+                    count_b = count_b.checked_add(1).ok_or(FusedError::Math)?;
+                } else {
+                    return err!(FusedError::BadMint);
+                }
+                seen_pools.push((pr.pool, pr.quote_mint));
+                pool_ais.push(ai);
+                pool_keys.push(pr.pool);
+                pool_quotes.push(pr.quote_mint);
+                pool_budgets.push(budget);
+            }
+        }
+        // PERFECT M3: crank cannot understate the reserved set.
+        require!(count_a == expect_a, FusedError::BadAutoLpAccounts);
+        require!(count_b == expect_b, FusedError::BadAutoLpAccounts);
+        msg!("auto_lp_pools count_a={} count_b={} budget_a={} budget_b={}", count_a, count_b, budget_a, budget_b);
+
+        // Fail-fast: thresholds must not exceed burn LP budget + unbooked surplus.
+        let booked_a = holder_a
+            .checked_add(burn_a)
+            .ok_or(FusedError::Math)?
+            .checked_add(owed_a)
+            .ok_or(FusedError::Math)?;
+        let booked_b = holder_b
+            .checked_add(burn_b)
+            .ok_or(FusedError::Math)?
+            .checked_add(owed_b)
+            .ok_or(FusedError::Math)?;
+        let surplus_a = before_a.saturating_sub(booked_a);
+        let surplus_b = before_b.saturating_sub(booked_b);
+        let max_spend_a = surplus_a.checked_add(budget_a).ok_or(FusedError::Math)?;
+        let max_spend_b = surplus_b.checked_add(budget_b).ok_or(FusedError::Math)?;
+        require!(token_a_amount_threshold <= max_spend_a, FusedError::BadAutoLpAmounts);
+        require!(token_b_amount_threshold <= max_spend_b, FusedError::BadAutoLpAmounts);
 
         let bump = global.bump;
         let seeds: &[&[u8]] = &[b"global", &[bump]];
@@ -1002,7 +1179,107 @@ pub mod fused_fee {
             token_b_amount_threshold,
         )?;
         cpi_permanent_lock(damm_pool, position, nft, &a[0], ev, damm, seeds, liquidity_delta)?;
-        msg!("auto_lp_added={}", liquidity_delta);
+
+        let after_a = token_amount(tok_a)?;
+        let after_b = token_amount(tok_b)?;
+        require!(after_a <= before_a && after_b <= before_b, FusedError::Math);
+        let spent_a = before_a.checked_sub(after_a).ok_or(FusedError::Math)?;
+        let spent_b = before_b.checked_sub(after_b).ok_or(FusedError::Math)?;
+        require!(spent_a <= token_a_amount_threshold, FusedError::BadAutoLpAmounts);
+        require!(spent_b <= token_b_amount_threshold, FusedError::BadAutoLpAmounts);
+        require!(spent_a <= max_spend_a, FusedError::VaultShort);
+        require!(spent_b <= max_spend_b, FusedError::VaultShort);
+
+        // Portion of spend that comes from burn budgets (surplus is consumed first so we
+        // never decrement burn for tokens that were never booked).
+        let from_burn_a = spent_a.saturating_sub(surplus_a);
+        let from_burn_b = spent_b.saturating_sub(surplus_b);
+        require!(from_burn_a <= budget_a, FusedError::VaultShort);
+        require!(from_burn_b <= budget_b, FusedError::VaultShort);
+
+        let n = pool_ais.len();
+        // Pro-rata decrement of burn_pot by mint; holder_pot untouched.
+        // Pass 1: floor(from_burn * budget_i / budget_tot). Pass 2: give leftover
+        // lamports one-by-one to pools that still have budget room (handles rounding).
+        let mut take_amt: Vec<u64> = vec![0u64; n];
+        for (mint_is_a, from_burn, budget_tot) in [
+            (true, from_burn_a, budget_a),
+            (false, from_burn_b, budget_b),
+        ] {
+            if from_burn == 0 || budget_tot == 0 {
+                continue;
+            }
+            let mut assigned: u64 = 0;
+            let mut idxs: Vec<usize> = Vec::new();
+            for i in 0..n {
+                let is_a = pool_quotes[i] == auto_lp.token_a_mint;
+                if is_a != mint_is_a {
+                    continue;
+                }
+                idxs.push(i);
+                let t = ((from_burn as u128)
+                    .checked_mul(pool_budgets[i] as u128)
+                    .ok_or(FusedError::Math)?
+                    / (budget_tot as u128)) as u64;
+                let t = core::cmp::min(t, pool_budgets[i]);
+                take_amt[i] = t;
+                assigned = assigned.checked_add(t).ok_or(FusedError::Math)?;
+            }
+            let mut left = from_burn.checked_sub(assigned).ok_or(FusedError::Math)?;
+            for &i in idxs.iter() {
+                if left == 0 {
+                    break;
+                }
+                let room = pool_budgets[i].checked_sub(take_amt[i]).ok_or(FusedError::Math)?;
+                if room == 0 {
+                    continue;
+                }
+                let add = core::cmp::min(room, left);
+                take_amt[i] = take_amt[i].checked_add(add).ok_or(FusedError::Math)?;
+                left = left.checked_sub(add).ok_or(FusedError::Math)?;
+            }
+            require!(left == 0, FusedError::Math);
+        }
+        let mut taken_a: u64 = 0;
+        let mut taken_b: u64 = 0;
+        for i in 0..n {
+            let take = take_amt[i];
+            if pool_quotes[i] == auto_lp.token_a_mint {
+                taken_a = taken_a.checked_add(take).ok_or(FusedError::Math)?;
+            } else {
+                taken_b = taken_b.checked_add(take).ok_or(FusedError::Math)?;
+            }
+            if take == 0 {
+                continue;
+            }
+            let mut pr: Account<PoolRecord> = Account::try_from(pool_ais[i])?;
+            require_keys_eq!(pr.pool, pool_keys[i], FusedError::BadAutoLpAccounts);
+            let holder_before = pr.holder_pot;
+            pr.burn_pot = pr.burn_pot.checked_sub(take).ok_or(FusedError::Math)?;
+            require!(pr.holder_pot == holder_before, FusedError::Math);
+            pr.exit(ctx.program_id)?;
+        }
+        require!(taken_a == from_burn_a, FusedError::Math);
+        require!(taken_b == from_burn_b, FusedError::Math);
+
+        // Solvency: vault must still cover holder + remaining burn + creator owed.
+        let reserved_a = holder_a
+            .checked_add(burn_a.checked_sub(taken_a).ok_or(FusedError::Math)?)
+            .ok_or(FusedError::Math)?
+            .checked_add(owed_a)
+            .ok_or(FusedError::Math)?;
+        let reserved_b = holder_b
+            .checked_add(burn_b.checked_sub(taken_b).ok_or(FusedError::Math)?)
+            .ok_or(FusedError::Math)?
+            .checked_add(owed_b)
+            .ok_or(FusedError::Math)?;
+        require!(after_a >= reserved_a, FusedError::VaultShort);
+        require!(after_b >= reserved_b, FusedError::VaultShort);
+
+        msg!(
+            "auto_lp_added={} spent_a={} spent_b={} from_burn_a={} from_burn_b={} reserved_a={} reserved_b={} lp_share_bps={}",
+            liquidity_delta, spent_a, spent_b, from_burn_a, from_burn_b, reserved_a, reserved_b, lp_share_bps
+        );
         Ok(())
     }
 }
@@ -1625,6 +1902,19 @@ impl AutoLpConfig {
     pub const LEN: usize = 32 + 32 + 32 + 32 + 32 + 2 + 1;
 }
 
+/// PERFECT: one per quote mint, seeds [b"qstat", quote_mint]. pool_count is the number of
+/// PoolRecords registered for that quote. crank_auto_lp requires the crank to pass exactly
+/// that many PoolRecords so reserved pots cannot be understated (M3).
+#[account]
+pub struct QuoteStat {
+    pub quote_mint: Pubkey,
+    pub pool_count: u64,
+    pub bump: u8,
+}
+impl QuoteStat {
+    pub const LEN: usize = 32 + 8 + 1;
+}
+
 /// V2: one per pool, seeds [b"paycur", pool]. Tracks who was paid in the current round.
 #[account]
 pub struct PayCursor {
@@ -1716,7 +2006,7 @@ pub struct UpdateConfig<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(pool: Pubkey)]
+#[instruction(pool: Pubkey, base_mint: Pubkey, quote_mint: Pubkey)]
 pub struct RegisterPool<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -1738,6 +2028,15 @@ pub struct RegisterPool<'info> {
     pub dbc_pool: UncheckedAccount<'info>,
     /// CHECK: Meteora DBC PoolConfig; checked in check_dbc_config
     pub dbc_config: UncheckedAccount<'info>,
+    // PERFECT: appended — existing clients that omit it fail at Anchor account count; crank/launch updated together.
+    #[account(
+        init_if_needed,
+        payer = payer,
+        space = 8 + QuoteStat::LEN,
+        seeds = [b"qstat", quote_mint.as_ref()],
+        bump
+    )]
+    pub quote_stat: Account<'info, QuoteStat>,
 }
 
 #[derive(Accounts)]
@@ -2166,6 +2465,24 @@ pub struct SetAutoLpShare<'info> {
     pub admin: Signer<'info>,
     #[account(mut, seeds = [b"autolp"], bump = auto_lp.bump)]
     pub auto_lp: Account<'info, AutoLpConfig>,
+}
+
+#[derive(Accounts)]
+#[instruction(quote_mint: Pubkey)]
+pub struct SyncQuoteStat<'info> {
+    #[account(mut)]
+    pub admin: Signer<'info>,
+    #[account(seeds = [b"global"], bump = global.bump, has_one = admin)]
+    pub global: Account<'info, Global>,
+    #[account(
+        init_if_needed,
+        payer = admin,
+        space = 8 + QuoteStat::LEN,
+        seeds = [b"qstat", quote_mint.as_ref()],
+        bump
+    )]
+    pub quote_stat: Account<'info, QuoteStat>,
+    pub system_program: Program<'info, System>,
 }
 
 /// V5: accounts passed as remaining_accounts (keeps the binary small, same pattern as claim_creator_share).
