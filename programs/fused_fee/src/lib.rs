@@ -144,11 +144,27 @@ pub mod fused_fee {
         require_keys_eq!(real_base_mint, base_mint, FusedError::BadMint);
         require_keys_eq!(ctx.accounts.dbc_config.key(), real_config, FusedError::ConfigMismatch);
         check_dbc_config(&ctx.accounts.dbc_config, &quote_mint, &ctx.accounts.global.key())?;
-        // V3: optional remaining_accounts[0] = quote mint -> refuse unsupported pairs at registration.
-        if let Some(mint_ai) = ctx.remaining_accounts.first() {
-            require_keys_eq!(mint_ai.key(), quote_mint, FusedError::BadMint);
-            mint_policy(mint_ai)?;
-        }
+        // QuoteStat is not a named account: the 7-account prefix stays the same.
+        // It cannot stay optional. A successful registration has to update the quote
+        // counter in this instruction, and Solana will not write a PDA the caller left out.
+        // Omission used to commit the PoolRecord and leave pool_count stale.
+        //   remaining_accounts[0] = quote mint (pair policy)
+        //   remaining_accounts[1] = writable QuoteStat PDA ["qstat", quote_mint]
+        // Missing, read-only, wrong PDA, wrong mint, wrong owner, or overflow aborts
+        // the instruction, so the new PoolRecord is not committed.
+        // An existing QuoteStat is incremented by exactly 1. An empty PDA is rejected:
+        // inventing count=1 would hide pools registered before the counter existed.
+        // Admin sync_quote_stat sets the absolute baseline first (0 when the quote is new).
+        // Registering the same pool again fails at `init` and does not increment.
+        // This instruction does not arm auto-LP.
+        require!(ctx.remaining_accounts.len() >= 2, FusedError::QuoteStatRequired);
+        let mint_ai = &ctx.remaining_accounts[0];
+        require_keys_eq!(mint_ai.key(), quote_mint, FusedError::BadMint);
+        mint_policy(mint_ai)?;
+        let payer_ai = ctx.accounts.payer.to_account_info();
+        let sys_ai = ctx.accounts.system_program.to_account_info();
+        let qs_ai = ctx.remaining_accounts[1].clone();
+        bump_quote_stat_from_remaining(&payer_ai, &sys_ai, &qs_ai, &quote_mint, ctx.program_id)?;
         let p = &mut ctx.accounts.pool_record;
         p.pool = pool;
         p.base_mint = base_mint;
@@ -159,27 +175,6 @@ pub mod fused_fee {
         p.holder_pot = 0;
         p.burn_pot = 0;
         p.bump = ctx.bumps.pool_record;
-        // PERFECT + launch-compat: QuoteStat is NOT a named account.
-        // Live launch (/api/launch, Matchbox, coin-page Register) sends exactly the live 7 named
-        // accounts + quote mint at remaining_accounts[0]. Keeping named accounts identical to
-        // 539d50a means those clients keep working unchanged.
-        // Optional remaining_accounts[1] = QuoteStat PDA ["qstat", quote_mint] (writable):
-        // create-if-empty + increment. If omitted, register still succeeds and pool_count goes
-        // stale → crank_auto_lp fails closed (BadAutoLpAccounts 6045) until admin sync_quote_stat.
-        if ctx.remaining_accounts.len() >= 2 {
-            let payer_ai = ctx.accounts.payer.to_account_info();
-            let sys_ai = ctx.accounts.system_program.to_account_info();
-            let qs_ai = ctx.remaining_accounts[1].clone();
-            bump_quote_stat_from_remaining(
-                &payer_ai,
-                &sys_ai,
-                &qs_ai,
-                &quote_mint,
-                ctx.program_id,
-            )?;
-        } else {
-            msg!("quote_stat omitted at rem[1]; pool_count stale until sync_quote_stat");
-        }
         Ok(())
     }
 
@@ -947,8 +942,10 @@ pub mod fused_fee {
         Ok(())
     }
 
-    /// PERFECT: admin sets/repairs QuoteStat.pool_count after upgrade (existing pools were
-    /// registered before the counter existed). New registers increment via register_pool.
+    /// Admin sets the absolute QuoteStat.pool_count (migration and repair).
+    /// Pools registered before register_pool required the counter are not included until
+    /// this is set to the exact live total. A later register_pool increments that total
+    /// by one. This overwrites; it does not add.
     pub fn sync_quote_stat(ctx: Context<SyncQuoteStat>, quote_mint: Pubkey, pool_count: u64) -> Result<()> {
         require!(quote_mint != Pubkey::default(), FusedError::BadMint);
         let qs = &mut ctx.accounts.quote_stat;
@@ -1065,9 +1062,9 @@ pub mod fused_fee {
         //   [15] damm_program
         //   [16] QuoteStat PDA seeds=["qstat", token_a_mint]
         //   [17] QuoteStat PDA seeds=["qstat", token_b_mint]
-        //   [18..] writable PoolRecords for EVERY pool with quote in {token_a, token_b}
-        //          (count per mint MUST equal QuoteStat.pool_count), then CreatorOwed PDAs
-        //          (each AFTER its PoolRecord).
+        //   [18..] pairs: writable PoolRecord, then its CreatorOwed PDA ["cown", pool]
+        //          (empty PDA means owed = 0). One pair per pool. Repeats are rejected.
+        //          Count per mint must equal QuoteStat.pool_count.
         //
         // Per PoolRecord: lp_budget = burn_pot * lp_share_bps / 10000.
         // Spend from burn is capped by sum(budgets) on-chain (C2). Surplus (unbooked) may
@@ -1115,61 +1112,68 @@ pub mod fused_fee {
         let mut count_b: u64 = 0;
         let mut seen_pools: Vec<(Pubkey, Pubkey)> = Vec::new();
 
-        for ai in a.iter().skip(18) {
+        // Each pool is followed by its CreatorOwed PDA. An empty PDA means owed = 0.
+        // Repeating one pool to satisfy QuoteStat.pool_count is rejected.
+        let tail: Vec<&AccountInfo<'info>> = a.iter().skip(18).collect();
+        let mut i = 0usize;
+        while i < tail.len() {
+            let ai = tail[i];
             require_keys_eq!(*ai.owner, *ctx.program_id, FusedError::BadAutoLpAccounts);
-            let is_owed = {
-                let d = ai.try_borrow_data()?;
-                d.len() == OWED_LEN && d[..8] == OWED_TAG
-            };
-            if is_owed {
+            require!(ai.is_writable, FusedError::BadAutoLpAccounts);
+            let pr: Account<PoolRecord> = Account::try_from(ai)?;
+            let (expected, _) = Pubkey::find_program_address(&[b"pool", pr.pool.as_ref()], ctx.program_id);
+            require_keys_eq!(ai.key(), expected, FusedError::BadAutoLpAccounts);
+            require!(
+                !seen_pools.iter().any(|(p, _)| *p == pr.pool),
+                FusedError::BadAutoLpAccounts
+            );
+            let budget = (pr.burn_pot as u128)
+                .checked_mul(lp_share_bps as u128)
+                .ok_or(FusedError::Math)?
+                .checked_div(10_000u128)
+                .ok_or(FusedError::Math)? as u64;
+            if pr.quote_mint == auto_lp.token_a_mint {
+                holder_a = holder_a.checked_add(pr.holder_pot).ok_or(FusedError::Math)?;
+                burn_a = burn_a.checked_add(pr.burn_pot).ok_or(FusedError::Math)?;
+                budget_a = budget_a.checked_add(budget).ok_or(FusedError::Math)?;
+                count_a = count_a.checked_add(1).ok_or(FusedError::Math)?;
+            } else if pr.quote_mint == auto_lp.token_b_mint {
+                holder_b = holder_b.checked_add(pr.holder_pot).ok_or(FusedError::Math)?;
+                burn_b = burn_b.checked_add(pr.burn_pot).ok_or(FusedError::Math)?;
+                budget_b = budget_b.checked_add(budget).ok_or(FusedError::Math)?;
+                count_b = count_b.checked_add(1).ok_or(FusedError::Math)?;
+            } else {
+                return err!(FusedError::BadMint);
+            }
+            i += 1;
+            let owed_ai = tail.get(i).ok_or(error!(FusedError::BadAutoLpAccounts))?;
+            let owed_key = creator_owed_key(&pr.pool, ctx.program_id);
+            require_keys_eq!(owed_ai.key(), owed_key, FusedError::BadAutoLpAccounts);
+            let owed = if owed_ai.data_is_empty() {
+                0
+            } else {
+                require_keys_eq!(*owed_ai.owner, *ctx.program_id, FusedError::BadAutoLpAccounts);
                 let (pool, owed) = {
-                    let d = ai.try_borrow_data()?;
+                    let d = owed_ai.try_borrow_data()?;
+                    require!(d.len() == OWED_LEN && d[..8] == OWED_TAG, FusedError::BadAutoLpAccounts);
                     let pool = Pubkey::try_from(&d[8..40]).map_err(|_| error!(FusedError::BadCreator))?;
                     let owed = u64::from_le_bytes(d[40..48].try_into().unwrap());
                     (pool, owed)
                 };
-                require_keys_eq!(ai.key(), creator_owed_key(&pool, ctx.program_id), FusedError::BadAutoLpAccounts);
-                let quote = seen_pools
-                    .iter()
-                    .find(|(p, _)| *p == pool)
-                    .map(|(_, q)| *q)
-                    .ok_or_else(|| error!(FusedError::BadAutoLpAccounts))?;
-                if quote == auto_lp.token_a_mint {
-                    owed_a = owed_a.checked_add(owed).ok_or(FusedError::Math)?;
-                } else if quote == auto_lp.token_b_mint {
-                    owed_b = owed_b.checked_add(owed).ok_or(FusedError::Math)?;
-                } else {
-                    return err!(FusedError::BadMint);
-                }
+                require_keys_eq!(pool, pr.pool, FusedError::BadAutoLpAccounts);
+                owed
+            };
+            if pr.quote_mint == auto_lp.token_a_mint {
+                owed_a = owed_a.checked_add(owed).ok_or(FusedError::Math)?;
             } else {
-                require!(ai.is_writable, FusedError::BadAutoLpAccounts);
-                let pr: Account<PoolRecord> = Account::try_from(ai)?;
-                let (expected, _) = Pubkey::find_program_address(&[b"pool", pr.pool.as_ref()], ctx.program_id);
-                require_keys_eq!(ai.key(), expected, FusedError::BadAutoLpAccounts);
-                let budget = (pr.burn_pot as u128)
-                    .checked_mul(lp_share_bps as u128)
-                    .ok_or(FusedError::Math)?
-                    .checked_div(10_000u128)
-                    .ok_or(FusedError::Math)? as u64;
-                if pr.quote_mint == auto_lp.token_a_mint {
-                    holder_a = holder_a.checked_add(pr.holder_pot).ok_or(FusedError::Math)?;
-                    burn_a = burn_a.checked_add(pr.burn_pot).ok_or(FusedError::Math)?;
-                    budget_a = budget_a.checked_add(budget).ok_or(FusedError::Math)?;
-                    count_a = count_a.checked_add(1).ok_or(FusedError::Math)?;
-                } else if pr.quote_mint == auto_lp.token_b_mint {
-                    holder_b = holder_b.checked_add(pr.holder_pot).ok_or(FusedError::Math)?;
-                    burn_b = burn_b.checked_add(pr.burn_pot).ok_or(FusedError::Math)?;
-                    budget_b = budget_b.checked_add(budget).ok_or(FusedError::Math)?;
-                    count_b = count_b.checked_add(1).ok_or(FusedError::Math)?;
-                } else {
-                    return err!(FusedError::BadMint);
-                }
-                seen_pools.push((pr.pool, pr.quote_mint));
-                pool_ais.push(ai);
-                pool_keys.push(pr.pool);
-                pool_quotes.push(pr.quote_mint);
-                pool_budgets.push(budget);
+                owed_b = owed_b.checked_add(owed).ok_or(FusedError::Math)?;
             }
+            seen_pools.push((pr.pool, pr.quote_mint));
+            pool_ais.push(ai);
+            pool_keys.push(pr.pool);
+            pool_quotes.push(pr.quote_mint);
+            pool_budgets.push(budget);
+            i += 1;
         }
         // PERFECT M3: crank cannot understate the reserved set.
         require!(count_a == expect_a, FusedError::BadAutoLpAccounts);
@@ -1360,13 +1364,18 @@ fn write_owed(ai: &AccountInfo, pool: &Pubkey, owed: u64, paid: u64) -> Result<(
     Ok(())
 }
 
-/// PERFECT (compat): create-or-increment QuoteStat when launch/crank passes it at rem[1].
-/// Rejects a wrong key (must be PDA ["qstat", quote_mint]). Space = 8 disc + QuoteStat::LEN.
-const QSTAT_TAG: [u8; 8] = [196, 19, 91, 20, 68, 151, 114, 86]; // sha256("account:QuoteStat")[0..8]
+/// Increment the QuoteStat passed at remaining_accounts[1].
+/// The account must already exist. sync_quote_stat creates it and sets the absolute
+/// baseline. Rejects a wrong PDA, a read-only account, an empty account, a non-program
+/// owner, a mismatched mint, or an overflowing count.
+const QSTAT_TAG: [u8; 8] = {
+    let d = <QuoteStat as anchor_lang::Discriminator>::DISCRIMINATOR;
+    [d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]]
+};
 const QSTAT_LEN: usize = 8 + QuoteStat::LEN; // disc + mint + count + bump
 fn bump_quote_stat_from_remaining<'info>(
-    payer: &AccountInfo<'info>,
-    sys: &AccountInfo<'info>,
+    _payer: &AccountInfo<'info>,
+    _sys: &AccountInfo<'info>,
     ai: &AccountInfo<'info>,
     quote_mint: &Pubkey,
     program_id: &Pubkey,
@@ -1375,15 +1384,10 @@ fn bump_quote_stat_from_remaining<'info>(
     require_keys_eq!(ai.key(), key, FusedError::QuoteMismatch);
     require!(ai.is_writable, FusedError::BadMint);
     if ai.data_is_empty() {
-        let lamports = Rent::get()?.minimum_balance(QSTAT_LEN);
-        let seeds: &[&[u8]] = &[b"qstat", quote_mint.as_ref(), &[bump]];
-        create_pda_account(payer, ai, sys, lamports, QSTAT_LEN as u64, program_id, seeds)?;
-        let mut d = ai.try_borrow_mut_data()?;
-        d[..8].copy_from_slice(&QSTAT_TAG);
-        d[8..40].copy_from_slice(quote_mint.as_ref());
-        d[40..48].copy_from_slice(&1u64.to_le_bytes());
-        d[48] = bump;
-        msg!("quote_stat created mint={} count=1", quote_mint);
+        // Do not invent a count. A brand-new quote is sync_quote_stat(..., 0) first;
+        // a quote that already has pools is sync_quote_stat(..., exact_total) first.
+        msg!("quote_stat uninitialized mint={}", quote_mint);
+        return err!(FusedError::QuoteStatUninitialized);
     } else {
         require_keys_eq!(*ai.owner, *program_id, FusedError::QuoteMismatch);
         let mut d = ai.try_borrow_mut_data()?;
@@ -2089,8 +2093,9 @@ pub struct RegisterPool<'info> {
     pub dbc_pool: UncheckedAccount<'info>,
     /// CHECK: Meteora DBC PoolConfig; checked in check_dbc_config
     pub dbc_config: UncheckedAccount<'info>,
-    // PERFECT (compat): QuoteStat is NOT named here — live clients send 7 accounts + rem[0]=mint.
-    // Optional rem[1]=QuoteStat PDA handled in register_pool body (bump_quote_stat_from_remaining).
+    // QuoteStat is intentionally not named. Live clients keep this 7-account prefix and
+    // pass the quote mint at remaining_accounts[0] plus the writable QuoteStat PDA at
+    // remaining_accounts[1]. The handler rejects the registration if that PDA is absent.
 }
 
 #[derive(Accounts)]
@@ -2460,6 +2465,12 @@ pub enum FusedError {
     BadAutoLpAmounts,
     #[msg("DAMM add_liquidity or permanent_lock_position CPI failed")]
     AutoLpCpiFailed,
+    // QuoteStat auto-count: appended so existing error numbers do not change (6048).
+    #[msg("register_pool requires writable QuoteStat PDA at remaining_accounts[1]")]
+    QuoteStatRequired,
+    // Appended (6049). Empty QuoteStat is not created here; sync the absolute count first.
+    #[msg("QuoteStat is missing; sync the absolute pool count before register_pool")]
+    QuoteStatUninitialized,
 }
 
 #[derive(Accounts)]
@@ -2550,4 +2561,53 @@ pub struct MigrateGlobal<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
     pub system_program: Program<'info, System>,
+}
+
+#[cfg(test)]
+mod quotestat_unit {
+    use super::*;
+    use anchor_lang::Discriminator;
+
+    #[test]
+    fn quote_stat_discriminator_matches_manual_layout() {
+        assert_eq!(&QSTAT_TAG[..], QuoteStat::DISCRIMINATOR);
+        assert_eq!(QSTAT_LEN, 8 + QuoteStat::LEN);
+        assert_eq!(QuoteStat::LEN, 32 + 8 + 1);
+    }
+
+    #[test]
+    fn register_pool_instruction_discriminator() {
+        assert_eq!(
+            <crate::instruction::RegisterPool as Discriminator>::DISCRIMINATOR,
+            &[85, 229, 114, 47, 75, 145, 166, 100]
+        );
+        assert_eq!(
+            <crate::instruction::SyncQuoteStat as Discriminator>::DISCRIMINATOR,
+            &[130, 168, 89, 25, 125, 164, 73, 104]
+        );
+        assert_eq!(ConfigRecord::DISCRIMINATOR, &[176, 40, 195, 139, 54, 176, 82, 177]);
+        assert_eq!(PoolRecord::DISCRIMINATOR, &[117, 217, 136, 145, 181, 104, 107, 17]);
+    }
+
+    #[test]
+    fn economics_constants_unchanged() {
+        assert_eq!(HOLDER_NUM, 90);
+        assert_eq!(BURN_NUM, 20);
+        assert_eq!(SPLIT_DENOM, 110);
+        assert_eq!(CREATOR_SHARE_NUM, 8);
+        assert_eq!(CREATOR_SHARE_DENOM, 100);
+        assert_eq!(DEFAULT_AUTO_LP_BPS, 5_000);
+        // Curve split of a 1.10% partner claim: 0.90 holder / 0.20 burn, dust to holders.
+        let delta: u64 = 1_100_000;
+        let burn = delta * BURN_NUM / SPLIT_DENOM;
+        let holder = delta - burn;
+        assert_eq!(burn, 200_000);
+        assert_eq!(holder, 900_000);
+        assert_eq!(burn + holder, delta);
+        // Default auto-LP takes half of the burn pot (0.10 of volume if burn is 0.20).
+        let burn_pot: u64 = 2_000;
+        let lp_budget = burn_pot * DEFAULT_AUTO_LP_BPS as u64 / 10_000;
+        assert_eq!(lp_budget, 1_000);
+        assert_eq!(burn_pot - lp_budget, 1_000);
+    }
 }
