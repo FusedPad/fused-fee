@@ -29,14 +29,48 @@ def structs(text):
                 mm = re.search(r"pub (\w+)\s*:", line)
                 blob = "\n".join(pending + [line])
                 typ = line.split(":", 1)[1]
-                signer = "Signer" in typ
-                writable = bool(re.search(r"#\[account\([^\)]*\bmut\b", blob)) or bool(re.search(r"seeds = \[[^\]]*\][^\]]*bump[^\]]*\]", blob) and "mut" in blob)
-                # mut anywhere in the attribute stack
-                writable = "mut" in blob and "#[account" in blob
-                fields.append({"name": mm.group(1), "signer": signer, "writable": writable, "source": "anchor named field"})
+                # Anchor 0.31 account-meta expansion, anchor-syn ConstraintGroupBuilder::build
+                # and __client_accounts.rs: init/init_if_needed inject ConstraintMut, so
+                # is_mutable() is true and ToAccountMetas emits AccountMeta::new.
+                # realloc does not inject mut; the source must already say mut.
+                # A non-PDA init also injects ConstraintSigner. A PDA init does not.
+                literal_mut = bool(re.search(r"(?<![:\w])mut\b", blob))
+                init_if_needed = bool(re.search(r"\binit_if_needed\b", blob))
+                init = (not init_if_needed) and bool(re.search(r"(?<![\w])init(?![\w_])", blob))
+                has_seeds = bool(re.search(r"\bseeds\b", blob))
+                has_ata = "associated_token" in blob
+                signer = ("Signer" in typ) or (init or init_if_needed) and not has_seeds and not has_ata
+                because = []
+                if literal_mut:
+                    because.append("mut")
+                if init_if_needed:
+                    because.append("init_if_needed injects mut")
+                elif init:
+                    because.append("init injects mut")
+                writable = literal_mut or init or init_if_needed
+                fields.append({
+                    "name": mm.group(1),
+                    "signer": signer,
+                    "writable": writable,
+                    "writable_because": because,
+                    "source": "anchor named field",
+                    "_blob": blob,
+                })
                 pending = []
             else:
                 pending.append(line)
+        payers = {}
+        for f in fields:
+            for m in re.finditer(r"(?:realloc::)?payer\s*=\s*(\w+)", f["_blob"]):
+                payers.setdefault(m.group(1), []).append(f["name"])
+        for f in fields:
+            if f["name"] in payers:
+                f["payer_of"] = payers[f["name"]]
+                # Anchor refuses to compile unless this payer field is already mutable.
+                # It does not add writability itself.
+                assert f["writable"], (name, f["name"], payers[f["name"]])
+                f["writable_because"].append("Anchor requires this payer field to already be mut")
+            del f["_blob"]
         out[name] = fields
     return out
 
@@ -44,6 +78,14 @@ SS, PS = structs(SHARED), structs(PER)
 assert SS["CrankClaimDamm"] and len(SS["CrankClaimDamm"]) == 18
 assert len(PS["CrankPayV3"]) == 9 and len(SS["CrankPayV3"]) == 10
 assert "CrankAutoLp" in SS and SS["CrankAutoLp"] == []
+for src in (SS, PS):
+    for struct in ("CrankPayV2", "CrankPayV3"):
+        cursor = next(f for f in src[struct] if f["name"] == "pay_cursor")
+        assert cursor["writable"] is True and cursor["signer"] is False, cursor
+        assert any("init_if_needed" in r for r in cursor["writable_because"]), cursor
+    vault = next(f for f in src["CrankPayV2"] if f["name"] == "sol_vault")
+    assert vault["writable"] is True and vault["signer"] is False
+    assert next(f for f in src["Initialize"] if f["name"] == "global")["writable"] is True
 
 def errors(text):
     m = re.search(r"#\[error_code\]\s*pub enum FusedError \{", text)
@@ -233,7 +275,10 @@ def named_from(design_structs, name):
     fields = design_structs[STRUCT[name]]
     accounts = []
     for n, f in enumerate(fields):
-        accounts.append({"index": n, "name": f["name"], "signer": f["signer"], "writable": f["writable"], "source": "anchor named field"})
+        row = {"index": n, "name": f["name"], "signer": f["signer"], "writable": f["writable"], "writable_because": f["writable_because"], "source": "anchor named field"}
+        if "payer_of" in f:
+            row["payer_of"] = f["payer_of"]
+        accounts.append(row)
     return accounts
 
 for item in doc["instructions"]:

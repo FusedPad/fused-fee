@@ -1,5 +1,13 @@
 # RUN13 ABI correction
 
+Pay cursors are writable. `init_if_needed` does not use the word `mut`, and the previous extractor treated that as read-only. That was an export bug. The program was not wrong and was not changed.
+
+Anchor 0.31.2, which expands the accounts for anchor-lang 0.31.1, does this in `ConstraintGroupBuilder::build`: if the attribute is `init` or `init_if_needed` and `mut` is absent, it inserts `ConstraintMut`. `is_mutable()` is then true. `__client_accounts.rs` emits `AccountMeta::new` for that field. The program also runs the generated check `if !account.is_writable`. A read-only compiled meta is rejected by that check. It is not a separate check in the pay handler. `realloc` does not insert `mut`; the field must already say `mut`, and the named payer must already be `mut`, or Anchor refuses to compile. A payer is not given writability by being named. Our payers already have `mut`.
+
+A PDA with `init` or `init_if_needed` is not made a signer. Both pay cursors and the wSOL vault are PDAs, so they are writable and not signers. The same rule makes the initialized global account, the pool record, the auto-LP config, and QuoteStat writable. The compiled flag and the Anchor runtime check are the same fact. A handler `require!(is_writable)` is a different check and is not what marks the cursor.
+
+
+
 This package does not change the program. The four run13 ELF hashes stay:
 
 | File | Bytes | sha256 |

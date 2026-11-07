@@ -1676,6 +1676,20 @@ fn abi_has_accounts(design: &str, name: &str, accounts: &[&str]) {
     }
 }
 
+fn abi_field_flags(design: &str, ix: &str, field: &str) -> (bool, bool) {
+    let id = format!("\"id\": \"{design}.{ix}\"");
+    let start = ABI_TEXT.find(&id).unwrap_or_else(|| panic!("missing {id}"));
+    let rest = &ABI_TEXT[start + 1..];
+    let end = rest.find("\"id\":").unwrap_or(rest.len());
+    let window = &ABI_TEXT[start..start + 1 + end];
+    let key = format!("\"name\": \"{field}\"");
+    let at = window.find(&key).unwrap_or_else(|| panic!("{id} missing {field}"));
+    let slice = &window[at..at + 280];
+    let signer = slice.contains("\"signer\": true");
+    let writable = slice.contains("\"writable\": true");
+    (signer, writable)
+}
+
 fn abi_named_len(design: &str, name: &str) -> usize {
     let id = format!("\"id\": \"{design}.{name}\"");
     let at = ABI_TEXT.find(&id).unwrap_or_else(|| panic!("ABI missing {id}"));
@@ -1693,6 +1707,16 @@ async fn retained_three(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey, p
     assert_eq!(abi_named_len(design, "crank_auto_lp"), 0);
     assert!(ABI_TEXT.contains("quote_token_program"));
     assert!(ABI_TEXT.contains("MigrationFeeShort"));
+    for design in ["shared", "per_pool"] {
+        for ix in ["crank_pay_page_v2", "crank_pay_page_v3"] {
+            assert_eq!(abi_field_flags(design, ix, "pay_cursor"), (false, true), "{design} {ix}");
+        }
+        assert_eq!(abi_field_flags(design, "crank_pay_page_v2", "sol_vault"), (false, true));
+        assert_eq!(abi_field_flags(design, "initialize", "global"), (false, true));
+        assert_eq!(abi_field_flags(design, "register_pool", "pool_record"), (false, true));
+        assert_eq!(abi_field_flags(design, "sync_quote_stat", "quote_stat"), (false, true));
+        assert_eq!(abi_field_flags(design, "init_auto_lp", "auto_lp"), (false, true));
+    }
     for (n, accts) in [
         ("mark_graduated", &["global", "pool_record", "dbc_pool"][..]),
         ("check_quote_mint", &["mint"][..]),

@@ -81,13 +81,23 @@
           "name": "admin",
           "signer": true,
           "writable": true,
-          "source": "anchor named field"
+          "writable_because": [
+            "mut",
+            "Anchor requires this payer field to already be mut"
+          ],
+          "source": "anchor named field",
+          "payer_of": [
+            "global"
+          ]
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
-          "writable": false,
+          "writable": true,
+          "writable_because": [
+            "init injects mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -95,6 +105,7 @@
           "name": "system_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -123,13 +134,23 @@
           "name": "admin",
           "signer": true,
           "writable": true,
-          "source": "anchor named field"
+          "writable_because": [
+            "mut",
+            "Anchor requires this payer field to already be mut"
+          ],
+          "source": "anchor named field",
+          "payer_of": [
+            "global"
+          ]
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
-          "writable": false,
+          "writable": true,
+          "writable_because": [
+            "init injects mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -137,6 +158,7 @@
           "name": "system_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -170,13 +192,21 @@
           "name": "payer",
           "signer": true,
           "writable": true,
-          "source": "anchor named field"
+          "writable_because": [
+            "mut",
+            "Anchor requires this payer field to already be mut"
+          ],
+          "source": "anchor named field",
+          "payer_of": [
+            "config_record"
+          ]
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -184,13 +214,17 @@
           "name": "config",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "config_record",
           "signer": false,
-          "writable": false,
+          "writable": true,
+          "writable_because": [
+            "init injects mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -198,6 +232,7 @@
           "name": "system_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -238,13 +273,21 @@
           "name": "payer",
           "signer": true,
           "writable": true,
-          "source": "anchor named field"
+          "writable_because": [
+            "mut",
+            "Anchor requires this payer field to already be mut"
+          ],
+          "source": "anchor named field",
+          "payer_of": [
+            "config_record"
+          ]
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -252,13 +295,17 @@
           "name": "config",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "config_record",
           "signer": false,
-          "writable": false,
+          "writable": true,
+          "writable_because": [
+            "init injects mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -266,6 +313,7 @@
           "name": "system_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -306,6 +354,9 @@
           "name": "global",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -313,6 +364,7 @@
           "name": "admin",
           "signer": true,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -320,6 +372,9 @@
           "name": "config_record",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         }
       ],
@@ -353,6 +408,9 @@
           "name": "global",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -360,6 +418,7 @@
           "name": "admin",
           "signer": true,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -367,6 +426,9 @@
           "name": "config_record",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         }
       ],
@@ -400,6 +462,7 @@
           "name": "admin",
           "signer": true,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -407,6 +470,9 @@
           "name": "global",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         }
       ],
@@ -440,6 +506,7 @@
           "name": "admin",
           "signer": true,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -447,6 +514,9 @@
           "name": "global",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         }
       ],
@@ -481,6 +551,7 @@
           "name": "admin",
           "signer": true,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -488,6 +559,9 @@
           "name": "global",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         }
       ],
@@ -522,6 +596,7 @@
           "name": "admin",
           "signer": true,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -529,6 +604,9 @@
           "name": "global",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         }
       ],
@@ -557,6 +635,9 @@
           "name": "global",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -564,13 +645,21 @@
           "name": "admin",
           "signer": true,
           "writable": true,
-          "source": "anchor named field"
+          "writable_because": [
+            "mut",
+            "Anchor requires this payer field to already be mut"
+          ],
+          "source": "anchor named field",
+          "payer_of": [
+            "global"
+          ]
         },
         {
           "index": 2,
           "name": "system_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -599,6 +688,9 @@
           "name": "global",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -606,13 +698,21 @@
           "name": "admin",
           "signer": true,
           "writable": true,
-          "source": "anchor named field"
+          "writable_because": [
+            "mut",
+            "Anchor requires this payer field to already be mut"
+          ],
+          "source": "anchor named field",
+          "payer_of": [
+            "global"
+          ]
         },
         {
           "index": 2,
           "name": "system_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -641,6 +741,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -648,6 +749,9 @@
           "name": "pool_record",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -655,6 +759,7 @@
           "name": "dbc_pool",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -685,6 +790,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -692,6 +798,9 @@
           "name": "pool_record",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -699,6 +808,7 @@
           "name": "dbc_pool",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -729,6 +839,7 @@
           "name": "mint",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -760,6 +871,7 @@
           "name": "mint",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -797,6 +909,7 @@
           "name": "signer",
           "signer": true,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -804,6 +917,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -811,6 +925,7 @@
           "name": "pool_record",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -818,6 +933,9 @@
           "name": "rent_receiver",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         }
       ],
@@ -869,6 +987,7 @@
           "name": "signer",
           "signer": true,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -876,6 +995,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -883,6 +1003,7 @@
           "name": "pool_record",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -890,6 +1011,9 @@
           "name": "rent_receiver",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         }
       ],
@@ -935,6 +1059,7 @@
           "name": "admin",
           "signer": true,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -942,6 +1067,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -949,6 +1075,9 @@
           "name": "pool_record",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -956,6 +1085,7 @@
           "name": "dbc_pool",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -963,6 +1093,7 @@
           "name": "new_config",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -991,6 +1122,7 @@
           "name": "admin",
           "signer": true,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -998,6 +1130,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1005,6 +1138,9 @@
           "name": "pool_record",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -1012,6 +1148,7 @@
           "name": "dbc_pool",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1019,6 +1156,7 @@
           "name": "new_config",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -1052,6 +1190,7 @@
           "name": "admin",
           "signer": true,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1059,6 +1198,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1066,6 +1206,9 @@
           "name": "pool_record",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         }
       ],
@@ -1099,6 +1242,7 @@
           "name": "admin",
           "signer": true,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1106,6 +1250,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1113,6 +1258,9 @@
           "name": "pool_record",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         }
       ],
@@ -1141,20 +1289,31 @@
           "name": "admin",
           "signer": true,
           "writable": true,
-          "source": "anchor named field"
+          "writable_because": [
+            "mut",
+            "Anchor requires this payer field to already be mut"
+          ],
+          "source": "anchor named field",
+          "payer_of": [
+            "auto_lp"
+          ]
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "auto_lp",
           "signer": false,
-          "writable": false,
+          "writable": true,
+          "writable_because": [
+            "init injects mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -1162,6 +1321,7 @@
           "name": "system_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -1190,20 +1350,31 @@
           "name": "admin",
           "signer": true,
           "writable": true,
-          "source": "anchor named field"
+          "writable_because": [
+            "mut",
+            "Anchor requires this payer field to already be mut"
+          ],
+          "source": "anchor named field",
+          "payer_of": [
+            "auto_lp"
+          ]
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "auto_lp",
           "signer": false,
-          "writable": false,
+          "writable": true,
+          "writable_because": [
+            "init injects mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -1211,6 +1382,7 @@
           "name": "system_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -1260,6 +1432,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1267,6 +1440,7 @@
           "name": "admin",
           "signer": true,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1274,6 +1448,9 @@
           "name": "auto_lp",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         }
       ],
@@ -1323,6 +1500,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1330,6 +1508,7 @@
           "name": "admin",
           "signer": true,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1337,6 +1516,9 @@
           "name": "auto_lp",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         }
       ],
@@ -1370,6 +1552,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1377,6 +1560,7 @@
           "name": "admin",
           "signer": true,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1384,6 +1568,9 @@
           "name": "auto_lp",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         }
       ],
@@ -1417,6 +1604,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1424,6 +1612,7 @@
           "name": "admin",
           "signer": true,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1431,6 +1620,9 @@
           "name": "auto_lp",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         }
       ],
@@ -1469,20 +1661,31 @@
           "name": "admin",
           "signer": true,
           "writable": true,
-          "source": "anchor named field"
+          "writable_because": [
+            "mut",
+            "Anchor requires this payer field to already be mut"
+          ],
+          "source": "anchor named field",
+          "payer_of": [
+            "quote_stat"
+          ]
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "quote_stat",
           "signer": false,
-          "writable": false,
+          "writable": true,
+          "writable_because": [
+            "init_if_needed injects mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -1490,6 +1693,7 @@
           "name": "system_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -1528,20 +1732,31 @@
           "name": "admin",
           "signer": true,
           "writable": true,
-          "source": "anchor named field"
+          "writable_because": [
+            "mut",
+            "Anchor requires this payer field to already be mut"
+          ],
+          "source": "anchor named field",
+          "payer_of": [
+            "quote_stat"
+          ]
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "quote_stat",
           "signer": false,
-          "writable": false,
+          "writable": true,
+          "writable_because": [
+            "init_if_needed injects mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -1549,6 +1764,7 @@
           "name": "system_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -1582,6 +1798,7 @@
           "name": "payer",
           "signer": true,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -1615,6 +1832,7 @@
           "name": "payer",
           "signer": true,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -1659,20 +1877,31 @@
           "name": "payer",
           "signer": true,
           "writable": true,
-          "source": "anchor named field"
+          "writable_because": [
+            "mut",
+            "Anchor requires this payer field to already be mut"
+          ],
+          "source": "anchor named field",
+          "payer_of": [
+            "pool_record"
+          ]
         },
         {
           "index": 1,
           "name": "config_record",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "pool_record",
           "signer": false,
-          "writable": false,
+          "writable": true,
+          "writable_because": [
+            "init injects mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -1680,6 +1909,7 @@
           "name": "system_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1687,6 +1917,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1694,6 +1925,7 @@
           "name": "dbc_pool",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1701,6 +1933,7 @@
           "name": "dbc_config",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -1779,20 +2012,31 @@
           "name": "payer",
           "signer": true,
           "writable": true,
-          "source": "anchor named field"
+          "writable_because": [
+            "mut",
+            "Anchor requires this payer field to already be mut"
+          ],
+          "source": "anchor named field",
+          "payer_of": [
+            "pool_record"
+          ]
         },
         {
           "index": 1,
           "name": "config_record",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "pool_record",
           "signer": false,
-          "writable": false,
+          "writable": true,
+          "writable_because": [
+            "init injects mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -1800,6 +2044,7 @@
           "name": "system_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1807,6 +2052,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1814,6 +2060,7 @@
           "name": "dbc_pool",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1821,6 +2068,7 @@
           "name": "dbc_config",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -1881,6 +2129,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1888,6 +2137,9 @@
           "name": "pool_record",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -1895,6 +2147,7 @@
           "name": "pool_authority",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1902,6 +2155,7 @@
           "name": "config",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1909,6 +2163,9 @@
           "name": "pool",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -1916,6 +2173,9 @@
           "name": "base_dest",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -1923,6 +2183,9 @@
           "name": "quote_vault",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -1930,6 +2193,9 @@
           "name": "base_vault",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -1937,6 +2203,9 @@
           "name": "quote_pool_vault",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -1944,6 +2213,7 @@
           "name": "base_mint",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1951,6 +2221,7 @@
           "name": "quote_mint",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1958,6 +2229,7 @@
           "name": "token_base_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1965,6 +2237,7 @@
           "name": "token_quote_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1972,6 +2245,7 @@
           "name": "event_authority",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1979,6 +2253,7 @@
           "name": "dbc_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -1986,6 +2261,7 @@
           "name": "token_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -2037,6 +2313,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -2044,6 +2321,9 @@
           "name": "pool_record",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -2051,6 +2331,7 @@
           "name": "pool_authority",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -2058,6 +2339,7 @@
           "name": "config",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -2065,6 +2347,9 @@
           "name": "pool",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -2072,6 +2357,9 @@
           "name": "base_dest",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -2079,6 +2367,9 @@
           "name": "quote_vault",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -2086,6 +2377,9 @@
           "name": "base_vault",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -2093,6 +2387,9 @@
           "name": "quote_pool_vault",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -2100,6 +2397,7 @@
           "name": "base_mint",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -2107,6 +2405,7 @@
           "name": "quote_mint",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -2114,6 +2413,7 @@
           "name": "token_base_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -2121,6 +2421,7 @@
           "name": "token_quote_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -2128,6 +2429,7 @@
           "name": "event_authority",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -2135,6 +2437,7 @@
           "name": "dbc_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -2142,6 +2445,7 @@
           "name": "token_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -2629,6 +2933,9 @@
           "name": "admin",
           "signer": true,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -2636,6 +2943,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -2643,6 +2951,9 @@
           "name": "reserve",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -2650,6 +2961,7 @@
           "name": "mint",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -2657,6 +2969,7 @@
           "name": "system_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -2685,6 +2998,9 @@
           "name": "admin",
           "signer": true,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -2692,6 +3008,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -2699,6 +3016,9 @@
           "name": "reserve",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -2706,6 +3026,7 @@
           "name": "pool_record",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -2713,6 +3034,9 @@
           "name": "owed",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         }
       ],
@@ -2762,6 +3086,9 @@
           "name": "admin",
           "signer": true,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -2769,6 +3096,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -2776,6 +3104,9 @@
           "name": "reserve",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -2783,6 +3114,7 @@
           "name": "pool_record",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -2790,6 +3122,9 @@
           "name": "owed",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         }
       ],
@@ -2839,6 +3174,7 @@
           "name": "admin",
           "signer": true,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -2846,6 +3182,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -2853,6 +3190,9 @@
           "name": "reserve",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -2860,6 +3200,7 @@
           "name": "mint",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -2867,6 +3208,7 @@
           "name": "vault",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -2874,6 +3216,7 @@
           "name": "token_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -2944,6 +3287,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -2951,6 +3295,9 @@
           "name": "pool_record",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -2958,6 +3305,9 @@
           "name": "quote_vault",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -2965,6 +3315,9 @@
           "name": "operator_token",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -2972,6 +3325,7 @@
           "name": "token_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -3015,6 +3369,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -3022,6 +3377,9 @@
           "name": "pool_record",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3029,6 +3387,9 @@
           "name": "quote_vault",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3036,6 +3397,9 @@
           "name": "operator_token",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3043,6 +3407,7 @@
           "name": "token_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -3074,6 +3439,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -3081,6 +3447,9 @@
           "name": "pool_record",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3088,6 +3457,9 @@
           "name": "quote_vault",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3095,6 +3467,7 @@
           "name": "quote_mint",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -3102,6 +3475,9 @@
           "name": "operator_token",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3109,6 +3485,7 @@
           "name": "token_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -3152,6 +3529,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -3159,6 +3537,9 @@
           "name": "pool_record",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3166,6 +3547,9 @@
           "name": "quote_vault",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3173,6 +3557,7 @@
           "name": "quote_mint",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -3180,6 +3565,9 @@
           "name": "operator_token",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3187,6 +3575,7 @@
           "name": "token_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -3218,6 +3607,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -3225,6 +3615,9 @@
           "name": "pool_record",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3232,6 +3625,9 @@
           "name": "burn_mint",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3239,6 +3635,9 @@
           "name": "quote_vault",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3246,6 +3645,7 @@
           "name": "token_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -3289,6 +3689,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -3296,6 +3697,9 @@
           "name": "pool_record",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3303,6 +3707,9 @@
           "name": "burn_mint",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3310,6 +3717,9 @@
           "name": "quote_vault",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3317,6 +3727,7 @@
           "name": "token_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -3353,13 +3764,22 @@
           "name": "payer",
           "signer": true,
           "writable": true,
-          "source": "anchor named field"
+          "writable_because": [
+            "mut",
+            "Anchor requires this payer field to already be mut"
+          ],
+          "source": "anchor named field",
+          "payer_of": [
+            "pay_cursor",
+            "sol_vault"
+          ]
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -3367,6 +3787,9 @@
           "name": "pool_record",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3374,6 +3797,9 @@
           "name": "quote_vault",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3381,6 +3807,7 @@
           "name": "token_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -3388,20 +3815,27 @@
           "name": "system_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
           "index": 6,
           "name": "pay_cursor",
           "signer": false,
-          "writable": false,
+          "writable": true,
+          "writable_because": [
+            "init_if_needed injects mut"
+          ],
           "source": "anchor named field"
         },
         {
           "index": 7,
           "name": "sol_vault",
           "signer": false,
-          "writable": false,
+          "writable": true,
+          "writable_because": [
+            "init_if_needed injects mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3409,6 +3843,9 @@
           "name": "unwrap_account",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3416,6 +3853,7 @@
           "name": "native_mint",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -3423,6 +3861,9 @@
           "name": "quote_reserve",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         }
       ],
@@ -3475,13 +3916,22 @@
           "name": "payer",
           "signer": true,
           "writable": true,
-          "source": "anchor named field"
+          "writable_because": [
+            "mut",
+            "Anchor requires this payer field to already be mut"
+          ],
+          "source": "anchor named field",
+          "payer_of": [
+            "pay_cursor",
+            "sol_vault"
+          ]
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -3489,6 +3939,9 @@
           "name": "pool_record",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3496,6 +3949,9 @@
           "name": "quote_vault",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3503,6 +3959,7 @@
           "name": "token_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -3510,20 +3967,27 @@
           "name": "system_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
           "index": 6,
           "name": "pay_cursor",
           "signer": false,
-          "writable": false,
+          "writable": true,
+          "writable_because": [
+            "init_if_needed injects mut"
+          ],
           "source": "anchor named field"
         },
         {
           "index": 7,
           "name": "sol_vault",
           "signer": false,
-          "writable": false,
+          "writable": true,
+          "writable_because": [
+            "init_if_needed injects mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3531,6 +3995,9 @@
           "name": "unwrap_account",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3538,6 +4005,7 @@
           "name": "native_mint",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -3589,13 +4057,21 @@
           "name": "payer",
           "signer": true,
           "writable": true,
-          "source": "anchor named field"
+          "writable_because": [
+            "mut",
+            "Anchor requires this payer field to already be mut"
+          ],
+          "source": "anchor named field",
+          "payer_of": [
+            "pay_cursor"
+          ]
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -3603,6 +4079,9 @@
           "name": "pool_record",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3610,6 +4089,9 @@
           "name": "quote_vault",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3617,6 +4099,7 @@
           "name": "quote_mint",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -3624,6 +4107,7 @@
           "name": "quote_token_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -3631,6 +4115,7 @@
           "name": "base_mint",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -3638,13 +4123,17 @@
           "name": "system_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
           "index": 8,
           "name": "pay_cursor",
           "signer": false,
-          "writable": false,
+          "writable": true,
+          "writable_because": [
+            "init_if_needed injects mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3652,6 +4141,9 @@
           "name": "quote_reserve",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         }
       ],
@@ -3703,13 +4195,21 @@
           "name": "payer",
           "signer": true,
           "writable": true,
-          "source": "anchor named field"
+          "writable_because": [
+            "mut",
+            "Anchor requires this payer field to already be mut"
+          ],
+          "source": "anchor named field",
+          "payer_of": [
+            "pay_cursor"
+          ]
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -3717,6 +4217,9 @@
           "name": "pool_record",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3724,6 +4227,9 @@
           "name": "quote_vault",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -3731,6 +4237,7 @@
           "name": "quote_mint",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -3738,6 +4245,7 @@
           "name": "quote_token_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -3745,6 +4253,7 @@
           "name": "base_mint",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -3752,13 +4261,17 @@
           "name": "system_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
           "index": 8,
           "name": "pay_cursor",
           "signer": false,
-          "writable": false,
+          "writable": true,
+          "writable_because": [
+            "init_if_needed injects mut"
+          ],
           "source": "anchor named field"
         }
       ],
@@ -4000,6 +4513,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -4007,6 +4521,9 @@
           "name": "pool_record",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -4014,6 +4531,9 @@
           "name": "quote_vault",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -4021,6 +4541,7 @@
           "name": "pool_authority",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -4028,6 +4549,7 @@
           "name": "damm_pool",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -4035,6 +4557,9 @@
           "name": "position",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -4042,6 +4567,9 @@
           "name": "token_a_account",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -4049,6 +4577,9 @@
           "name": "token_b_account",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -4056,6 +4587,9 @@
           "name": "token_a_vault",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -4063,6 +4597,9 @@
           "name": "token_b_vault",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -4070,6 +4607,7 @@
           "name": "token_a_mint",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -4077,6 +4615,7 @@
           "name": "token_b_mint",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -4084,6 +4623,7 @@
           "name": "position_nft_account",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -4091,6 +4631,7 @@
           "name": "token_a_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -4098,6 +4639,7 @@
           "name": "token_b_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -4105,6 +4647,7 @@
           "name": "event_authority",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -4112,6 +4655,7 @@
           "name": "damm_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -4119,6 +4663,7 @@
           "name": "token_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
@@ -4206,6 +4751,7 @@
           "name": "global",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -4213,6 +4759,9 @@
           "name": "pool_record",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -4220,6 +4769,9 @@
           "name": "quote_vault",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -4227,6 +4779,7 @@
           "name": "pool_authority",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -4234,6 +4787,7 @@
           "name": "damm_pool",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -4241,6 +4795,9 @@
           "name": "position",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -4248,6 +4805,9 @@
           "name": "token_a_account",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -4255,6 +4815,9 @@
           "name": "token_b_account",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -4262,6 +4825,9 @@
           "name": "token_a_vault",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -4269,6 +4835,9 @@
           "name": "token_b_vault",
           "signer": false,
           "writable": true,
+          "writable_because": [
+            "mut"
+          ],
           "source": "anchor named field"
         },
         {
@@ -4276,6 +4845,7 @@
           "name": "token_a_mint",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -4283,6 +4853,7 @@
           "name": "token_b_mint",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -4290,6 +4861,7 @@
           "name": "position_nft_account",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -4297,6 +4869,7 @@
           "name": "token_a_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -4304,6 +4877,7 @@
           "name": "token_b_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -4311,6 +4885,7 @@
           "name": "event_authority",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -4318,6 +4893,7 @@
           "name": "damm_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         },
         {
@@ -4325,6 +4901,7 @@
           "name": "token_program",
           "signer": false,
           "writable": false,
+          "writable_because": [],
           "source": "anchor named field"
         }
       ],
