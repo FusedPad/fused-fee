@@ -1,0 +1,12 @@
+{"shared_sha":"47360f8d231b3b641f5e7ff731a640e70964ea78839cb03e033cfd1badb9012b","shared_bytes":708808,"per_sha":"1f23a817023547178a42caa8dfb3c4d961e987b5e339507c685cd7def07be56d","per_bytes":675704,"rows":[
+{"id":"shared-seal","ok":true,"detail":"empty quote sealed","cu":11738},
+{"id":"shared-claim","ok":true,"detail":"holder=9000 burn=2000 vault=11000","cu":29138},
+{"id":"shared-pay-v3","ok":true,"detail":"paid=9000 reserve_holder=0","cu":35767},
+{"id":"shared-release","ok":true,"detail":"burn 2000 to admin","cu":25358},
+{"id":"shared-register-without-reserve","ok":true,"detail":"err=Some(6050)","cu":0},
+{"id":"per-claim-moves-to-pool-vault","ok":true,"detail":"global=0 pool=11000","cu":36176},
+{"id":"per-pay-v3","ok":true,"detail":"paid from pool vault, global untouched","cu":33800},
+{"id":"t22-plain-check","ok":true,"detail":"Ok(1648)","cu":1648},
+{"id":"t22-fee-over-1pct","ok":true,"detail":"Some(6032)","cu":0},
+{"id":"t22-active-hook","ok":true,"detail":"rejected on per-pool build too","cu":0}
+]}
