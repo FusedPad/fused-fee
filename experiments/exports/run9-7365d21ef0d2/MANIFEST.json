@@ -1,4 +1,5 @@
 {
+  "safety": "UNSAFE. binding_holds=false on both reservation designs. Do not upload. Superseded by run10-binding.",
   "run": "run9",
   "elf_source_commit": "7365d21ef0d2fdb62b76480f695ce52ab770580f",
   "elf_source_commit_subject": "Execute the remaining integrated vault paths locally.",

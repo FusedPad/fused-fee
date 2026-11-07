@@ -232,6 +232,9 @@ async fn shared_cases(rt: &mut Rt, prog: Pubkey, rows: &mut Vec<Rec>) {
     damm_and_creator(rt, prog, &g, &admin, true, rows).await;
     fee_pay(rt, prog, &g, &admin, true, rows).await;
     autolp_and_batch(rt, prog, &g, &admin, true, rows).await;
+    fee_mint_claim(rt, prog, &g, &admin, true, rows).await;
+    two_pages(rt, prog, &g, &admin, true, rows).await;
+    wsol_unwrap(rt, prog, &g, &admin, true, rows).await;
 }
 
 async fn per_cases(rt: &mut Rt, prog: Pubkey, rows: &mut Vec<Rec>) {
@@ -327,6 +330,9 @@ async fn per_cases(rt: &mut Rt, prog: Pubkey, rows: &mut Vec<Rec>) {
     damm_and_creator(rt, prog, &g, &admin, false, rows).await;
     fee_pay(rt, prog, &g, &admin, false, rows).await;
     autolp_and_batch(rt, prog, &g, &admin, false, rows).await;
+    fee_mint_claim(rt, prog, &g, &admin, false, rows).await;
+    two_pages(rt, prog, &g, &admin, false, rows).await;
+    wsol_unwrap(rt, prog, &g, &admin, false, rows).await;
 }
 
 async fn damm_and_creator(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey, shared: bool, rows: &mut Vec<Rec>) {
@@ -515,7 +521,7 @@ async fn autolp_and_batch(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey,
     let position = Pubkey::new_unique();
     let nft_mint = Pubkey::new_unique();
     let nft = Pubkey::new_unique();
-    rt.store(&damm_pool, owned(DAMM, vec![0; 32]));
+    rt.store(&damm_pool, owned(DAMM, vec![0; 64]));
     rt.store(&position, owned(DAMM, vec![0; 8]));
     rt.store(&nft_mint, owned(spl_token::ID, mint(0, admin)));
     rt.store(&nft, owned(spl_token::ID, token(&nft_mint, g, 1)));
@@ -532,6 +538,10 @@ async fn autolp_and_batch(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey,
     let vb = Pubkey::new_unique();
     rt.store(&va, owned(spl_token::ID, token(&a.quote, &DAMM_AUTH, 0)));
     rt.store(&vb, owned(spl_token::ID, token(&b.quote, &DAMM_AUTH, 0)));
+    let mut pool_bytes = vec![0u8; 64];
+    pool_bytes[..32].copy_from_slice(va.as_ref());
+    pool_bytes[32..64].copy_from_slice(vb.as_ref());
+    rt.store(&damm_pool, owned(DAMM, pool_bytes));
     let event = Pubkey::new_unique();
     rt.store(&event, owned(system_program::ID, vec![]));
     let qs_a = pda(&prog, &[b"qstat", a.quote.as_ref()]);
@@ -589,7 +599,7 @@ async fn autolp_and_batch(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey,
     let esc_b = ata(&batch, &b.quote, &spl_token::ID);
     rt.store(&esc_a, owned(spl_token::ID, token(&a.quote, &batch, 0)));
     rt.store(&esc_b, owned(spl_token::ID, token(&b.quote, &batch, 0)));
-    let open = open_accounts(*admin, *g, batch, auto, &a, &b, esc_a, esc_b, shared);
+    let open = open_accounts(*admin, *g, batch, auto, damm_pool, &a, &b, esc_a, esc_b, va, vb, shared);
     let src_a_before = amt(&rt.acct(&a.vault).await.unwrap());
     let src_b_before = amt(&rt.acct(&b.vault).await.unwrap());
     rt.send(prog, IX_OPEN, &1u64.to_le_bytes(), open).await.expect("open batch");
@@ -612,21 +622,63 @@ async fn autolp_and_batch(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey,
     let e2b = ata(&batch2, &b.quote, &spl_token::ID);
     rt.store(&e2a, owned(spl_token::ID, token(&a.quote, &batch2, 0)));
     rt.store(&e2b, owned(spl_token::ID, token(&b.quote, &batch2, 0)));
-    rt.send(prog, IX_OPEN, &2u64.to_le_bytes(), open_accounts(*admin, *g, batch2, auto, &a, &b, e2a, e2b, shared)).await.expect("open 2");
-    let dest_a = Pubkey::new_unique();
-    let dest_b = Pubkey::new_unique();
-    rt.store(&dest_a, owned(spl_token::ID, token(&a.quote, &DAMM_AUTH, 0)));
-    rt.store(&dest_b, owned(spl_token::ID, token(&b.quote, &DAMM_AUTH, 0)));
-    let consume = vec![
-        AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(batch2, false), AccountMeta::new_readonly(spl_token::ID, false),
-        AccountMeta::new(e2a, false), AccountMeta::new(dest_a, false), AccountMeta::new(e2b, false), AccountMeta::new(dest_b, false),
-    ];
-    rt.send(prog, IX_CONSUME, &2u64.to_le_bytes(), consume.clone()).await.expect("consume");
-    assert_eq!(amt(&rt.acct(&dest_a).await.unwrap()), 500);
-    assert_eq!(amt(&rt.acct(&dest_b).await.unwrap()), 500);
+    rt.send(prog, IX_OPEN, &2u64.to_le_bytes(), open_accounts(*admin, *g, batch2, auto, damm_pool, &a, &b, e2a, e2b, va, vb, shared)).await.expect("open 2");
+    let replay = rt.send(prog, IX_OPEN, &2u64.to_le_bytes(), open_accounts(*admin, *g, batch2, auto, damm_pool, &a, &b, e2a, e2b, va, vb, shared)).await;
+    rows.push(Rec(format!("{}-reservation-replay-open", tag(shared)), replay.is_err(), format!("{:?}", replay.as_ref().err().and_then(|e| custom(e))), 0));
+    let snap_esc = amt(&rt.acct(&e2a).await.unwrap());
+    let snap_burn = pots(&rt.acct(&a.prec).await.unwrap()).1;
+    let snap_holder = pots(&rt.acct(&a.prec).await.unwrap()).0;
+    let snap_va = amt(&rt.acct(&va).await.unwrap());
+    let snap_vb = amt(&rt.acct(&vb).await.unwrap());
+    let wallet_dest = Pubkey::new_unique();
+    rt.store(&wallet_dest, owned(spl_token::ID, token(&a.quote, admin, 0)));
+    let unbound = Pubkey::new_unique();
+    rt.store(&unbound, owned(spl_token::ID, token(&a.quote, &DAMM_AUTH, 0)));
+    let wrong_pool = Pubkey::new_unique();
+    let mut wrong_bytes = vec![0u8; 64];
+    wrong_bytes[..32].copy_from_slice(unbound.as_ref());
+    rt.store(&wrong_pool, owned(DAMM, wrong_bytes));
+    let wrong_escrow = Pubkey::new_unique();
+    rt.store(&wrong_escrow, owned(spl_token::ID, token(&a.quote, &batch2, snap_esc)));
+    fn consume_to(admin: Pubkey, g: Pubkey, batch: Pubkey, auto: Pubkey, pool: Pubkey, ea: Pubkey, da: Pubkey, eb: Pubkey, db: Pubkey) -> Vec<AccountMeta> {
+        vec![
+            AccountMeta::new(admin, true), AccountMeta::new_readonly(g, false), AccountMeta::new(batch, false), AccountMeta::new_readonly(spl_token::ID, false),
+            AccountMeta::new_readonly(auto, false), AccountMeta::new_readonly(pool, false),
+            AccountMeta::new(ea, false), AccountMeta::new(da, false), AccountMeta::new(eb, false), AccountMeta::new(db, false),
+        ]
+    }
+    let reject_user = rt.send(prog, IX_CONSUME, &2u64.to_le_bytes(), consume_to(*admin, *g, batch2, auto, damm_pool, e2a, wallet_dest, e2b, vb)).await;
+    let reject_same_auth = rt.send(prog, IX_CONSUME, &2u64.to_le_bytes(), consume_to(*admin, *g, batch2, auto, damm_pool, e2a, unbound, e2b, vb)).await;
+    let reject_quote = rt.send(prog, IX_CONSUME, &2u64.to_le_bytes(), consume_to(*admin, *g, batch2, auto, damm_pool, e2a, vb, e2b, va)).await;
+    let reject_pool = rt.send(prog, IX_CONSUME, &2u64.to_le_bytes(), consume_to(*admin, *g, batch2, auto, wrong_pool, e2a, unbound, e2b, vb)).await;
+    let reject_escrow = rt.send(prog, IX_CONSUME, &2u64.to_le_bytes(), consume_to(*admin, *g, batch2, auto, damm_pool, wrong_escrow, va, e2b, vb)).await;
+    let unchanged = amt(&rt.acct(&e2a).await.unwrap()) == snap_esc
+        && pots(&rt.acct(&a.prec).await.unwrap()).1 == snap_burn
+        && pots(&rt.acct(&a.prec).await.unwrap()).0 == snap_holder
+        && amt(&rt.acct(&unbound).await.unwrap()) == 0
+        && amt(&rt.acct(&wallet_dest).await.unwrap()) == 0
+        && amt(&rt.acct(&va).await.unwrap()) == snap_va
+        && amt(&rt.acct(&vb).await.unwrap()) == snap_vb;
+    rows.push(Rec(
+        format!("{}-reservation-binding-rejections", tag(shared)),
+        reject_user.is_err() && reject_same_auth.is_err() && reject_quote.is_err() && reject_pool.is_err() && reject_escrow.is_err() && unchanged,
+        format!("user={:?} same_authority={:?} wrong_quote={:?} wrong_pool={:?} wrong_escrow={:?} unchanged={unchanged}",
+            reject_user.as_ref().err().and_then(|e| custom(e)),
+            reject_same_auth.as_ref().err().and_then(|e| custom(e)),
+            reject_quote.as_ref().err().and_then(|e| custom(e)),
+            reject_pool.as_ref().err().and_then(|e| custom(e)),
+            reject_escrow.as_ref().err().and_then(|e| custom(e))),
+        0,
+    ));
+    assert!(unchanged, "a rejected consume moved funds");
+    let consume = consume_to(*admin, *g, batch2, auto, damm_pool, e2a, va, e2b, vb);
+    rt.send(prog, IX_CONSUME, &2u64.to_le_bytes(), consume.clone()).await.expect("configured consume");
+    assert_eq!(amt(&rt.acct(&va).await.unwrap()), snap_va + 500);
+    assert_eq!(amt(&rt.acct(&vb).await.unwrap()), snap_vb + 500);
     assert_eq!(amt(&rt.acct(&e2a).await.unwrap()), 0);
+    rows.push(Rec(format!("{}-reservation-configured-dest", tag(shared)), true, "configured vaults received 500 each. Escrow consume is not add_liquidity and is not a lock".into(), 0));
     let again = rt.send(prog, IX_CONSUME, &2u64.to_le_bytes(), consume).await;
-    rows.push(Rec(format!("{}-reservation-consume-once-not-lp", tag(shared)), again.is_err(), "second consume rejected. This transfer is not add_liquidity and is not a lock".into(), 0));
+    rows.push(Rec(format!("{}-reservation-consume-once-not-lp", tag(shared)), again.is_err() && amt(&rt.acct(&va).await.unwrap()) == snap_va + 500, "second consume rejected. Balances stayed at the first consume. This is not add_liquidity and is not a lock".into(), 0));
     assert!(again.is_err(), "{again:?}");
     let holder_a = pots(&rt.acct(&a.prec).await.unwrap()).0;
     let holder_b = pots(&rt.acct(&b.prec).await.unwrap()).0;
@@ -634,43 +686,6 @@ async fn autolp_and_batch(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey,
     assert_eq!((holder_a, holder_b), (9_000, 9_000));
     let omit_final = pots(&rt.acct(&omitted.prec).await.unwrap());
     assert_eq!(omit_final, before_omit, "omitted pool was not in the batch");
-
-    // Replay of the same open, then a consume to a wallet, then a consume to a
-    // DAMM-authority account that is not the auto-LP vault used above.
-    let replay = rt.send(prog, IX_OPEN, &2u64.to_le_bytes(), open_accounts(*admin, *g, batch2, auto, &a, &b, e2a, e2b, shared)).await;
-    rows.push(Rec(format!("{}-reservation-replay-open", tag(shared)), replay.is_err(), format!("{:?}", replay.as_ref().err().and_then(|e| custom(e))), 0));
-    let batch9 = pda(&prog, &[b"lpbatch", &9u64.to_le_bytes()]);
-    let e9a = ata(&batch9, &a.quote, &spl_token::ID);
-    let e9b = ata(&batch9, &b.quote, &spl_token::ID);
-    rt.store(&e9a, owned(spl_token::ID, token(&a.quote, &batch9, 0)));
-    rt.store(&e9b, owned(spl_token::ID, token(&b.quote, &batch9, 0)));
-    let burn_before_probe = pots(&rt.acct(&a.prec).await.unwrap()).1;
-    if burn_before_probe > 0 {
-        rt.send(prog, IX_OPEN, &9u64.to_le_bytes(), open_accounts(*admin, *g, batch9, auto, &a, &b, e9a, e9b, shared)).await.expect("open probe");
-        let wallet_dest = Pubkey::new_unique();
-        rt.store(&wallet_dest, owned(spl_token::ID, token(&a.quote, admin, 0)));
-        let other = Pubkey::new_unique();
-        rt.store(&other, owned(spl_token::ID, token(&b.quote, &DAMM_AUTH, 0)));
-        let naked_user = rt.send(prog, IX_CONSUME, &9u64.to_le_bytes(), vec![
-            AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(batch9, false), AccountMeta::new_readonly(spl_token::ID, false),
-            AccountMeta::new(e9a, false), AccountMeta::new(wallet_dest, false), AccountMeta::new(e9b, false), AccountMeta::new(other, false),
-        ]).await;
-        let user_code = naked_user.as_ref().err().and_then(|e| custom(e));
-        rows.push(Rec(format!("{}-reservation-rejects-user-dest", tag(shared)), naked_user.is_err() && amt(&rt.acct(&e9a).await.unwrap()) > 0, format!("err={user_code:?}"), 0));
-        let unbound = Pubkey::new_unique();
-        rt.store(&unbound, owned(spl_token::ID, token(&a.quote, &DAMM_AUTH, 0)));
-        let naked_auth = rt.send(prog, IX_CONSUME, &9u64.to_le_bytes(), vec![
-            AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(batch9, false), AccountMeta::new_readonly(spl_token::ID, false),
-            AccountMeta::new(e9a, false), AccountMeta::new(unbound, false), AccountMeta::new(e9b, false), AccountMeta::new(other, false),
-        ]).await;
-        let moved = amt(&rt.acct(&unbound).await.unwrap());
-        rows.push(Rec(
-            format!("{}-reservation-unbound-damm-authority-dest", tag(shared)),
-            true,
-            format!("binding_holds={} unbound_account_received={moved} err={:?}", naked_auth.is_err() && moved == 0, naked_auth.as_ref().err().and_then(|e| custom(e))),
-            0,
-        ));
-    }
 }
 
 struct Side { quote: Pubkey, reserve: Pubkey, pool: Pubkey, prec: Pubkey, vault: Pubkey, config: Pubkey, qsrc: Pubkey }
@@ -755,17 +770,19 @@ fn push_pool(metas: &mut Vec<AccountMeta>, prog: Pubkey, side: &Side, shared: bo
     metas.push(AccountMeta::new_readonly(owed, false));
 }
 
-fn open_accounts(admin: Pubkey, g: Pubkey, batch: Pubkey, auto: Pubkey, a: &Side, b: &Side, ea: Pubkey, eb: Pubkey, shared: bool) -> Vec<AccountMeta> {
+fn open_accounts(admin: Pubkey, g: Pubkey, batch: Pubkey, auto: Pubkey, damm_pool: Pubkey, a: &Side, b: &Side, ea: Pubkey, eb: Pubkey, da: Pubkey, db: Pubkey, shared: bool) -> Vec<AccountMeta> {
     let mut v = vec![
         AccountMeta::new(admin, true), AccountMeta::new_readonly(g, false), AccountMeta::new(batch, false),
         AccountMeta::new_readonly(system_program::ID, false), AccountMeta::new_readonly(auto, false), AccountMeta::new_readonly(spl_token::ID, false),
+        AccountMeta::new_readonly(damm_pool, false),
     ];
-    for (s, e) in [(a, ea), (b, eb)] {
+    for (s, e, d) in [(a, ea, da), (b, eb, db)] {
         v.push(AccountMeta::new(s.prec, false));
         v.push(AccountMeta::new(s.vault, false));
         v.push(AccountMeta::new_readonly(s.quote, false));
         v.push(AccountMeta::new(e, false));
         if shared { v.push(AccountMeta::new(s.reserve, false)); }
+        v.push(AccountMeta::new(d, false));
     }
     v
 }
@@ -890,4 +907,209 @@ async fn import_result(rt: &mut Rt, prog: Pubkey, admin: &Pubkey, g: &Pubkey, re
         AccountMeta::new_readonly(*prec, false), AccountMeta::new_readonly(owed, false),
         AccountMeta::new(marker, false), AccountMeta::new_readonly(system_program::ID, false),
     ]).await
+}
+
+async fn fee_mint_claim(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey, shared: bool, rows: &mut Vec<Rec>) {
+    let quote = Pubkey::new_unique();
+    let base = Pubkey::new_unique();
+    let config = Pubkey::new_unique();
+    let pool = Pubkey::new_unique();
+    rt.store(&quote, owned(T22, fee_mint(6, admin)));
+    rt.store(&base, owned(spl_token::ID, mint(6, admin)));
+    rt.store(&config, owned(DBC, dbc_cfg(&quote, g)));
+    rt.store(&pool, owned(DBC, dbc_pool(&config, admin, &base, 0)));
+    let cfg = pda(&prog, &[b"config", quote.as_ref()]);
+    rt.send(prog, IX_REG_CFG, &quote.to_bytes(), vec![
+        AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(config, false),
+        AccountMeta::new(cfg, false), AccountMeta::new_readonly(system_program::ID, false), AccountMeta::new_readonly(quote, false),
+    ]).await.expect("feeclaim cfg");
+    let qs = pda(&prog, &[b"qstat", quote.as_ref()]);
+    let mut sync = quote.to_bytes().to_vec();
+    sync.extend_from_slice(&0u64.to_le_bytes());
+    rt.send(prog, IX_SYNC, &sync, vec![
+        AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(qs, false), AccountMeta::new_readonly(system_program::ID, false),
+    ]).await.expect("feeclaim sync");
+    let reserve = pda(&prog, &[b"qres", quote.as_ref()]);
+    if shared {
+        rt.send(prog, IX_INIT_RES, &[], vec![
+            AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(reserve, false),
+            AccountMeta::new_readonly(quote, false), AccountMeta::new_readonly(system_program::ID, false),
+        ]).await.expect("feeclaim res");
+    }
+    let prec = pda(&prog, &[b"pool", pool.as_ref()]);
+    reg_pool(rt, prog, admin, g, &cfg, &prec, &pool, &config, &base, &quote, &qs, if shared { Some(&reserve) } else { None }).await;
+    let gvault = ata(g, &quote, &T22);
+    rt.store(&gvault, owned(T22, fee_token(&quote, g, 0)));
+    let pvault = ata(&prec, &quote, &T22);
+    if !shared { rt.store(&pvault, owned(T22, fee_token(&quote, &prec, 0))); }
+    if shared {
+        import(rt, prog, admin, g, &reserve, &prec, &pool).await;
+        rt.send(prog, IX_SEAL, &[], vec![
+            AccountMeta::new_readonly(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(reserve, false),
+            AccountMeta::new_readonly(quote, false), AccountMeta::new(gvault, false), AccountMeta::new_readonly(T22, false),
+        ]).await.expect("feeclaim seal");
+    }
+    let qsrc = Pubkey::new_unique();
+    rt.store(&qsrc, owned(T22, fee_token(&quote, g, 100_000)));
+    let base_dest = Pubkey::new_unique();
+    rt.store(&base_dest, owned(spl_token::ID, token(&base, g, 0)));
+    let base_vault = Pubkey::new_unique();
+    rt.store(&base_vault, owned(system_program::ID, vec![]));
+    let mut data = Vec::new();
+    data.extend_from_slice(&1u64.to_le_bytes());
+    data.extend_from_slice(&10_000u64.to_le_bytes());
+    let mut accts = vec![
+        AccountMeta::new_readonly(*g, false), AccountMeta::new(prec, false), AccountMeta::new_readonly(DBC_AUTH, false),
+        AccountMeta::new_readonly(config, false), AccountMeta::new(pool, false), AccountMeta::new(base_dest, false),
+        AccountMeta::new(gvault, false), AccountMeta::new(base_vault, false), AccountMeta::new(qsrc, false),
+        AccountMeta::new_readonly(base, false), AccountMeta::new_readonly(quote, false),
+        AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new_readonly(T22, false),
+        AccountMeta::new_readonly(Pubkey::new_unique(), false), AccountMeta::new_readonly(DBC, false),
+        AccountMeta::new_readonly(spl_token::ID, false),
+    ];
+    if shared { accts.push(AccountMeta::new(reserve, false)); } else { accts.push(AccountMeta::new(pvault, false)); }
+    let cu = rt.send(prog, IX_CLAIM, &data, accts).await.expect("fee mint claim");
+    let global_left = amt(&rt.acct(&gvault).await.unwrap());
+    let landed = if shared { global_left } else { amt(&rt.acct(&pvault).await.unwrap()) };
+    let (holder, burn, _) = pots(&rt.acct(&prec).await.unwrap());
+    let expect_burn = landed * 20 / 110;
+    let expect_holder = landed - expect_burn;
+    let ok = holder == expect_holder && burn == expect_burn && (shared || global_left == 0) && landed > 0 && landed < 10_000;
+    rows.push(Rec(format!("{}-fee-mint-claim", tag(shared)), ok, format!("landed={landed} global_left={global_left} holder={holder} burn={burn}"), cu));
+    assert!(ok, "landed={landed} global={global_left} pots={holder}/{burn}");
+}
+
+async fn two_pages(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey, shared: bool, rows: &mut Vec<Rec>) {
+    let (quote, base, config, pool, prec, gvault, qsrc, reserve, _, _) = boot_curve(rt, prog, g, admin, shared).await;
+    if shared {
+        rt.send(prog, IX_SEAL, &[], vec![
+            AccountMeta::new_readonly(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(reserve, false),
+            AccountMeta::new_readonly(quote, false), AccountMeta::new(gvault, false), AccountMeta::new_readonly(spl_token::ID, false),
+        ]).await.expect("page seal");
+    }
+    let pvault = ata(&prec, &quote, &spl_token::ID);
+    if !shared { rt.store(&pvault, owned(spl_token::ID, token(&quote, &prec, 0))); }
+    let vault = if shared { gvault } else { pvault };
+    let cursor = pda(&prog, &[b"paycur", pool.as_ref()]);
+    let sol_vault = pda(&prog, &[b"sol_vault"]);
+    let unwrap = pda(&prog, &[b"unwrap", pool.as_ref()]);
+    let mut open = pay2_accounts(*admin, *g, prec, vault, cursor, sol_vault, unwrap, shared, Some(reserve));
+    rt.send(prog, IX_PAY2, &0u64.to_le_bytes(), open.split_off(0)).await.expect("open cursor round 0");
+    let base_dest = Pubkey::new_unique();
+    rt.store(&base_dest, owned(spl_token::ID, token(&base, g, 0)));
+    let base_vault = Pubkey::new_unique();
+    rt.store(&base_vault, owned(system_program::ID, vec![]));
+    let mut claim_data = Vec::new();
+    claim_data.extend_from_slice(&1u64.to_le_bytes());
+    claim_data.extend_from_slice(&11_000u64.to_le_bytes());
+    let tail = if shared { Some(reserve) } else { Some(pvault) };
+    rt.send(prog, IX_CLAIM, &claim_data, claim_metas(*g, prec, config, pool, gvault, qsrc, base, quote, base_dest, base_vault, tail)).await.expect("page claim");
+    let mut w1 = Pubkey::new_unique();
+    let mut w2 = Pubkey::new_unique();
+    if w2 < w1 { std::mem::swap(&mut w1, &mut w2); }
+    let b1 = Pubkey::new_unique();
+    let b2 = Pubkey::new_unique();
+    let d1 = Pubkey::new_unique();
+    let d2 = Pubkey::new_unique();
+    rt.store(&b1, owned(spl_token::ID, token(&base, &w1, 50)));
+    rt.store(&b2, owned(spl_token::ID, token(&base, &w2, 50)));
+    rt.store(&d1, owned(spl_token::ID, token(&quote, &w1, 0)));
+    rt.store(&d2, owned(spl_token::ID, token(&quote, &w2, 0)));
+    let mut page1 = pay2_accounts(*admin, *g, prec, vault, cursor, sol_vault, unwrap, shared, Some(reserve));
+    page1.push(AccountMeta::new_readonly(b1, false));
+    page1.push(AccountMeta::new(d1, false));
+    rt.send(prog, IX_PAY2, &100u64.to_le_bytes(), page1).await.expect("page 1");
+    assert_eq!(amt(&rt.acct(&d1).await.unwrap()), 4_500);
+    let mut replay = pay2_accounts(*admin, *g, prec, vault, cursor, sol_vault, unwrap, shared, Some(reserve));
+    replay.push(AccountMeta::new_readonly(b1, false));
+    replay.push(AccountMeta::new(d1, false));
+    rt.send(prog, IX_PAY2, &50u64.to_le_bytes(), replay).await.expect("replay lower wallet while pot remains");
+    assert_eq!(amt(&rt.acct(&d1).await.unwrap()), 4_500, "cursor must not pay the same wallet twice in the round");
+    let mut page2 = pay2_accounts(*admin, *g, prec, vault, cursor, sol_vault, unwrap, shared, Some(reserve));
+    page2.push(AccountMeta::new_readonly(b2, false));
+    page2.push(AccountMeta::new(d2, false));
+    rt.send(prog, IX_PAY2, &50u64.to_le_bytes(), page2).await.expect("page 2");
+    assert_eq!(amt(&rt.acct(&d2).await.unwrap()), 4_500);
+    let ok = amt(&rt.acct(&d1).await.unwrap()) == 4_500 && amt(&rt.acct(&d2).await.unwrap()) == 4_500 && pots(&rt.acct(&prec).await.unwrap()).0 == 0;
+    rows.push(Rec(format!("{}-two-pay-pages-same-round", tag(shared)), ok, format!("first={} second={}", amt(&rt.acct(&d1).await.unwrap()), amt(&rt.acct(&d2).await.unwrap())), 0));
+    assert!(ok, "cursor paid the first wallet twice or left a pot");
+}
+
+async fn wsol_unwrap(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey, shared: bool, rows: &mut Vec<Rec>) {
+    let quote = NATIVE;
+    let base = Pubkey::new_unique();
+    let config = Pubkey::new_unique();
+    let pool = Pubkey::new_unique();
+    rt.store(&quote, owned(spl_token::ID, mint(9, admin)));
+    rt.store(&base, owned(spl_token::ID, mint(6, admin)));
+    rt.store(&config, owned(DBC, dbc_cfg(&quote, g)));
+    rt.store(&pool, owned(DBC, dbc_pool(&config, admin, &base, 0)));
+    let cfg = pda(&prog, &[b"config", quote.as_ref()]);
+    rt.send(prog, IX_REG_CFG, &quote.to_bytes(), vec![
+        AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(config, false),
+        AccountMeta::new(cfg, false), AccountMeta::new_readonly(system_program::ID, false), AccountMeta::new_readonly(quote, false),
+    ]).await.expect("wsol cfg");
+    let qs = pda(&prog, &[b"qstat", quote.as_ref()]);
+    let mut sync = quote.to_bytes().to_vec();
+    sync.extend_from_slice(&0u64.to_le_bytes());
+    rt.send(prog, IX_SYNC, &sync, vec![
+        AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(qs, false), AccountMeta::new_readonly(system_program::ID, false),
+    ]).await.expect("wsol sync");
+    let reserve = pda(&prog, &[b"qres", quote.as_ref()]);
+    if shared {
+        rt.send(prog, IX_INIT_RES, &[], vec![
+            AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(reserve, false),
+            AccountMeta::new_readonly(quote, false), AccountMeta::new_readonly(system_program::ID, false),
+        ]).await.expect("wsol res");
+    }
+    let prec = pda(&prog, &[b"pool", pool.as_ref()]);
+    reg_pool(rt, prog, admin, g, &cfg, &prec, &pool, &config, &base, &quote, &qs, if shared { Some(&reserve) } else { None }).await;
+    let gvault = ata(g, &quote, &spl_token::ID);
+    let mut gv = owned(spl_token::ID, token(&quote, g, 0));
+    gv.lamports = rent(165);
+    rt.store(&gvault, gv);
+    let pvault = ata(&prec, &quote, &spl_token::ID);
+    if !shared {
+        let mut pv = owned(spl_token::ID, token(&quote, &prec, 0));
+        pv.lamports = rent(165);
+        rt.store(&pvault, pv);
+    }
+    if shared {
+        import(rt, prog, admin, g, &reserve, &prec, &pool).await;
+        rt.send(prog, IX_SEAL, &[], vec![
+            AccountMeta::new_readonly(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(reserve, false),
+            AccountMeta::new_readonly(quote, false), AccountMeta::new(gvault, false), AccountMeta::new_readonly(spl_token::ID, false),
+        ]).await.expect("wsol seal");
+    }
+    let qsrc = Pubkey::new_unique();
+    let mut src = owned(spl_token::ID, token(&quote, g, 100_000));
+    src.lamports = rent(165) + 100_000;
+    rt.store(&qsrc, src);
+    let cursor = pda(&prog, &[b"paycur", pool.as_ref()]);
+    let sol_vault = pda(&prog, &[b"sol_vault"]);
+    let unwrap = pda(&prog, &[b"unwrap", pool.as_ref()]);
+    let vault = if shared { gvault } else { pvault };
+    rt.send(prog, IX_PAY2, &0u64.to_le_bytes(), pay2_accounts(*admin, *g, prec, vault, cursor, sol_vault, unwrap, shared, Some(reserve))).await.expect("wsol cursor");
+    let base_dest = Pubkey::new_unique();
+    rt.store(&base_dest, owned(spl_token::ID, token(&base, g, 0)));
+    let base_vault = Pubkey::new_unique();
+    rt.store(&base_vault, owned(system_program::ID, vec![]));
+    let mut claim_data = Vec::new();
+    claim_data.extend_from_slice(&1u64.to_le_bytes());
+    claim_data.extend_from_slice(&11_000u64.to_le_bytes());
+    let tail = if shared { Some(reserve) } else { Some(pvault) };
+    rt.send(prog, IX_CLAIM, &claim_data, claim_metas(*g, prec, config, pool, gvault, qsrc, base, quote, base_dest, base_vault, tail)).await.expect("wsol claim");
+    let wallet = Pubkey::new_unique();
+    rt.store(&wallet, owned(system_program::ID, vec![]));
+    let hb = Pubkey::new_unique();
+    rt.store(&hb, owned(spl_token::ID, token(&base, &wallet, 100)));
+    let before = rt.acct(&wallet).await.unwrap().lamports;
+    let mut pay = pay2_accounts(*admin, *g, prec, vault, cursor, sol_vault, unwrap, shared, Some(reserve));
+    pay.push(AccountMeta::new_readonly(hb, false));
+    pay.push(AccountMeta::new(wallet, false));
+    let cu = rt.send(prog, IX_PAY2, &100u64.to_le_bytes(), pay).await.expect("wsol unwrap pay");
+    let after = rt.acct(&wallet).await.unwrap().lamports;
+    let ok = after == before + 9_000 && pots(&rt.acct(&prec).await.unwrap()).0 == 0;
+    rows.push(Rec(format!("{}-wsol-unwrap-pay-v2", tag(shared)), ok, format!("lamports_gained={}", after - before), cu));
+    assert!(ok, "gained {}", after - before);
 }

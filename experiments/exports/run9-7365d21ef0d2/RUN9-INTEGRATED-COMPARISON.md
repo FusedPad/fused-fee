@@ -1,5 +1,7 @@
 # RUN9 integrated comparison
 
+UNSAFE EXPERIMENTAL. Do not upload these ELFs and do not treat the harness row count as safety passes. Commit `399c08b` recorded `binding_holds=false`: a token account owned by the DAMM pool authority, and not the configured auto-LP vault, received 250 on both reservation designs. The hashes `9b903d8003a460cab19aa584c8774b9ac06c3e688dd741c2389cc5a68bc790a8` (594040 bytes) and `1447e565641b329eddfe384fb0deb17a82a18e73d667e8157aff1b0050092996` (564320 bytes), plus experiment-id `1aa04cecefde0eb2ed3d6bfdca244bd754e7b395b8db98b6defdf3cfe5671c21` and `246f4e7b4cebf4e12516946163e6bd92bfab8fa56f7f5e78d8da5422dad4e398`, are that unsafe build. The replacement is `experiments/exports/run10-binding/`.
+
 Superseded warning. Any earlier `INTEGRATED-COMPARISON.md` that lists binaries of 708808 or 675704 bytes, hashes `47360f8d` or `1f23a817`, 3Evo files of 711144 or 678040 bytes, hashes `2f540943` or `e8c8861a`, buffer figures of 4.95 or 4.72 SOL, or a permanent extension of 0.501120 SOL is stale. The 6960-lamport-per-byte formula used for those costs is not the current devnet rent. The figures below are devnet-only. They are not mainnet prices.
 
 This file is the run9 pin. Machine-readable companion: `experiments/exports/run9-7365d21ef0d2/MANIFEST.json`. ELF source commit `7365d21ef0d2fdb62b76480f695ce52ab770580f`. The ELFs were not rebuilt after that commit.
