@@ -1,0 +1,18 @@
+{
+  "bundle": "run13-cown-abi-bundle.tar",
+  "b3911bc_is_not_a_deploy_candidate": true,
+  "why": "That build's reverse could omit the creator account, return only holder+burn, and mark the reverse complete.",
+  "build": "cargo-build-sbf --arch v0 --tools-version v1.58 --offline",
+  "profile": "overflow-checks, lto fat, codegen-units 1, opt-level z",
+  "mock_meteora": "not Meteora add_liquidity and not permanent_lock",
+  "prices": "Crank's provisional 0.497799 extension, buffers 3.081350 and 3.150601, and 0.763 headroom above a 0.5 reserve were for the 620032 and 606400 files. Do not reuse them.",
+  "elfs": [
+    {"role": "3Evo shared", "bytes": 621672, "sha256": "d87ce272c943bb7b115cc7c2555f1977e38244d2beac576d727d4a7347f834b6", "file": "run13-3evo-shared-621672-d87ce272c943bb7b115cc7c2555f1977e38244d2beac576d727d4a7347f834b6.so"},
+    {"role": "3Evo per-pool", "bytes": 607824, "sha256": "225c7768650666540c5f66d82ea2c4ac2be7567f9189ff998648abc1cc63fba9", "file": "run13-3evo-per-607824-225c7768650666540c5f66d82ea2c4ac2be7567f9189ff998648abc1cc63fba9.so"},
+    {"role": "experiment-id shared", "bytes": 620392, "sha256": "cb0b1d4952e8123a29a2e8cd80d243faab4c8be54c90cb07b215ae0de4ada92c", "file": "run13-expid-shared-620392-cb0b1d4952e8123a29a2e8cd80d243faab4c8be54c90cb07b215ae0de4ada92c.so"},
+    {"role": "experiment-id per-pool", "bytes": 606544, "sha256": "321acc6eedf0d8a510c968eac64a6e853e75f3a6138a3625d18eeb7f5fff13bf", "file": "run13-expid-per-606544-321acc6eedf0d8a510c968eac64a6e853e75f3a6138a3625d18eeb7f5fff13bf.so"}
+  ],
+  "abi": "INSTRUCTION-CONTRACT.json",
+  "sdk_sizes": "SDK-SIZES-3SIGNER.json",
+  "report": "RUN13-HANDOFF.md"
+}

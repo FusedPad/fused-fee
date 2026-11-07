@@ -241,6 +241,27 @@ async fn shared_cases(rt: &mut Rt, prog: Pubkey, rows: &mut Vec<Rec>) {
     ]).await.expect("seal after both imports");
     let late = import_result(rt, prog, &admin, &g, &reserve, &prec2, &pool2).await;
     rows.push(Rec("shared-import-after-seal".into(), late.as_ref().err().and_then(|e| custom(e)) == Some(6052), format!("{:?}", late.as_ref().err().and_then(|e| custom(e))), 0));
+    let count_before = u64::from_le_bytes(rt.acct(&qs).await.unwrap().data[40..48].try_into().unwrap());
+    let rh_before = u64::from_le_bytes(rt.acct(&reserve).await.unwrap().data[56..64].try_into().unwrap());
+    let pool3 = Pubkey::new_unique();
+    rt.store(&pool3, owned(DBC, dbc_pool(&config, &admin, &base, 0)));
+    let prec3 = pda(&prog, &[b"pool", pool3.as_ref()]);
+    reg_pool(rt, prog, &admin, &g, &cfg, &prec3, &pool3, &config, &base, &quote, &qs, Some(&reserve)).await;
+    let count_after = u64::from_le_bytes(rt.acct(&qs).await.unwrap().data[40..48].try_into().unwrap());
+    let marker3 = pda(&prog, &[b"qimp", pool3.as_ref()]);
+    let base_dest3 = Pubkey::new_unique();
+    rt.store(&base_dest3, owned(spl_token::ID, token(&base, &g, 0)));
+    let base_vault3 = Pubkey::new_unique();
+    rt.store(&base_vault3, owned(system_program::ID, vec![]));
+    let mut claim3_data = Vec::new();
+    claim3_data.extend_from_slice(&1u64.to_le_bytes());
+    claim3_data.extend_from_slice(&11_000u64.to_le_bytes());
+    rt.send(prog, IX_CLAIM, &claim3_data, claim_metas(g, prec3, config, pool3, vault, qsrc, base, quote, base_dest3, base_vault3, Some(reserve))).await.expect("claim new pool after seal");
+    let rh_after = u64::from_le_bytes(rt.acct(&reserve).await.unwrap().data[56..64].try_into().unwrap());
+    let new_pots = pots(&rt.acct(&prec3).await.unwrap());
+    let sealed_ok = count_after == count_before + 1 && rt.acct(&marker3).await.is_none() && new_pots.0 > 0 && rh_after == rh_before + new_pots.0 && rt.acct(&reserve).await.unwrap().data[80] == 2;
+    rows.push(Rec("shared-new-pool-after-seal-no-resync-no-import".into(), sealed_ok, format!("qstat {count_before}->{count_after} holder={} reserve_holder={rh_before}->{rh_after}", new_pots.0), 0));
+    assert!(sealed_ok, "qstat {count_before}->{count_after} pots={new_pots:?} reserve {rh_before}->{rh_after}");
 
     let base_dest = Pubkey::new_unique();
     rt.store(&base_dest, owned(spl_token::ID, token(&base, &g, 0)));
@@ -1049,10 +1070,10 @@ async fn import(rt: &mut Rt, prog: Pubkey, admin: &Pubkey, g: &Pubkey, reserve: 
 }
 async fn import_result(rt: &mut Rt, prog: Pubkey, admin: &Pubkey, g: &Pubkey, reserve: &Pubkey, prec: &Pubkey, pool: &Pubkey) -> Result<u64, String> {
     let marker = pda(&prog, &[b"qimp", pool.as_ref()]);
-    let owed = Pubkey::new_unique();
+    let owed = pda(&prog, &[b"cown", pool.as_ref()]);
     rt.send(prog, IX_IMPORT, &[], vec![
         AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(*reserve, false),
-        AccountMeta::new_readonly(*prec, false), AccountMeta::new_readonly(owed, false),
+        AccountMeta::new_readonly(*prec, false), AccountMeta::new(owed, false),
         AccountMeta::new(marker, false), AccountMeta::new_readonly(system_program::ID, false),
     ]).await
 }
@@ -1311,7 +1332,7 @@ async fn old_layout(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey, share
         let marker = pda(&prog, &[b"qimp", pool.as_ref()]);
         rt.send(prog, IX_IMPORT_OLD, &[], vec![
             AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(reserve, false),
-            AccountMeta::new_readonly(prec, false), AccountMeta::new_readonly(owed_key, false),
+            AccountMeta::new_readonly(prec, false), AccountMeta::new(owed_key, false),
             AccountMeta::new(marker, false), AccountMeta::new_readonly(system_program::ID, false),
         ]).await.expect("import existing");
         rt.send(prog, IX_SEAL, &[], vec![
@@ -1369,7 +1390,7 @@ async fn old_layout(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey, share
             AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec, false),
             AccountMeta::new(gvault, false), AccountMeta::new(pvault, false), AccountMeta::new_readonly(quote, false),
             AccountMeta::new_readonly(T22, false), AccountMeta::new(marker, false), AccountMeta::new_readonly(system_program::ID, false),
-            AccountMeta::new_readonly(owed_key, false),
+            AccountMeta::new(owed_key, false),
         ]).await;
         let code = moved.as_ref().err().and_then(|e| custom(e));
         let pots_now = pots(&rt.acct(&prec).await.unwrap());
@@ -1391,15 +1412,16 @@ async fn old_layout(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey, share
         let pv2 = ata(&prec2, &quote2, &spl_token::ID);
         rt.store(&pv2, owned(spl_token::ID, token(&quote2, &prec2, 0)));
         let marker2 = pda(&prog, &[b"pcust", pool2.as_ref()]);
+        let cown2 = pda(&prog, &[b"cown", pool2.as_ref()]);
         rt.send(prog, IX_MIGRATE, &[], vec![
             AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec2, false),
             AccountMeta::new(gv2, false), AccountMeta::new(pv2, false), AccountMeta::new_readonly(quote2, false),
-            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(marker2, false), AccountMeta::new_readonly(system_program::ID, false),
+            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(marker2, false), AccountMeta::new_readonly(system_program::ID, false), AccountMeta::new(cown2, false),
         ]).await.expect("classic migrate");
         let again_move = rt.send(prog, IX_MIGRATE, &[], vec![
             AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec2, false),
             AccountMeta::new(gv2, false), AccountMeta::new(pv2, false), AccountMeta::new_readonly(quote2, false),
-            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(marker2, false), AccountMeta::new_readonly(system_program::ID, false),
+            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(marker2, false), AccountMeta::new_readonly(system_program::ID, false), AccountMeta::new(cown2, false),
         ]).await;
         let p2 = pots(&rt.acct(&prec2).await.unwrap());
         let ok2 = p2.0 == 9_000 && p2.1 == 2_000 && amt(&rt.acct(&pv2).await.unwrap()) == 11_000 && amt(&rt.acct(&gv2).await.unwrap()) == 0
@@ -1411,17 +1433,17 @@ async fn old_layout(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey, share
         let stranger_rev = rt.send_with(prog, IX_REVERSE, &[], vec![
             AccountMeta::new(stranger.pubkey(), true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec2, false),
             AccountMeta::new(gv2, false), AccountMeta::new(pv2, false), AccountMeta::new_readonly(quote2, false),
-            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(marker2, false),
+            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(marker2, false), AccountMeta::new(cown2, false),
         ], &[&stranger]).await;
         rt.send(prog, IX_REVERSE, &[], vec![
             AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec2, false),
             AccountMeta::new(gv2, false), AccountMeta::new(pv2, false), AccountMeta::new_readonly(quote2, false),
-            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(marker2, false),
+            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(marker2, false), AccountMeta::new(cown2, false),
         ]).await.expect("classic reverse");
         let replay_rev = rt.send(prog, IX_REVERSE, &[], vec![
             AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec2, false),
             AccountMeta::new(gv2, false), AccountMeta::new(pv2, false), AccountMeta::new_readonly(quote2, false),
-            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(marker2, false),
+            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(marker2, false), AccountMeta::new(cown2, false),
         ]).await;
         let p3 = pots(&rt.acct(&prec2).await.unwrap());
         let global_back = amt(&rt.acct(&gv2).await.unwrap());
@@ -1454,7 +1476,7 @@ async fn old_layout(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey, share
         let fee_rev = rt.send(prog, IX_REVERSE, &[], vec![
             AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec3, false),
             AccountMeta::new(gv3, false), AccountMeta::new(pv3, false), AccountMeta::new_readonly(quote3, false),
-            AccountMeta::new_readonly(T22, false), AccountMeta::new(m3, false), AccountMeta::new_readonly(owed3, false),
+            AccountMeta::new_readonly(T22, false), AccountMeta::new(m3, false), AccountMeta::new(owed3, false),
         ]).await;
         let code = fee_rev.as_ref().err().and_then(|e| custom(e));
         let owed_left = u64::from_le_bytes(rt.acct(&owed3).await.unwrap().data[40..48].try_into().unwrap());
@@ -1484,12 +1506,12 @@ async fn old_layout(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey, share
             AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec4, false),
             AccountMeta::new(gv4, false), AccountMeta::new(pv4, false), AccountMeta::new_readonly(quote4, false),
             AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(m4, false), AccountMeta::new_readonly(system_program::ID, false),
-            AccountMeta::new_readonly(owed4, false),
+            AccountMeta::new(owed4, false),
         ]).await.expect("migrate with owed");
         rt.send(prog, IX_REVERSE, &[], vec![
             AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec4, false),
             AccountMeta::new(gv4, false), AccountMeta::new(pv4, false), AccountMeta::new_readonly(quote4, false),
-            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(m4, false), AccountMeta::new_readonly(owed4, false),
+            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(m4, false), AccountMeta::new(owed4, false),
         ]).await.expect("reverse with owed");
         let owed4_now = u64::from_le_bytes(rt.acct(&owed4).await.unwrap().data[40..48].try_into().unwrap());
         let p4 = pots(&rt.acct(&prec4).await.unwrap());
@@ -1516,22 +1538,50 @@ async fn old_layout(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey, share
             AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec5, false),
             AccountMeta::new(gv5, false), AccountMeta::new(pv5, false), AccountMeta::new_readonly(quote5, false),
             AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(m5, false), AccountMeta::new_readonly(system_program::ID, false),
-            AccountMeta::new_readonly(owed5, false),
+            AccountMeta::new(owed5, false),
         ]).await.expect("migrate owed for omission");
-        rt.send(prog, IX_REVERSE, &[], vec![
+        let omit = rt.send(prog, IX_REVERSE, &[], vec![
             AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec5, false),
             AccountMeta::new(gv5, false), AccountMeta::new(pv5, false), AccountMeta::new_readonly(quote5, false),
             AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(m5, false),
-        ]).await.expect("reverse omitting owed");
-        let owed5_now = u64::from_le_bytes(rt.acct(&owed5).await.unwrap().data[40..48].try_into().unwrap());
-        let omitted = owed5_now == 1_000 && amt(&rt.acct(&pv5).await.unwrap()) == 1_000 && amt(&rt.acct(&gv5).await.unwrap()) == 9_000 && marker_state(&rt.acct(&m5).await.unwrap()) == 2;
-        let second = rt.send(prog, IX_REVERSE, &[], vec![
+        ]).await;
+        let readonly = rt.send(prog, IX_REVERSE, &[], vec![
             AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec5, false),
             AccountMeta::new(gv5, false), AccountMeta::new(pv5, false), AccountMeta::new_readonly(quote5, false),
             AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(m5, false), AccountMeta::new_readonly(owed5, false),
         ]).await;
-        rows.push(Rec("per-classic-reverse-omitting-owed-strands-creator".into(), omitted && second.is_err(), format!("pool_left={} global={} owed={owed5_now} second={:?}", amt(&rt.acct(&pv5).await.unwrap()), amt(&rt.acct(&gv5).await.unwrap()), second.as_ref().err().and_then(|e| custom(e))), 0));
-        assert!(omitted && second.is_err(), "{second:?}");
+        let wrong = rt.send(prog, IX_REVERSE, &[], vec![
+            AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec5, false),
+            AccountMeta::new(gv5, false), AccountMeta::new(pv5, false), AccountMeta::new_readonly(quote5, false),
+            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(m5, false), AccountMeta::new(owed4, false),
+        ]).await;
+        let owed_left = u64::from_le_bytes(rt.acct(&owed5).await.unwrap().data[40..48].try_into().unwrap());
+        let held = omit.as_ref().err().and_then(|e| custom(e)) == Some(6040)
+            && readonly.as_ref().err().and_then(|e| custom(e)) == Some(6040)
+            && wrong.as_ref().err().and_then(|e| custom(e)) == Some(6040)
+            && marker_state(&rt.acct(&m5).await.unwrap()) == 1
+            && amt(&rt.acct(&pv5).await.unwrap()) == 10_000
+            && amt(&rt.acct(&gv5).await.unwrap()) == 0
+            && owed_left == 1_000;
+        rows.push(Rec("per-reverse-rejects-bad-cown".into(), held, format!("omit={:?} readonly={:?} wrong_pool={:?}", omit.as_ref().err().and_then(|e| custom(e)), readonly.as_ref().err().and_then(|e| custom(e)), wrong.as_ref().err().and_then(|e| custom(e))), 0));
+        assert!(held, "{omit:?} {readonly:?} {wrong:?}");
+        rt.send(prog, IX_REVERSE, &[], vec![
+            AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec5, false),
+            AccountMeta::new(gv5, false), AccountMeta::new(pv5, false), AccountMeta::new_readonly(quote5, false),
+            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(m5, false), AccountMeta::new(owed5, false),
+        ]).await.expect("reverse with canonical cown");
+        let replay = rt.send(prog, IX_REVERSE, &[], vec![
+            AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec5, false),
+            AccountMeta::new(gv5, false), AccountMeta::new(pv5, false), AccountMeta::new_readonly(quote5, false),
+            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(m5, false), AccountMeta::new(owed5, false),
+        ]).await;
+        let restored = marker_state(&rt.acct(&m5).await.unwrap()) == 2
+            && amt(&rt.acct(&gv5).await.unwrap()) == 10_000
+            && amt(&rt.acct(&pv5).await.unwrap()) == 0
+            && u64::from_le_bytes(rt.acct(&owed5).await.unwrap().data[40..48].try_into().unwrap()) == 1_000
+            && replay.as_ref().err().and_then(|e| custom(e)) == Some(6056);
+        rows.push(Rec("per-reverse-canonical-cown-restores-creator-funds".into(), restored, format!("replay={:?}", replay.as_ref().err().and_then(|e| custom(e))), 0));
+        assert!(restored, "{replay:?}");
     }
 }
 
@@ -1597,6 +1647,88 @@ async fn caller_matrix(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey, sh
         let wire = register_wires(&prog, admin, &quote, &base, &pool, &config);
         rows.push(Rec("register-signed-sizes".into(), wire.eight < 1232 && wire.with_qstat < 1232, format!("eight={} qstat={} qstat_qres={} memo_qstat={} sdk_create=blocked", wire.eight, wire.with_qstat, wire.with_both, wire.memo_qstat), 0));
     }
+    retained_three(rt, prog, g, admin, &pool, &prec, &quote, if shared { "shared" } else { "per_pool" }, rows).await;
+}
+
+const ABI_TEXT: &str = include_str!("../../abi/INSTRUCTION-CONTRACT.json");
+const CRANK_KEY: Pubkey = solana_pubkey::pubkey!("2tUjZV4UX9V8P65RZxFBhTxHTDhYRhWo6MYsAGuTsn1h");
+
+fn abi_disc(design: &str, name: &str) -> [u8; 8] {
+    let id = format!("\"id\": \"{design}.{name}\"");
+    let at = ABI_TEXT.find(&id).unwrap_or_else(|| panic!("ABI missing {id}"));
+    let window = &ABI_TEXT[at..at + 700];
+    let d = window.find("\"disc\": [").unwrap_or_else(|| panic!("disc {id}"));
+    let body = &window[d + 9..];
+    let end = body.find(']').unwrap();
+    let nums: Vec<u8> = body[..end].split(',').map(|s| s.trim().parse().unwrap()).collect();
+    nums.try_into().unwrap()
+}
+
+fn abi_has_accounts(design: &str, name: &str, accounts: &[&str]) {
+    let id = format!("\"id\": \"{design}.{name}\"");
+    let at = ABI_TEXT.find(&id).unwrap_or_else(|| panic!("ABI missing {id}"));
+    let window = &ABI_TEXT[at..at + 1800];
+    let mut from = 0;
+    for a in accounts {
+        let key = format!("\"name\": \"{a}\"");
+        let j = window[from..].find(&key).unwrap_or_else(|| panic!("{id} missing {a}"));
+        from += j + key.len();
+    }
+}
+
+async fn retained_three(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey, pool: &Pubkey, prec: &Pubkey, quote: &Pubkey, design: &str, rows: &mut Vec<Rec>) {
+    for (n, accts) in [
+        ("mark_graduated", &["global", "pool_record", "dbc_pool"][..]),
+        ("check_quote_mint", &["mint"][..]),
+        ("close_old_checkpoints", &["signer", "global", "pool_record", "rent_receiver"][..]),
+    ] {
+        abi_has_accounts(design, n, accts);
+        let _ = abi_disc(design, n);
+    }
+    let mark = abi_disc(design, "mark_graduated");
+    let early = rt.send(prog, mark, &[], vec![
+        AccountMeta::new_readonly(*g, false), AccountMeta::new(*prec, false), AccountMeta::new_readonly(*pool, false),
+    ]).await;
+    let mut dbc = rt.acct(pool).await.unwrap();
+    dbc.data[305] = 1;
+    rt.store(pool, dbc);
+    rt.send(prog, mark, &[], vec![
+        AccountMeta::new_readonly(*g, false), AccountMeta::new(*prec, false), AccountMeta::new_readonly(*pool, false),
+    ]).await.expect("mark graduated");
+    let graduated = rt.acct(prec).await.unwrap().data[136] == 1 && early.as_ref().err().and_then(|e| custom(e)) == Some(6022);
+    rows.push(Rec(format!("{design}-mark-graduated"), graduated, format!("before={:?}", early.as_ref().err().and_then(|e| custom(e))), 0));
+    assert!(graduated, "{early:?}");
+    let check = abi_disc(design, "check_quote_mint");
+    let checked = rt.send(prog, check, &[], vec![AccountMeta::new_readonly(*quote, false)]).await;
+    rows.push(Rec(format!("{design}-check-quote-mint"), checked.is_ok(), format!("{:?}", checked.as_ref().err()), 0));
+    assert!(checked.is_ok(), "{checked:?}");
+    let mut pr = rt.acct(prec).await.unwrap();
+    pr.data[137..145].copy_from_slice(&2u64.to_le_bytes());
+    rt.store(prec, pr);
+    let owner = Pubkey::new_unique();
+    let round = 1u64;
+    let (ckpt, bump) = Pubkey::find_program_address(&[b"ckpt", pool.as_ref(), &round.to_le_bytes(), owner.as_ref()], &prog);
+    rt.store(&ckpt, Account { lamports: rent(8), data: vec![1u8; 8], owner: prog, executable: false, rent_epoch: 0 });
+    rt.store(&CRANK_KEY, Account { lamports: 1_000_000, data: vec![], owner: system_program::ID, executable: false, rent_epoch: 0 });
+    let mut args = Vec::new();
+    args.extend_from_slice(&1u32.to_le_bytes());
+    args.extend_from_slice(&round.to_le_bytes());
+    args.extend_from_slice(owner.as_ref());
+    args.push(bump);
+    let close = abi_disc(design, "close_old_checkpoints");
+    let wrong_dest = rt.send(prog, close, &args, vec![
+        AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(*prec, false),
+        AccountMeta::new(*admin, false), AccountMeta::new(ckpt, false),
+    ]).await;
+    let closed = rt.send(prog, close, &args, vec![
+        AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(*prec, false),
+        AccountMeta::new(CRANK_KEY, false), AccountMeta::new(ckpt, false),
+    ]).await;
+    let crank_after = rt.acct(&CRANK_KEY).await.unwrap().lamports;
+    let gone = rt.acct(&ckpt).await.map(|a| a.lamports == 0 && a.data.is_empty()).unwrap_or(true);
+    let ok = wrong_dest.as_ref().err().and_then(|e| custom(e)) == Some(6027) && closed.is_ok() && crank_after > 1_000_000 && gone;
+    rows.push(Rec(format!("{design}-close-old-checkpoints"), ok, format!("wrong_dest={:?} crank_lamports={crank_after}", wrong_dest.as_ref().err().and_then(|e| custom(e))), 0));
+    assert!(ok, "{wrong_dest:?} {closed:?} crank={crank_after}");
 }
 
 struct Wires { eight: usize, with_qstat: usize, with_both: usize, memo_qstat: usize }

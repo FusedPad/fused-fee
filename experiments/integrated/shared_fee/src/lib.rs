@@ -1379,11 +1379,7 @@ pub mod fused_fee {
         let mint = ctx.accounts.pool_record.quote_mint;
         let state = qres_state(&ctx.accounts.reserve, &mint, ctx.program_id)?;
         require!(state == 1, FusedError::ReserveNotLive);
-        let (owed, _) = if ctx.accounts.owed.data_is_empty() {
-            (0, 0)
-        } else {
-            read_owed(&ctx.accounts.owed, &ctx.accounts.pool_record.pool)?
-        };
+        let owed = canonical_owed(&ctx.accounts.owed.to_account_info(), &ctx.accounts.pool_record.pool, ctx.program_id)?;
         require!(ctx.remaining_accounts.len() >= 2, FusedError::ReserveMissing);
         let marker = &ctx.remaining_accounts[0];
         let sys = &ctx.remaining_accounts[1];
@@ -1415,11 +1411,7 @@ pub mod fused_fee {
         let mint = ctx.accounts.pool_record.quote_mint;
         let state = qres_state(&ctx.accounts.reserve, &mint, ctx.program_id)?;
         require!(state == 1, FusedError::ReserveNotLive);
-        let (owed, _) = if ctx.accounts.owed.data_is_empty() {
-            (0, 0)
-        } else {
-            read_owed(&ctx.accounts.owed, &ctx.accounts.pool_record.pool)?
-        };
+        let owed = canonical_owed(&ctx.accounts.owed.to_account_info(), &ctx.accounts.pool_record.pool, ctx.program_id)?;
         require!(ctx.remaining_accounts.len() >= 2, FusedError::ReserveMissing);
         let marker = &ctx.remaining_accounts[0];
         let sys = &ctx.remaining_accounts[1];
@@ -1532,6 +1524,17 @@ const OWED_TAG: [u8; 8] = [83, 80, 110, 53, 75, 132, 102, 33];
 const OWED_LEN: usize = 8 + 32 + 8 + 8 + 1;
 fn creator_owed_key(pool: &Pubkey, program_id: &Pubkey) -> Pubkey {
     Pubkey::find_program_address(&[b"cown", pool.as_ref()], program_id).0
+}
+/// Empty canonical ["cown", pool] means the creator is owed nothing. A different account,
+/// a read-only account, or a populated account with the wrong owner or tag is refused.
+fn canonical_owed<'info>(ai: &AccountInfo<'info>, pool: &Pubkey, program_id: &Pubkey) -> Result<u64> {
+    require_keys_eq!(ai.key(), creator_owed_key(pool, program_id), FusedError::BadCreator);
+    require!(ai.is_writable, FusedError::BadCreator);
+    if ai.data_is_empty() {
+        return Ok(0);
+    }
+    require_keys_eq!(*ai.owner, *program_id, FusedError::BadCreator);
+    Ok(read_owed(ai, pool)?.0)
 }
 /// (owed, paid) of an existing CreatorOwed account that belongs to `pool`.
 fn read_owed(ai: &AccountInfo, pool: &Pubkey) -> Result<(u64, u64)> {
@@ -2806,7 +2809,8 @@ pub struct ImportQuoteReserve<'info> {
     pub reserve: UncheckedAccount<'info>,
     #[account(seeds = [b"pool", pool_record.pool.as_ref()], bump = pool_record.bump)]
     pub pool_record: Account<'info, PoolRecord>,
-    /// CHECK: creator owed, or an empty account when owed is zero
+    /// CHECK: canonical ["cown", pool]. Empty means zero. Must be writable. Checked in canonical_owed.
+    #[account(mut)]
     pub owed: UncheckedAccount<'info>,
 }
 

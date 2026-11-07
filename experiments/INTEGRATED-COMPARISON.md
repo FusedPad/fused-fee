@@ -1,59 +1,44 @@
-# RUN12 corrected handoff
+# RUN13 handoff
 
-Program source is still `b3911bc32a1f92f3bfd9ae1a91b7a2856e0426dc`. The four ELFs were not rebuilt. Crank is pricing 620032 and 606400, and those are the files in this bundle. Nothing was deployed. Neither design is selected. `mock_meteora` is not Meteora `add_liquidity` and not `permanent_lock`.
+The bundle is `run13-cown-abi-bundle.tar`. It contains this note, the full machine ABI, the manifest, the unchanged 3-signer size file, the test rows, and the four ELF files. Nothing was deployed. `mock_meteora` is not a Meteora add or a permanent lock. `b3911bc` is not a deploy candidate: its reverse could omit the creator account, return 9000, leave the creator's 1000 behind, and mark the reverse complete.
 
-The bundle file is `run12-corrected-handoff-bundle.tar`. It contains this note, `INSTRUCTION-CONTRACT.json` for the current account list, `MANIFEST.json`, `SDK-SIZES-3SIGNER.json`, the test rows, and the four `.so` files.
+## Creator account
 
-## SDK sizes, corrected
+Migrate and reverse now require the canonical `["cown", pool]` account, and it must be writable, before any marker or token change. An empty account there means the creator is owed nothing. A populated account must be owned by the program and carry the creator tag and this pool. Omission, a read-only pass, and another pool's creator account each returned 6040. The marker stayed at "in the pool vault", the pool vault stayed at 10000, and the creator figure stayed at 1000. The same reverse with the canonical account then put 10000 back and a second reverse returned 6056. A 1% fee mint still returns 6053 and moves nothing. No fee is taken from the pots.
 
-The earlier run12 figure signed the memo with the fee payer. That was two signatures. The saved builder adds Memo `fusedpad` with a distinct launch signer, and only when `txSize + 64 <= 1232`. That is a third signature. The launch signer is not writable.
+Shared import uses the same rule, so a backfill cannot book a creator total from a substitute account.
 
-Packages checked with `npm view` and installed in scratch: `@meteora-ag/dynamic-bonding-curve-sdk@1.5.13`, `@solana/web3.js@1.99.0`, `@solana/spl-token@0.4.14`. `createPool` and `createPoolWithFirstBuy` came from that SDK. `minimumAmountOut` is 0. Priority is `setComputeUnitPrice` of 100000 microlamports. The limit instruction is `setComputeUnitLimit` of 1400000, which is the builder cap, not a simulation. The instruction is 5 bytes, so a different unit count does not change the packet size. The builder drops that instruction if the legacy packet would exceed 1232. It was kept in every row below. Register is appended only when the packet fits in 1232−16, and in 1152 when a memo is present. It did not fit, so every launch below is two transactions.
+## New pool after the reserve is sealed
 
-This is a local fixture. The config account was encoded in this process. It is not a catalog config and it is not the live site. No transaction was sent.
+One `sync_quote_stat` set the baseline. Two pools were imported and the reserve was sealed. A third pool was then registered with no second sync and no import. QuoteStat went from 2 to 3. The claim on that pool booked holder 9000 into the pool and into the sealed reserve, which went from 0 to 9000. There is no import marker for that pool. The reserve stayed sealed. Config setup is still required for a new quote. A later launch on a quote that already has a QuoteStat does not need an admin recount.
 
-| Case | Create packet | Signatures | Register packet |
-| --- | --- | --- | --- |
-| wSOL, first buy 100000000, shared or per-pool | 1125 | 3 | shared 623, per-pool 590 |
-| wSOL, no first buy, shared or per-pool | 905 | 3 | shared 623, per-pool 590 |
-| 6-decimal SPL fixture, first buy 1000000 | 1096 | 3 | shared 623, per-pool 590 |
-| 6-decimal SPL fixture, no first buy | 905 | 3 | shared 623, per-pool 590 |
+## The six cells that were missing
 
-The rejected one-transaction size, wSOL plus first buy plus memo plus priority plus limit plus register, is 1426 shared and the same shape on a 6-decimal quote is 1364 per-pool. Both are over the memo budget of 1152. The three signers are the fee payer, the new base mint, and the launch signer.
+`mark_graduated`, `check_quote_mint`, and `close_old_checkpoints` are in the ABI twice, once for each design. They are the same on both.
 
-## Safety review, no program change
+`mark_graduated`, disc `[125, 72, 57, 129, 59, 15, 247, 251]`, no arguments. Accounts: global readonly `["global"]`, pool record writable `["pool", pool]`, dbc pool readonly and equal to that pool. It flips the flag only when DBC byte 305 is 1. Before that it returned 6022. After that the pool record byte 136 was 1. This disc is already in the saved builder. This work did not add an account to it.
 
-Classic reverse with the creator account passed: holder 8000, burn 1000, owed 1000. The global vault started at 12000, so 2000 was not part of this pool. After migrate and reverse the global vault was 12000 again, the pool vault was 0, pots stayed 8000/1000, and owed stayed 1000. A different token account holding 7000 of the same mint was not touched. Reverse does not read or write any other pool. The global check is this pool's liability only. It does not prove the shared vault covers every pool on that quote.
+`check_quote_mint`, disc `[18, 102, 204, 80, 128, 116, 58, 205]`, no arguments. One account, the mint, not a signer and not writable. Return data is 7 bytes: tier, decimals, a token-2022 flag, and flags as a little-endian u32. It writes nothing. The saved builder does not send it. A classic mint check succeeded on both designs.
 
-Omitting the owed account is not safe for the creator. The same 10000 position reversed without the owed account put 9000 back in the global vault and left 1000 in the pool vault. Owed stayed 1000. The marker still flipped to reversed, and a second reverse returned 6056. Pass the `cown` account. The program was not changed, because Crank is pricing these bytes. Until it is changed, a reverse without `cown` is not a creator restore.
+`close_old_checkpoints`, disc `[90, 240, 98, 46, 31, 229, 181, 93]`. Argument is a Borsh vector of `{round u64, owner pubkey, bump u8}`. Accounts: signer (admin or `2tUjZV4UX9V8P65RZxFBhTxHTDhYRhWo6MYsAGuTsn1h`), global readonly, pool record readonly, rent receiver writable and exactly that crank address, then one writable checkpoint per entry. The checkpoint seeds are `["ckpt", pool, round, owner]` with the entry's bump. The round must be below the pool's current round. Rent went to the crank address. Sending the rent to the admin instead returned 6027 and left the checkpoint. The saved builder does not send this instruction.
 
-A 1% mint that holds exactly the liability still returns 6053 in both directions and moves nothing. Funding the fee so the destination still receives the full liability is an open decision. It is not taken from the pots.
+## What the current caller can accept
 
-Refund accepts any signer. The destination must be the source vault stored at open. A stranger refund returned 250 to that vault and the stranger's account stayed empty. Close is admin or crank only. A stranger close returned 6023 and the 564-byte batch stayed. Rent from a successful close goes to that admin or crank.
+The saved client pins program `AZY2uXFPUfgTkhoNaXNL3oaZMdb4r3NfHYymA3s4mMw9` and the bytes of each instruction. A larger ELF is not acceptance.
 
-Two batches, 13 and 15, were open together. Closing 15 raised the one 17-byte watermark to 15. Id 14, which was never opened, was then rejected. Batch 13 was still open through that and was closed afterward. Reopening 13 was rejected. The watermark stayed 17 bytes. Closing a higher id retires every lower id. A lower batch that is still open can still be finished and closed. It cannot be opened again.
+Register's discriminator is still `[85, 229, 114, 47, 75, 145, 166, 100]`. The first seven named accounts are unchanged. Instruction index 7 on register is the quote mint. It is not the watermark. The watermark is account index 7 of `open_lp_reservation` only. The live client sends eight accounts and stops at the quote mint. Both designs return 6048. The client has to append a writable QuoteStat. The shared design also has to append the writable quote reserve. That is a client change.
 
-## Still unresolved
+`mark_graduated` keeps the three accounts above. `check_quote_mint` and `close_old_checkpoints` are unchanged and are not in the client's sent list. The 3-signer memo sizes in `SDK-SIZES-3SIGNER.json` are unchanged.
 
-Fee-mint per-pool custody needs a separate funding decision. The program will not haircut holder, burn, or owed.
+## Prices
 
-A shared quote writes one global vault and one `qres` on every claim, pay, release, and reservation for that quote. Those transactions cannot land in parallel. Two quotes do not share those accounts.
-
-Per-pool pay writes that pool's vault. Two pools can pay in parallel after custody has moved. A claim still writes the global vault first, so claims on the same quote still contend.
-
-The current 8-account register returns 6048 on both designs. An empty QuoteStat returns 6049. Shared register without the reserve returns 6050. Per-pool register with a synced QuoteStat succeeds and does not take a reserve.
-
-Bootstrap for a new shared quote: `sync_quote_stat` with the absolute count, `init_quote_reserve`, register with QuoteStat and the reserve, `import_quote_reserve`, then seal. Pools that already exist use `import_existing_pool`, because the old program never incremented the reserve. The builder's one-account edit adds QuoteStat only. Shared register needs the reserve as a second new account. Open's account index 7 is now the watermark.
-
-No devnet transaction was sent. The documented DBC and DAMM ids are still only public docs. A lock is not proven until those programs are called.
-
-## Files and hashes
+Crank's provisional figures for the previous 620032 and 606400 files are an extension of 0.497799, buffers 3.081350 and 3.150601, and 0.763 of headroom above a 0.5 reserve. These ELFs are different. Do not reuse those prices.
 
 | File | Bytes | sha256 |
 | --- | --- | --- |
-| 3Evo shared | 620032 | `498233a22757af4fd5fc6e6fe05025f64b9ac278fc0691d03e86448c6f448c8e` |
-| 3Evo per-pool | 606400 | `a0d1a6167cafd25f132878d83ddddc2067373c3f46d4e70d73db2509d2376723` |
-| Experiment-id shared | 618752 | `24578a0e3d1b854d16c1558f11a3cb1c94ec142e0890d550a633a485cf11a45b` |
-| Experiment-id per-pool | 605120 | `531e26506443b0d9591a004e42b3ce791dd6a2d852e4588139e4f9bf09ac661c` |
+| 3Evo shared | 621672 | `d87ce272c943bb7b115cc7c2555f1977e38244d2beac576d727d4a7347f834b6` |
+| 3Evo per-pool | 607824 | `225c7768650666540c5f66d82ea2c4ac2be7567f9189ff998648abc1cc63fba9` |
+| Experiment-id shared | 620392 | `cb0b1d4952e8123a29a2e8cd80d243faab4c8be54c90cb07b215ae0de4ada92c` |
+| Experiment-id per-pool | 606544 | `321acc6eedf0d8a510c968eac64a6e853e75f3a6138a3625d18eeb7f5fff13bf` |
 
-Run9 `9b903d80…` and `1447e565…` were not overwritten and remain unsafe.
+No deployment authority is added by this package.

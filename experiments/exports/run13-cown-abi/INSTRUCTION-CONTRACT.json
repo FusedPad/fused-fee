@@ -1,0 +1,3910 @@
+{
+  "kind": "machine ABI, not an Anchor IDL",
+  "b3911bc_is_not_a_deploy_candidate": true,
+  "watermark_is_only": "open_lp_reservation account index 7",
+  "register_instruction_index_7_is": "quote mint, on both designs",
+  "caller_pin": {
+    "not": "an ELF hash extension",
+    "live_program_pinned_by_saved_builder": "AZY2uXFPUfgTkhoNaXNL3oaZMdb4r3NfHYymA3s4mMw9",
+    "register_disc": [
+      85,
+      229,
+      114,
+      47,
+      75,
+      145,
+      166,
+      100
+    ],
+    "live_client_sends": "8 accounts, ending at the quote mint",
+    "both_designs_reject_that": 6048,
+    "client_must_append": "writable QuoteStat",
+    "shared_client_must_also_append": "writable QuoteReserve",
+    "mark_graduated_disc_in_saved_client": [
+      125,
+      72,
+      57,
+      129,
+      59,
+      15,
+      247,
+      251
+    ],
+    "mark_graduated_accounts_unchanged": [
+      "global",
+      "pool_record",
+      "dbc_pool"
+    ],
+    "check_quote_mint_and_close_old_checkpoints": "retained, identical on A and B, not sent by the saved builder"
+  },
+  "prices_not_for_this_elf": {
+    "crank_provisional_for_bytes": {
+      "shared": 620032,
+      "per_pool": 606400
+    },
+    "extension_sol": "0.497799",
+    "buffers_sol": [
+      "3.081350",
+      "3.150601"
+    ],
+    "headroom_above_half_sol_reserve": "0.763"
+  },
+  "state": {
+    "QuoteStat": "PDA [qstat, mint]. pool_count u64 at offset 40.",
+    "QuoteReserve": "82 bytes, PDA [qres, mint]. pool_count 40, imported 48, holder 56, burn 64, owed 72, state 80.",
+    "CreatorOwed": "57 bytes, PDA [cown, pool]. owed u64 at 40, paid u64 at 48.",
+    "PoolRecord": "162 bytes. graduated at 136, round at 137, holder at 145, burn at 153.",
+    "LpBatch": "564 bytes, PDA [lpbatch, id].",
+    "LpNonce": "17 bytes, PDA [lpnonce].",
+    "Custody": "42 bytes, PDA [pcust, pool], state at 40.",
+    "LegacyCheckpoint": "8 bytes, seeds [ckpt, pool, round le, owner]."
+  },
+  "instructions": [
+    {
+      "id": "shared.initialize",
+      "name": "initialize",
+      "status": "retained",
+      "disc": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "admin",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "global"
+          ],
+          "init": "8+32+32+1+32+1+1, payer=admin"
+        },
+        {
+          "index": 2,
+          "name": "system_program",
+          "signer": false,
+          "writable": false
+        }
+      ]
+    },
+    {
+      "id": "per_pool.initialize",
+      "name": "initialize",
+      "status": "retained",
+      "disc": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "admin",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "global"
+          ],
+          "init": "8+32+32+1+32+1+1, payer=admin"
+        },
+        {
+          "index": 2,
+          "name": "system_program",
+          "signer": false,
+          "writable": false
+        }
+      ]
+    },
+    {
+      "id": "shared.register_config",
+      "name": "register_config",
+      "status": "retained",
+      "disc": [
+        32,
+        247,
+        82,
+        131,
+        35,
+        183,
+        7,
+        57
+      ],
+      "args": [
+        {
+          "name": "quote_mint",
+          "type": "pubkey"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": true,
+          "note": "must be global.admin"
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "config",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 3,
+          "name": "config_record",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "config",
+            "quote_mint"
+          ],
+          "init": "8+32+32+1"
+        },
+        {
+          "index": 4,
+          "name": "system_program",
+          "signer": false,
+          "writable": false
+        }
+      ],
+      "remaining": [
+        {
+          "position": "remaining[0]",
+          "name": "quote_mint",
+          "writable": false
+        }
+      ]
+    },
+    {
+      "id": "per_pool.register_config",
+      "name": "register_config",
+      "status": "retained",
+      "disc": [
+        32,
+        247,
+        82,
+        131,
+        35,
+        183,
+        7,
+        57
+      ],
+      "args": [
+        {
+          "name": "quote_mint",
+          "type": "pubkey"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": true,
+          "note": "must be global.admin"
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "config",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 3,
+          "name": "config_record",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "config",
+            "quote_mint"
+          ],
+          "init": "8+32+32+1"
+        },
+        {
+          "index": 4,
+          "name": "system_program",
+          "signer": false,
+          "writable": false
+        }
+      ],
+      "remaining": [
+        {
+          "position": "remaining[0]",
+          "name": "quote_mint",
+          "writable": false
+        }
+      ]
+    },
+    {
+      "id": "shared.update_config",
+      "name": "update_config",
+      "status": "retained",
+      "disc": [
+        29,
+        158,
+        252,
+        191,
+        10,
+        83,
+        219,
+        99
+      ],
+      "args": [
+        {
+          "name": "new_config",
+          "type": "pubkey"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 1,
+          "name": "admin",
+          "signer": true,
+          "writable": false
+        },
+        {
+          "index": 2,
+          "name": "config_record",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "config",
+            "config_record.quote_mint"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "per_pool.update_config",
+      "name": "update_config",
+      "status": "retained",
+      "disc": [
+        29,
+        158,
+        252,
+        191,
+        10,
+        83,
+        219,
+        99
+      ],
+      "args": [
+        {
+          "name": "new_config",
+          "type": "pubkey"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 1,
+          "name": "admin",
+          "signer": true,
+          "writable": false
+        },
+        {
+          "index": 2,
+          "name": "config_record",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "config",
+            "config_record.quote_mint"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shared.set_burn_mint",
+      "name": "set_burn_mint",
+      "status": "retained",
+      "disc": [
+        245,
+        243,
+        127,
+        223,
+        152,
+        205,
+        137,
+        210
+      ],
+      "args": [
+        {
+          "name": "burn_mint",
+          "type": "pubkey"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "admin",
+          "signer": true,
+          "writable": false
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "global"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "per_pool.set_burn_mint",
+      "name": "set_burn_mint",
+      "status": "retained",
+      "disc": [
+        245,
+        243,
+        127,
+        223,
+        152,
+        205,
+        137,
+        210
+      ],
+      "args": [
+        {
+          "name": "burn_mint",
+          "type": "pubkey"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "admin",
+          "signer": true,
+          "writable": false
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "global"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shared.set_paused",
+      "name": "set_paused",
+      "status": "retained",
+      "disc": [
+        91,
+        60,
+        125,
+        192,
+        176,
+        225,
+        166,
+        218
+      ],
+      "args": [
+        {
+          "name": "paused",
+          "type": "bool",
+          "encoding": "1 byte"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "admin",
+          "signer": true,
+          "writable": false
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "global"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "per_pool.set_paused",
+      "name": "set_paused",
+      "status": "retained",
+      "disc": [
+        91,
+        60,
+        125,
+        192,
+        176,
+        225,
+        166,
+        218
+      ],
+      "args": [
+        {
+          "name": "paused",
+          "type": "bool",
+          "encoding": "1 byte"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "admin",
+          "signer": true,
+          "writable": false
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "global"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shared.migrate_global",
+      "name": "migrate_global",
+      "status": "retained",
+      "disc": [
+        255,
+        63,
+        114,
+        173,
+        218,
+        4,
+        220,
+        32
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "global"
+          ],
+          "note": "body is a no-op"
+        }
+      ]
+    },
+    {
+      "id": "per_pool.migrate_global",
+      "name": "migrate_global",
+      "status": "retained",
+      "disc": [
+        255,
+        63,
+        114,
+        173,
+        218,
+        4,
+        220,
+        32
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "global"
+          ],
+          "note": "body is a no-op"
+        }
+      ]
+    },
+    {
+      "id": "shared.mark_graduated",
+      "name": "mark_graduated",
+      "status": "retained",
+      "disc": [
+        125,
+        72,
+        57,
+        129,
+        59,
+        15,
+        247,
+        251
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 1,
+          "name": "pool_record",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "pool",
+            "pool_record.pool"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "dbc_pool",
+          "signer": false,
+          "writable": false,
+          "address": "pool_record.pool",
+          "note": "DBC is_migrated at byte 305 must be 1"
+        }
+      ],
+      "note": "Identical on both designs. Discriminator is already in the saved builder. This work did not add an account."
+    },
+    {
+      "id": "per_pool.mark_graduated",
+      "name": "mark_graduated",
+      "status": "retained",
+      "disc": [
+        125,
+        72,
+        57,
+        129,
+        59,
+        15,
+        247,
+        251
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 1,
+          "name": "pool_record",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "pool",
+            "pool_record.pool"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "dbc_pool",
+          "signer": false,
+          "writable": false,
+          "address": "pool_record.pool",
+          "note": "DBC is_migrated at byte 305 must be 1"
+        }
+      ],
+      "note": "Identical on both designs. Discriminator is already in the saved builder. This work did not add an account."
+    },
+    {
+      "id": "shared.check_quote_mint",
+      "name": "check_quote_mint",
+      "status": "retained",
+      "disc": [
+        18,
+        102,
+        204,
+        80,
+        128,
+        116,
+        58,
+        205
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "mint",
+          "signer": false,
+          "writable": false,
+          "note": "mint_policy reads it; nothing is written"
+        }
+      ],
+      "return_data": "7 bytes: tier u8, decimals u8, token_2022 u8, flags u32 le",
+      "note": "Identical on both designs. Not in the saved builder sent-instruction list."
+    },
+    {
+      "id": "per_pool.check_quote_mint",
+      "name": "check_quote_mint",
+      "status": "retained",
+      "disc": [
+        18,
+        102,
+        204,
+        80,
+        128,
+        116,
+        58,
+        205
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "mint",
+          "signer": false,
+          "writable": false,
+          "note": "mint_policy reads it; nothing is written"
+        }
+      ],
+      "return_data": "7 bytes: tier u8, decimals u8, token_2022 u8, flags u32 le",
+      "note": "Identical on both designs. Not in the saved builder sent-instruction list."
+    },
+    {
+      "id": "shared.close_old_checkpoints",
+      "name": "close_old_checkpoints",
+      "status": "retained",
+      "disc": [
+        90,
+        240,
+        98,
+        46,
+        31,
+        229,
+        181,
+        93
+      ],
+      "args": [
+        {
+          "name": "entries",
+          "type": "vec",
+          "encoding": "borsh u32 le count, then each round u64 le, owner pubkey, bump u8"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "signer",
+          "signer": true,
+          "writable": false,
+          "note": "global.admin or 2tUjZV4UX9V8P65RZxFBhTxHTDhYRhWo6MYsAGuTsn1h"
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "pool_record",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "pool",
+            "pool_record.pool"
+          ]
+        },
+        {
+          "index": 3,
+          "name": "rent_receiver",
+          "signer": false,
+          "writable": true,
+          "address": "2tUjZV4UX9V8P65RZxFBhTxHTDhYRhWo6MYsAGuTsn1h"
+        }
+      ],
+      "remaining": [
+        {
+          "name": "checkpoint",
+          "writable": true,
+          "pda": [
+            "ckpt",
+            "pool",
+            "round_le",
+            "owner"
+          ],
+          "note": "8-byte program account. round < pool_record.round. Rent goes to rent_receiver."
+        }
+      ],
+      "note": "Identical on both designs. Not in the saved builder sent-instruction list."
+    },
+    {
+      "id": "per_pool.close_old_checkpoints",
+      "name": "close_old_checkpoints",
+      "status": "retained",
+      "disc": [
+        90,
+        240,
+        98,
+        46,
+        31,
+        229,
+        181,
+        93
+      ],
+      "args": [
+        {
+          "name": "entries",
+          "type": "vec",
+          "encoding": "borsh u32 le count, then each round u64 le, owner pubkey, bump u8"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "signer",
+          "signer": true,
+          "writable": false,
+          "note": "global.admin or 2tUjZV4UX9V8P65RZxFBhTxHTDhYRhWo6MYsAGuTsn1h"
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "pool_record",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "pool",
+            "pool_record.pool"
+          ]
+        },
+        {
+          "index": 3,
+          "name": "rent_receiver",
+          "signer": false,
+          "writable": true,
+          "address": "2tUjZV4UX9V8P65RZxFBhTxHTDhYRhWo6MYsAGuTsn1h"
+        }
+      ],
+      "remaining": [
+        {
+          "name": "checkpoint",
+          "writable": true,
+          "pda": [
+            "ckpt",
+            "pool",
+            "round_le",
+            "owner"
+          ],
+          "note": "8-byte program account. round < pool_record.round. Rent goes to rent_receiver."
+        }
+      ],
+      "note": "Identical on both designs. Not in the saved builder sent-instruction list."
+    },
+    {
+      "id": "shared.set_pool_config",
+      "name": "set_pool_config",
+      "status": "retained",
+      "disc": [
+        216,
+        87,
+        65,
+        125,
+        113,
+        110,
+        185,
+        120
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "admin",
+          "signer": true,
+          "writable": false
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "pool_record",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "pool",
+            "pool_record.pool"
+          ]
+        },
+        {
+          "index": 3,
+          "name": "dbc_pool",
+          "signer": false,
+          "writable": false,
+          "address": "pool_record.pool"
+        },
+        {
+          "index": 4,
+          "name": "new_config",
+          "signer": false,
+          "writable": false
+        }
+      ]
+    },
+    {
+      "id": "per_pool.set_pool_config",
+      "name": "set_pool_config",
+      "status": "retained",
+      "disc": [
+        216,
+        87,
+        65,
+        125,
+        113,
+        110,
+        185,
+        120
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "admin",
+          "signer": true,
+          "writable": false
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "pool_record",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "pool",
+            "pool_record.pool"
+          ]
+        },
+        {
+          "index": 3,
+          "name": "dbc_pool",
+          "signer": false,
+          "writable": false,
+          "address": "pool_record.pool"
+        },
+        {
+          "index": 4,
+          "name": "new_config",
+          "signer": false,
+          "writable": false
+        }
+      ]
+    },
+    {
+      "id": "shared.admin_set_graduated",
+      "name": "admin_set_graduated",
+      "status": "retained",
+      "disc": [
+        26,
+        237,
+        191,
+        197,
+        33,
+        200,
+        195,
+        145
+      ],
+      "args": [
+        {
+          "name": "graduated",
+          "type": "bool"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "admin",
+          "signer": true,
+          "writable": false
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "pool_record",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "pool",
+            "pool_record.pool"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "per_pool.admin_set_graduated",
+      "name": "admin_set_graduated",
+      "status": "retained",
+      "disc": [
+        26,
+        237,
+        191,
+        197,
+        33,
+        200,
+        195,
+        145
+      ],
+      "args": [
+        {
+          "name": "graduated",
+          "type": "bool"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "admin",
+          "signer": true,
+          "writable": false
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "pool_record",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "pool",
+            "pool_record.pool"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shared.init_auto_lp",
+      "name": "init_auto_lp",
+      "status": "retained",
+      "disc": [
+        166,
+        15,
+        73,
+        164,
+        58,
+        151,
+        116,
+        19
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "admin",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "auto_lp",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "autolp"
+          ]
+        },
+        {
+          "index": 3,
+          "name": "system_program",
+          "signer": false,
+          "writable": false
+        }
+      ]
+    },
+    {
+      "id": "per_pool.init_auto_lp",
+      "name": "init_auto_lp",
+      "status": "retained",
+      "disc": [
+        166,
+        15,
+        73,
+        164,
+        58,
+        151,
+        116,
+        19
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "admin",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "auto_lp",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "autolp"
+          ]
+        },
+        {
+          "index": 3,
+          "name": "system_program",
+          "signer": false,
+          "writable": false
+        }
+      ]
+    },
+    {
+      "id": "shared.set_auto_lp",
+      "name": "set_auto_lp",
+      "status": "retained",
+      "disc": [
+        77,
+        69,
+        121,
+        149,
+        171,
+        199,
+        117,
+        85
+      ],
+      "args": [
+        {
+          "name": "damm_pool",
+          "type": "pubkey"
+        },
+        {
+          "name": "position",
+          "type": "pubkey"
+        },
+        {
+          "name": "position_nft_account",
+          "type": "pubkey"
+        },
+        {
+          "name": "token_a_mint",
+          "type": "pubkey"
+        },
+        {
+          "name": "token_b_mint",
+          "type": "pubkey"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 1,
+          "name": "admin",
+          "signer": true,
+          "writable": false
+        },
+        {
+          "index": 2,
+          "name": "auto_lp",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "autolp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "per_pool.set_auto_lp",
+      "name": "set_auto_lp",
+      "status": "retained",
+      "disc": [
+        77,
+        69,
+        121,
+        149,
+        171,
+        199,
+        117,
+        85
+      ],
+      "args": [
+        {
+          "name": "damm_pool",
+          "type": "pubkey"
+        },
+        {
+          "name": "position",
+          "type": "pubkey"
+        },
+        {
+          "name": "position_nft_account",
+          "type": "pubkey"
+        },
+        {
+          "name": "token_a_mint",
+          "type": "pubkey"
+        },
+        {
+          "name": "token_b_mint",
+          "type": "pubkey"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 1,
+          "name": "admin",
+          "signer": true,
+          "writable": false
+        },
+        {
+          "index": 2,
+          "name": "auto_lp",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "autolp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shared.set_auto_lp_share",
+      "name": "set_auto_lp_share",
+      "status": "retained",
+      "disc": [
+        52,
+        19,
+        206,
+        114,
+        85,
+        2,
+        243,
+        52
+      ],
+      "args": [
+        {
+          "name": "lp_share_bps",
+          "type": "u16 le"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 1,
+          "name": "admin",
+          "signer": true,
+          "writable": false
+        },
+        {
+          "index": 2,
+          "name": "auto_lp",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "autolp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "per_pool.set_auto_lp_share",
+      "name": "set_auto_lp_share",
+      "status": "retained",
+      "disc": [
+        52,
+        19,
+        206,
+        114,
+        85,
+        2,
+        243,
+        52
+      ],
+      "args": [
+        {
+          "name": "lp_share_bps",
+          "type": "u16 le"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 1,
+          "name": "admin",
+          "signer": true,
+          "writable": false
+        },
+        {
+          "index": 2,
+          "name": "auto_lp",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "autolp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shared.sync_quote_stat",
+      "name": "sync_quote_stat",
+      "status": "retained",
+      "disc": [
+        130,
+        168,
+        89,
+        25,
+        125,
+        164,
+        73,
+        104
+      ],
+      "args": [
+        {
+          "name": "quote_mint",
+          "type": "pubkey"
+        },
+        {
+          "name": "pool_count",
+          "type": "u64 le",
+          "note": "absolute baseline, once per quote"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "admin",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "quote_stat",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "qstat",
+            "quote_mint"
+          ]
+        },
+        {
+          "index": 3,
+          "name": "system_program",
+          "signer": false,
+          "writable": false
+        }
+      ]
+    },
+    {
+      "id": "per_pool.sync_quote_stat",
+      "name": "sync_quote_stat",
+      "status": "retained",
+      "disc": [
+        130,
+        168,
+        89,
+        25,
+        125,
+        164,
+        73,
+        104
+      ],
+      "args": [
+        {
+          "name": "quote_mint",
+          "type": "pubkey"
+        },
+        {
+          "name": "pool_count",
+          "type": "u64 le",
+          "note": "absolute baseline, once per quote"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "admin",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "quote_stat",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "qstat",
+            "quote_mint"
+          ]
+        },
+        {
+          "index": 3,
+          "name": "system_program",
+          "signer": false,
+          "writable": false
+        }
+      ]
+    },
+    {
+      "id": "shared.crank_pay_page",
+      "name": "crank_pay_page",
+      "status": "retained",
+      "disc": [
+        210,
+        166,
+        31,
+        248,
+        115,
+        138,
+        100,
+        90
+      ],
+      "args": [
+        {
+          "name": "eligible_total",
+          "type": "u64 le"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": true,
+          "note": "instruction always fails UsePayV2"
+        }
+      ]
+    },
+    {
+      "id": "per_pool.crank_pay_page",
+      "name": "crank_pay_page",
+      "status": "retained",
+      "disc": [
+        210,
+        166,
+        31,
+        248,
+        115,
+        138,
+        100,
+        90
+      ],
+      "args": [
+        {
+          "name": "eligible_total",
+          "type": "u64 le"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": true,
+          "note": "instruction always fails UsePayV2"
+        }
+      ]
+    },
+    {
+      "id": "shared.register_pool",
+      "name": "register_pool",
+      "status": "changed",
+      "disc": [
+        85,
+        229,
+        114,
+        47,
+        75,
+        145,
+        166,
+        100
+      ],
+      "args": [
+        {
+          "name": "pool",
+          "type": "pubkey"
+        },
+        {
+          "name": "base_mint",
+          "type": "pubkey"
+        },
+        {
+          "name": "quote_mint",
+          "type": "pubkey"
+        },
+        {
+          "encoding": "8 disc + 96 argument bytes"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "config_record",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "config",
+            "quote_mint"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "pool_record",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "pool",
+            "pool"
+          ],
+          "init": "162 bytes"
+        },
+        {
+          "index": 3,
+          "name": "system_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 4,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 5,
+          "name": "dbc_pool",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 6,
+          "name": "dbc_config",
+          "signer": false,
+          "writable": false
+        }
+      ],
+      "remaining": [
+        {
+          "position": "remaining[0] instruction index 7",
+          "name": "quote_mint",
+          "writable": false,
+          "note": "not the LP watermark"
+        },
+        {
+          "position": "remaining[1] instruction index 8",
+          "name": "quote_stat",
+          "writable": true,
+          "pda": [
+            "qstat",
+            "quote_mint"
+          ]
+        },
+        {
+          "position": "remaining[2] instruction index 9",
+          "name": "quote_reserve",
+          "writable": true,
+          "pda": [
+            "qres",
+            "quote_mint"
+          ],
+          "note": "works while backfilling and after seal"
+        }
+      ],
+      "note": "Live 8-account client returns 6048. Website adds QuoteStat. Shared also adds the reserve."
+    },
+    {
+      "id": "per_pool.register_pool",
+      "name": "register_pool",
+      "status": "changed",
+      "disc": [
+        85,
+        229,
+        114,
+        47,
+        75,
+        145,
+        166,
+        100
+      ],
+      "args": [
+        {
+          "name": "pool",
+          "type": "pubkey"
+        },
+        {
+          "name": "base_mint",
+          "type": "pubkey"
+        },
+        {
+          "name": "quote_mint",
+          "type": "pubkey"
+        },
+        {
+          "encoding": "8 disc + 96 argument bytes"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "config_record",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "config",
+            "quote_mint"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "pool_record",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "pool",
+            "pool"
+          ],
+          "init": "162 bytes"
+        },
+        {
+          "index": 3,
+          "name": "system_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 4,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 5,
+          "name": "dbc_pool",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 6,
+          "name": "dbc_config",
+          "signer": false,
+          "writable": false
+        }
+      ],
+      "remaining": [
+        {
+          "position": "remaining[0] instruction index 7",
+          "name": "quote_mint",
+          "writable": false,
+          "note": "not the LP watermark"
+        },
+        {
+          "position": "remaining[1] instruction index 8",
+          "name": "quote_stat",
+          "writable": true,
+          "pda": [
+            "qstat",
+            "quote_mint"
+          ]
+        }
+      ],
+      "note": "No reserve account. One sync per quote, then every launch only registers."
+    },
+    {
+      "id": "shared.crank_claim",
+      "name": "crank_claim",
+      "status": "changed",
+      "disc": [
+        193,
+        62,
+        163,
+        14,
+        168,
+        236,
+        179,
+        103
+      ],
+      "args": [
+        {
+          "name": "max_base",
+          "type": "u64 le"
+        },
+        {
+          "name": "max_quote",
+          "type": "u64 le"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 1,
+          "name": "pool_record",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "pool",
+            "pool_record.pool"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "pool_authority",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 3,
+          "name": "config",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 4,
+          "name": "pool",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 5,
+          "name": "base_dest",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 6,
+          "name": "quote_vault",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 7,
+          "name": "base_vault",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 8,
+          "name": "quote_pool_vault",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 9,
+          "name": "base_mint",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 10,
+          "name": "quote_mint",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 11,
+          "name": "token_base_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 12,
+          "name": "token_quote_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 13,
+          "name": "event_authority",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 14,
+          "name": "dbc_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 15,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        }
+      ],
+      "remaining": [
+        {
+          "position": "remaining[0]",
+          "name": "quote_reserve",
+          "writable": true
+        }
+      ]
+    },
+    {
+      "id": "per_pool.crank_claim",
+      "name": "crank_claim",
+      "status": "changed",
+      "disc": [
+        193,
+        62,
+        163,
+        14,
+        168,
+        236,
+        179,
+        103
+      ],
+      "args": [
+        {
+          "name": "max_base",
+          "type": "u64 le"
+        },
+        {
+          "name": "max_quote",
+          "type": "u64 le"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 1,
+          "name": "pool_record",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "pool",
+            "pool_record.pool"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "pool_authority",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 3,
+          "name": "config",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 4,
+          "name": "pool",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 5,
+          "name": "base_dest",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 6,
+          "name": "quote_vault",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 7,
+          "name": "base_vault",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 8,
+          "name": "quote_pool_vault",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 9,
+          "name": "base_mint",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 10,
+          "name": "quote_mint",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 11,
+          "name": "token_base_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 12,
+          "name": "token_quote_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 13,
+          "name": "event_authority",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 14,
+          "name": "dbc_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 15,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        }
+      ],
+      "remaining": [
+        {
+          "position": "remaining[0]",
+          "name": "pool_vault",
+          "writable": true
+        }
+      ]
+    },
+    {
+      "id": "shared.open_lp_reservation",
+      "name": "open_lp_reservation",
+      "status": "new",
+      "disc": [
+        199,
+        255,
+        0,
+        21,
+        197,
+        1,
+        87,
+        215
+      ],
+      "args": [
+        {
+          "name": "batch_id",
+          "type": "u64 le"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "batch",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "lpbatch",
+            "id le"
+          ]
+        },
+        {
+          "index": 3,
+          "name": "system_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 4,
+          "name": "auto_lp",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "autolp"
+          ]
+        },
+        {
+          "index": 5,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 6,
+          "name": "damm_pool",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 7,
+          "name": "lpnonce",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "lpnonce"
+          ],
+          "note": "watermark. Not a register account."
+        }
+      ],
+      "remaining": "groups of 6 after index 7: pool, global ATA, mint, escrow, reserve, configured vault"
+    },
+    {
+      "id": "per_pool.open_lp_reservation",
+      "name": "open_lp_reservation",
+      "status": "new",
+      "disc": [
+        199,
+        255,
+        0,
+        21,
+        197,
+        1,
+        87,
+        215
+      ],
+      "args": [
+        {
+          "name": "batch_id",
+          "type": "u64 le"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "batch",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "lpbatch",
+            "id le"
+          ]
+        },
+        {
+          "index": 3,
+          "name": "system_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 4,
+          "name": "auto_lp",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "autolp"
+          ]
+        },
+        {
+          "index": 5,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 6,
+          "name": "damm_pool",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 7,
+          "name": "lpnonce",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "lpnonce"
+          ],
+          "note": "watermark. Not a register account."
+        }
+      ],
+      "remaining": "groups of 5 after index 7: pool, pool vault, mint, escrow, configured vault"
+    },
+    {
+      "id": "shared.consume_lp_reservation",
+      "name": "consume_lp_reservation",
+      "status": "new",
+      "disc": [
+        79,
+        166,
+        172,
+        47,
+        219,
+        130,
+        169,
+        58
+      ],
+      "args": [
+        {
+          "name": "batch_id",
+          "type": "u64 le"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 2,
+          "name": "batch",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 3,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 4,
+          "name": "auto_lp",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 5,
+          "name": "damm_pool",
+          "signer": false,
+          "writable": false
+        }
+      ],
+      "remaining": "pairs of escrow, configured destination"
+    },
+    {
+      "id": "shared.close_lp_escrow",
+      "name": "close_lp_escrow",
+      "status": "new",
+      "disc": [
+        55,
+        254,
+        149,
+        79,
+        122,
+        41,
+        15,
+        20
+      ],
+      "args": [
+        {
+          "name": "batch_id",
+          "type": "u64 le"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 2,
+          "name": "batch",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 3,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 4,
+          "name": "escrow",
+          "signer": false,
+          "writable": true
+        }
+      ]
+    },
+    {
+      "id": "shared.close_lp_batch",
+      "name": "close_lp_batch",
+      "status": "new",
+      "disc": [
+        77,
+        158,
+        87,
+        217,
+        88,
+        244,
+        144,
+        86
+      ],
+      "args": [
+        {
+          "name": "batch_id",
+          "type": "u64 le"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 2,
+          "name": "batch",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 3,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 4,
+          "name": "lpnonce",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "lpnonce"
+          ]
+        }
+      ],
+      "remaining": "one empty escrow per entry"
+    },
+    {
+      "id": "per_pool.consume_lp_reservation",
+      "name": "consume_lp_reservation",
+      "status": "new",
+      "disc": [
+        79,
+        166,
+        172,
+        47,
+        219,
+        130,
+        169,
+        58
+      ],
+      "args": [
+        {
+          "name": "batch_id",
+          "type": "u64 le"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 2,
+          "name": "batch",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 3,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 4,
+          "name": "auto_lp",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 5,
+          "name": "damm_pool",
+          "signer": false,
+          "writable": false
+        }
+      ],
+      "remaining": "pairs of escrow, configured destination"
+    },
+    {
+      "id": "per_pool.close_lp_escrow",
+      "name": "close_lp_escrow",
+      "status": "new",
+      "disc": [
+        55,
+        254,
+        149,
+        79,
+        122,
+        41,
+        15,
+        20
+      ],
+      "args": [
+        {
+          "name": "batch_id",
+          "type": "u64 le"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 2,
+          "name": "batch",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 3,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 4,
+          "name": "escrow",
+          "signer": false,
+          "writable": true
+        }
+      ]
+    },
+    {
+      "id": "per_pool.close_lp_batch",
+      "name": "close_lp_batch",
+      "status": "new",
+      "disc": [
+        77,
+        158,
+        87,
+        217,
+        88,
+        244,
+        144,
+        86
+      ],
+      "args": [
+        {
+          "name": "batch_id",
+          "type": "u64 le"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 2,
+          "name": "batch",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 3,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 4,
+          "name": "lpnonce",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "lpnonce"
+          ]
+        }
+      ],
+      "remaining": "one empty escrow per entry"
+    },
+    {
+      "id": "shared.refund_lp_reservation",
+      "name": "refund_lp_reservation",
+      "status": "new",
+      "disc": [
+        42,
+        187,
+        253,
+        194,
+        9,
+        216,
+        228,
+        107
+      ],
+      "args": [
+        {
+          "name": "batch_id",
+          "type": "u64 le"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": false,
+          "note": "any signer; destination is the stored source"
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 2,
+          "name": "batch",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 3,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        }
+      ],
+      "remaining": "groups of 4: escrow, source, pool record, reserve"
+    },
+    {
+      "id": "per_pool.refund_lp_reservation",
+      "name": "refund_lp_reservation",
+      "status": "new",
+      "disc": [
+        42,
+        187,
+        253,
+        194,
+        9,
+        216,
+        228,
+        107
+      ],
+      "args": [
+        {
+          "name": "batch_id",
+          "type": "u64 le"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": false
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 2,
+          "name": "batch",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 3,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        }
+      ],
+      "remaining": "groups of 3: escrow, source, pool record"
+    },
+    {
+      "id": "shared.init_quote_reserve",
+      "name": "init_quote_reserve",
+      "status": "new",
+      "disc": [
+        11,
+        127,
+        62,
+        113,
+        165,
+        8,
+        89,
+        208
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "admin",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "reserve",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "qres",
+            "mint"
+          ],
+          "init": "82"
+        },
+        {
+          "index": 3,
+          "name": "mint",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 4,
+          "name": "system_program",
+          "signer": false,
+          "writable": false
+        }
+      ]
+    },
+    {
+      "id": "shared.import_quote_reserve",
+      "name": "import_quote_reserve",
+      "status": "new",
+      "disc": [
+        63,
+        237,
+        29,
+        130,
+        75,
+        236,
+        148,
+        88
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "admin",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 2,
+          "name": "reserve",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 3,
+          "name": "pool_record",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 4,
+          "name": "owed",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "cown",
+            "pool"
+          ],
+          "note": "empty means zero; otherwise program-owned with the cown tag"
+        }
+      ],
+      "remaining": [
+        {
+          "position": "remaining[0]",
+          "name": "qimp",
+          "writable": true,
+          "pda": [
+            "qimp",
+            "pool"
+          ]
+        },
+        {
+          "position": "remaining[1]",
+          "name": "system_program",
+          "writable": false
+        }
+      ]
+    },
+    {
+      "id": "shared.import_existing_pool",
+      "name": "import_existing_pool",
+      "status": "new",
+      "disc": [
+        168,
+        188,
+        249,
+        36,
+        4,
+        67,
+        3,
+        37
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "admin",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 2,
+          "name": "reserve",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 3,
+          "name": "pool_record",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 4,
+          "name": "owed",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "cown",
+            "pool"
+          ],
+          "note": "empty means zero; otherwise program-owned with the cown tag"
+        }
+      ],
+      "remaining": [
+        {
+          "position": "remaining[0]",
+          "name": "qimp",
+          "writable": true
+        },
+        {
+          "position": "remaining[1]",
+          "name": "system_program",
+          "writable": false
+        }
+      ]
+    },
+    {
+      "id": "shared.seal_quote_reserve",
+      "name": "seal_quote_reserve",
+      "status": "new",
+      "disc": [
+        145,
+        255,
+        187,
+        175,
+        182,
+        82,
+        226,
+        114
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "admin",
+          "signer": true,
+          "writable": false
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 2,
+          "name": "reserve",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 3,
+          "name": "mint",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 4,
+          "name": "vault",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 5,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        }
+      ]
+    },
+    {
+      "id": "per_pool.migrate_pool_custody",
+      "name": "migrate_pool_custody",
+      "status": "new",
+      "disc": [
+        7,
+        158,
+        186,
+        54,
+        226,
+        94,
+        254,
+        47
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "pool_record",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "pool",
+            "pool"
+          ]
+        },
+        {
+          "index": 3,
+          "name": "global_vault",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 4,
+          "name": "pool_vault",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 5,
+          "name": "mint",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 6,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 7,
+          "name": "pcust",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "pcust",
+            "pool"
+          ]
+        },
+        {
+          "index": 8,
+          "name": "system_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 9,
+          "name": "owed",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "cown",
+            "pool"
+          ]
+        }
+      ],
+      "note": "Fee on the liability returns MigrationFeeShort before any marker write."
+    },
+    {
+      "id": "per_pool.reverse_pool_custody",
+      "name": "reverse_pool_custody",
+      "status": "new",
+      "disc": [
+        135,
+        74,
+        192,
+        108,
+        126,
+        50,
+        79,
+        186
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 2,
+          "name": "pool_record",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 3,
+          "name": "global_vault",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 4,
+          "name": "pool_vault",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 5,
+          "name": "mint",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 6,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 7,
+          "name": "pcust",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "pcust",
+            "pool"
+          ]
+        },
+        {
+          "index": 8,
+          "name": "owed",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "cown",
+            "pool"
+          ]
+        }
+      ],
+      "note": "Canonical cown is checked before the marker can move to reversed."
+    },
+    {
+      "id": "shared.release_burn_pot",
+      "name": "release_burn_pot",
+      "status": "retained",
+      "disc": [
+        224,
+        64,
+        74,
+        119,
+        186,
+        164,
+        250,
+        47
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 1,
+          "name": "pool_record",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "pool",
+            "pool_record.pool"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "quote_vault",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 3,
+          "name": "operator_token",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 4,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        }
+      ],
+      "note": "Shared remaining[0] is qres and the signer is the global PDA. Per-pool vault owner is the pool record and the pool PDA signs."
+    },
+    {
+      "id": "per_pool.release_burn_pot",
+      "name": "release_burn_pot",
+      "status": "retained",
+      "disc": [
+        224,
+        64,
+        74,
+        119,
+        186,
+        164,
+        250,
+        47
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 1,
+          "name": "pool_record",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "pool",
+            "pool_record.pool"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "quote_vault",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 3,
+          "name": "operator_token",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 4,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        }
+      ],
+      "note": "Shared remaining[0] is qres and the signer is the global PDA. Per-pool vault owner is the pool record and the pool PDA signs."
+    },
+    {
+      "id": "shared.release_burn_pot_v2",
+      "name": "release_burn_pot_v2",
+      "status": "retained",
+      "disc": [
+        1,
+        142,
+        214,
+        119,
+        205,
+        117,
+        241,
+        120
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 1,
+          "name": "pool_record",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 2,
+          "name": "quote_vault",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 3,
+          "name": "quote_mint",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 4,
+          "name": "operator_token",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 5,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        }
+      ],
+      "note": "Shared remaining[0] is qres."
+    },
+    {
+      "id": "per_pool.release_burn_pot_v2",
+      "name": "release_burn_pot_v2",
+      "status": "retained",
+      "disc": [
+        1,
+        142,
+        214,
+        119,
+        205,
+        117,
+        241,
+        120
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 1,
+          "name": "pool_record",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 2,
+          "name": "quote_vault",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 3,
+          "name": "quote_mint",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 4,
+          "name": "operator_token",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 5,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        }
+      ],
+      "note": "Shared remaining[0] is qres."
+    },
+    {
+      "id": "shared.crank_burn_direct",
+      "name": "crank_burn_direct",
+      "status": "retained",
+      "disc": [
+        118,
+        75,
+        25,
+        157,
+        201,
+        143,
+        78,
+        137
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 1,
+          "name": "pool_record",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 2,
+          "name": "burn_mint",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 3,
+          "name": "quote_vault",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 4,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        }
+      ],
+      "note": "Shared remaining[0] is qres and the vault is the global ATA. Per-pool vault owner is the pool record."
+    },
+    {
+      "id": "per_pool.crank_burn_direct",
+      "name": "crank_burn_direct",
+      "status": "retained",
+      "disc": [
+        118,
+        75,
+        25,
+        157,
+        201,
+        143,
+        78,
+        137
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 1,
+          "name": "pool_record",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 2,
+          "name": "burn_mint",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 3,
+          "name": "quote_vault",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 4,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        }
+      ],
+      "note": "Shared remaining[0] is qres and the vault is the global ATA. Per-pool vault owner is the pool record."
+    },
+    {
+      "id": "shared.crank_pay_page_v2",
+      "name": "crank_pay_page_v2",
+      "status": "retained",
+      "disc": [
+        187,
+        255,
+        119,
+        89,
+        187,
+        17,
+        96,
+        79
+      ],
+      "args": [
+        {
+          "name": "eligible_total",
+          "type": "u64 le"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 2,
+          "name": "pool_record",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 3,
+          "name": "quote_vault",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 4,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 5,
+          "name": "system_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 6,
+          "name": "pay_cursor",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "paycur",
+            "pool"
+          ]
+        },
+        {
+          "index": 7,
+          "name": "sol_vault",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 8,
+          "name": "unwrap",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 9,
+          "name": "native_mint",
+          "signer": false,
+          "writable": false
+        }
+      ],
+      "note": "Shared appends qres. Holder pairs are remaining."
+    },
+    {
+      "id": "per_pool.crank_pay_page_v2",
+      "name": "crank_pay_page_v2",
+      "status": "retained",
+      "disc": [
+        187,
+        255,
+        119,
+        89,
+        187,
+        17,
+        96,
+        79
+      ],
+      "args": [
+        {
+          "name": "eligible_total",
+          "type": "u64 le"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 2,
+          "name": "pool_record",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 3,
+          "name": "quote_vault",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 4,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 5,
+          "name": "system_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 6,
+          "name": "pay_cursor",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "paycur",
+            "pool"
+          ]
+        },
+        {
+          "index": 7,
+          "name": "sol_vault",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 8,
+          "name": "unwrap",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 9,
+          "name": "native_mint",
+          "signer": false,
+          "writable": false
+        }
+      ],
+      "note": "Shared appends qres. Holder pairs are remaining."
+    },
+    {
+      "id": "shared.crank_pay_page_v3",
+      "name": "crank_pay_page_v3",
+      "status": "retained",
+      "disc": [
+        26,
+        92,
+        113,
+        244,
+        121,
+        99,
+        140,
+        121
+      ],
+      "args": [
+        {
+          "name": "eligible_total",
+          "type": "u64 le"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 2,
+          "name": "pool_record",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 3,
+          "name": "quote_vault",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 4,
+          "name": "quote_mint",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 5,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 6,
+          "name": "pay_cursor",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "paycur",
+            "pool"
+          ]
+        }
+      ],
+      "note": "Shared appends qres."
+    },
+    {
+      "id": "per_pool.crank_pay_page_v3",
+      "name": "crank_pay_page_v3",
+      "status": "retained",
+      "disc": [
+        26,
+        92,
+        113,
+        244,
+        121,
+        99,
+        140,
+        121
+      ],
+      "args": [
+        {
+          "name": "eligible_total",
+          "type": "u64 le"
+        }
+      ],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "index": 1,
+          "name": "global",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 2,
+          "name": "pool_record",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 3,
+          "name": "quote_vault",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 4,
+          "name": "quote_mint",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 5,
+          "name": "token_program",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 6,
+          "name": "pay_cursor",
+          "signer": false,
+          "writable": true,
+          "pda": [
+            "paycur",
+            "pool"
+          ]
+        }
+      ],
+      "note": "Shared appends qres."
+    },
+    {
+      "id": "shared.claim_creator_share",
+      "name": "claim_creator_share",
+      "status": "retained",
+      "disc": [
+        223,
+        73,
+        251,
+        122,
+        3,
+        19,
+        20,
+        33
+      ],
+      "args": [],
+      "accounts": [],
+      "note": "Remaining accounts. Per-pool: global, pool record, cown, dbc pool, pool vault, mint, creator ATA, token program; pool PDA signs. Shared adds qres at remaining[8]; global PDA signs."
+    },
+    {
+      "id": "per_pool.claim_creator_share",
+      "name": "claim_creator_share",
+      "status": "retained",
+      "disc": [
+        223,
+        73,
+        251,
+        122,
+        3,
+        19,
+        20,
+        33
+      ],
+      "args": [],
+      "accounts": [],
+      "note": "Remaining accounts. Per-pool: global, pool record, cown, dbc pool, pool vault, mint, creator ATA, token program; pool PDA signs. Shared adds qres at remaining[8]; global PDA signs."
+    },
+    {
+      "id": "shared.crank_claim_damm",
+      "name": "crank_claim_damm",
+      "status": "changed",
+      "disc": [
+        129,
+        173,
+        59,
+        184,
+        182,
+        112,
+        147,
+        238
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 1,
+          "name": "pool_record",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 2,
+          "name": "quote_vault",
+          "signer": false,
+          "writable": true
+        }
+      ],
+      "note": "Remaining begins payer, system, dbc pool, dbc config, cown. Shared index 5 is qres. Per-pool index 5 is the pool vault. mock_meteora is not a real DAMM claim."
+    },
+    {
+      "id": "per_pool.crank_claim_damm",
+      "name": "crank_claim_damm",
+      "status": "changed",
+      "disc": [
+        129,
+        173,
+        59,
+        184,
+        182,
+        112,
+        147,
+        238
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "index": 1,
+          "name": "pool_record",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "index": 2,
+          "name": "quote_vault",
+          "signer": false,
+          "writable": true
+        }
+      ],
+      "note": "Remaining begins payer, system, dbc pool, dbc config, cown. Shared index 5 is qres. Per-pool index 5 is the pool vault. mock_meteora is not a real DAMM claim."
+    },
+    {
+      "id": "shared.crank_auto_lp",
+      "name": "crank_auto_lp",
+      "status": "changed",
+      "disc": [
+        105,
+        243,
+        28,
+        82,
+        221,
+        253,
+        201,
+        200
+      ],
+      "args": [
+        {
+          "name": "liquidity_delta",
+          "type": "u128 le"
+        },
+        {
+          "name": "token_a_threshold",
+          "type": "u64 le"
+        },
+        {
+          "name": "token_b_threshold",
+          "type": "u64 le"
+        }
+      ],
+      "accounts": [],
+      "note": "mock_meteora only. Not add_liquidity and not permanent_lock."
+    },
+    {
+      "id": "per_pool.crank_auto_lp",
+      "name": "crank_auto_lp",
+      "status": "changed",
+      "disc": [
+        105,
+        243,
+        28,
+        82,
+        221,
+        253,
+        201,
+        200
+      ],
+      "args": [
+        {
+          "name": "liquidity_delta",
+          "type": "u128 le"
+        },
+        {
+          "name": "token_a_threshold",
+          "type": "u64 le"
+        },
+        {
+          "name": "token_b_threshold",
+          "type": "u64 le"
+        }
+      ],
+      "accounts": [],
+      "note": "mock_meteora only. Not add_liquidity and not permanent_lock."
+    }
+  ]
+}

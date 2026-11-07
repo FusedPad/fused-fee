@@ -392,6 +392,20 @@ fn lp_batch_close<'info>(a: &'info [AccountInfo<'info>], program_id: &Pubkey, ba
     Ok(())
 }
 
+/// The creator account is ["cown", pool]. An empty account there means the creator is owed nothing.
+/// Any other account, a read-only account, or a populated account with the wrong owner or tag is refused
+/// before tokens move or the custody marker changes.
+fn canonical_owed<'info>(ai: &AccountInfo<'info>, pool: &Pubkey, program_id: &Pubkey) -> Result<u64> {
+    let (key, _) = Pubkey::find_program_address(&[b"cown", pool.as_ref()], program_id);
+    require_keys_eq!(ai.key(), key, FusedError::BadCreator);
+    require!(ai.is_writable, FusedError::BadCreator);
+    if ai.data_is_empty() {
+        return Ok(0);
+    }
+    require_keys_eq!(*ai.owner, *program_id, FusedError::BadCreator);
+    Ok(read_owed(ai, pool)?.0)
+}
+
 /// Move an old shared-vault balance into the pool vault without reducing pots or creator owed.
 fn migrate_pool_custody_inner<'info>(a: &'info [AccountInfo<'info>], program_id: &Pubkey) -> Result<()> {
     require!(a.len() >= 7, FusedError::PoolVault);
@@ -411,12 +425,10 @@ fn migrate_pool_custody_inner<'info>(a: &'info [AccountInfo<'info>], program_id:
     require_keys_eq!(*mint.owner, *tprog.key, FusedError::WrongTokenProgram);
     require_keys_eq!(global_vault.key(), get_associated_token_address_with_program_id(&a[1].key(), &pr.quote_mint, tprog.key), FusedError::BadVault);
     pool_vault_ok(pool_vault, pool_ai.key, &pr.quote_mint, tprog.key)?;
-    require!(a.len() >= 9, FusedError::PoolVault);
+    require!(a.len() >= 10, FusedError::BadCreator);
     let marker = &a[7];
     let system = &a[8];
-    let owed = if a.len() >= 10 && !a[9].data_is_empty() {
-        read_owed(&a[9], &pr.pool)?.0
-    } else { 0 };
+    let owed = canonical_owed(&a[9], &pr.pool, program_id)?;
     let liability = pr.holder_pot.checked_add(pr.burn_pot).ok_or(FusedError::Math)?.checked_add(owed).ok_or(FusedError::Math)?;
     let before_pots = (pr.holder_pot, pr.burn_pot);
     let fee = if *tprog.key == TOKEN_2022_ID { mint_fee(mint, liability)? } else { 0 };
@@ -478,6 +490,8 @@ fn reverse_pool_custody_inner<'info>(a: &'info [AccountInfo<'info>], program_id:
     require_keys_eq!(*mint.owner, *tprog.key, FusedError::WrongTokenProgram);
     require_keys_eq!(global_vault.key(), get_associated_token_address_with_program_id(&a[1].key(), &pr.quote_mint, tprog.key), FusedError::BadVault);
     pool_vault_ok(pool_vault, pool_ai.key, &pr.quote_mint, tprog.key)?;
+    require!(a.len() >= 9, FusedError::BadCreator);
+    let owed_before = canonical_owed(&a[8], &pr.pool, program_id)?;
     let (mkey, _) = Pubkey::find_program_address(&[b"pcust", pr.pool.as_ref()], program_id);
     require_keys_eq!(marker.key(), mkey, FusedError::BadPool);
     if marker.data_is_empty() {
@@ -485,7 +499,6 @@ fn reverse_pool_custody_inner<'info>(a: &'info [AccountInfo<'info>], program_id:
     }
     let state = marker.try_borrow_data()?[40];
     require!(state == 1, FusedError::AlreadyReversed);
-    let owed_before = if a.len() >= 9 && !a[8].data_is_empty() { read_owed(&a[8], &pr.pool)?.0 } else { 0 };
     let liability = pr.holder_pot.checked_add(pr.burn_pot).ok_or(FusedError::Math)?.checked_add(owed_before).ok_or(FusedError::Math)?;
     let fee = if *tprog.key == TOKEN_2022_ID { mint_fee(mint, liability)? } else { 0 };
     if fee > 0 {
