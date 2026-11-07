@@ -793,6 +793,47 @@ async fn autolp_and_batch(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey,
     let ok_life = watermark.data.len() == 17 && high >= 12 && replay_closed.is_err() && batch_gone;
     rows.push(Rec(format!("{}-batch-watermark-reusable", tag(shared)), ok_life, format!("watermark_bytes={} high={high} replay={:?} batch_bytes_left={}", watermark.data.len(), replay_closed.as_ref().err().and_then(|e| custom(e)), rt.acct(&batch12).await.map(|a| a.data.len()).unwrap_or(0)), 0));
     assert!(ok_life, "{replay_closed:?} high={high}");
+    let batch13 = pda(&prog, &[b"lpbatch", &13u64.to_le_bytes()]);
+    let batch15 = pda(&prog, &[b"lpbatch", &15u64.to_le_bytes()]);
+    let e13a = ata(&batch13, &a.quote, &spl_token::ID);
+    let e13b = ata(&batch13, &b.quote, &spl_token::ID);
+    let e15a = ata(&batch15, &a.quote, &spl_token::ID);
+    let e15b = ata(&batch15, &b.quote, &spl_token::ID);
+    for (k, q, owner) in [(&e13a, &a.quote, &batch13), (&e13b, &b.quote, &batch13), (&e15a, &a.quote, &batch15), (&e15b, &b.quote, &batch15)] {
+        rt.store(k, owned(spl_token::ID, token(q, owner, 0)));
+    }
+    rt.send(prog, IX_OPEN, &13u64.to_le_bytes(), open_accounts(*admin, *g, batch13, auto, damm_pool, &a, &b, e13a, e13b, va, vb, shared, prog)).await.expect("open 13");
+    rt.send(prog, IX_OPEN, &15u64.to_le_bytes(), open_accounts(*admin, *g, batch15, auto, damm_pool, &a, &b, e15a, e15b, va, vb, shared, prog)).await.expect("open 15");
+    let vault_before = amt(&rt.acct(&a.vault).await.unwrap());
+    let escrow_before = amt(&rt.acct(&e13a).await.unwrap());
+    let stranger_refund = rt.send_with(prog, IX_REFUND, &13u64.to_le_bytes(), refund_accounts(stranger.pubkey(), *g, batch13, &a, &b, e13a, e13b, shared), &[&stranger]).await;
+    let vault_after = amt(&rt.acct(&a.vault).await.unwrap());
+    let refund_ok = stranger_refund.is_ok() && vault_after == vault_before + escrow_before && amt(&rt.acct(&e13a).await.unwrap()) == 0 && rt.acct(&stranger.pubkey()).await.unwrap().data.is_empty();
+    rows.push(Rec(format!("{}-refund-any-signer-recorded-source-only", tag(shared)), refund_ok, format!("refund={:?} vault_gained={}", stranger_refund.as_ref().err(), vault_after - vault_before), 0));
+    assert!(refund_ok, "{stranger_refund:?} vault {vault_before}->{vault_after}");
+    rt.send(prog, IX_REFUND, &15u64.to_le_bytes(), refund_accounts(*admin, *g, batch15, &a, &b, e15a, e15b, shared)).await.expect("refund 15");
+    rt.send(prog, IX_CLOSE_BATCH, &15u64.to_le_bytes(), vec![
+        AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(batch15, false),
+        AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(mark, false),
+        AccountMeta::new(e15a, false), AccountMeta::new(e15b, false),
+    ]).await.expect("close 15");
+    let reopen14 = rt.send(prog, IX_OPEN, &14u64.to_le_bytes(), open_accounts(*admin, *g, pda(&prog, &[b"lpbatch", &14u64.to_le_bytes()]), auto, damm_pool, &a, &b, e13a, e13b, va, vb, shared, prog)).await;
+    let stranger_batch = rt.send_with(prog, IX_CLOSE_BATCH, &13u64.to_le_bytes(), vec![
+        AccountMeta::new(stranger.pubkey(), true), AccountMeta::new_readonly(*g, false), AccountMeta::new(batch13, false),
+        AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(mark, false),
+        AccountMeta::new(e13a, false), AccountMeta::new(e13b, false),
+    ], &[&stranger]).await;
+    let batch13_still = rt.acct(&batch13).await.unwrap().data.len();
+    rt.send(prog, IX_CLOSE_BATCH, &13u64.to_le_bytes(), vec![
+        AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(batch13, false),
+        AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(mark, false),
+        AccountMeta::new(e13a, false), AccountMeta::new(e13b, false),
+    ]).await.expect("close lower id after higher");
+    let high2 = u64::from_le_bytes(rt.acct(&mark).await.unwrap().data[8..16].try_into().unwrap());
+    let replay13 = rt.send(prog, IX_OPEN, &13u64.to_le_bytes(), open_accounts(*admin, *g, batch13, auto, damm_pool, &a, &b, e13a, e13b, va, vb, shared, prog)).await;
+    let order_ok = reopen14.is_err() && stranger_batch.is_err() && batch13_still == 564 && high2 >= 15 && replay13.is_err() && rt.acct(&batch13).await.map(|x| x.data.len()).unwrap_or(0) == 0 && rt.acct(&mark).await.unwrap().data.len() == 17;
+    rows.push(Rec(format!("{}-watermark-out-of-order", tag(shared)), order_ok, format!("gap14={:?} stranger_close={:?} high={high2} replay13={:?}", reopen14.as_ref().err().and_then(|e| custom(e)), stranger_batch.as_ref().err().and_then(|e| custom(e)), replay13.as_ref().err().and_then(|e| custom(e))), 0));
+    assert!(order_ok, "{reopen14:?} {stranger_batch:?} high={high2}");
 }
 
 struct Side { quote: Pubkey, reserve: Pubkey, pool: Pubkey, prec: Pubkey, vault: Pubkey, config: Pubkey, qsrc: Pubkey }
@@ -1422,6 +1463,75 @@ async fn old_layout(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey, share
             && pots3.0 == 8_000 && pots3.1 == 1_000 && owed_left == 1_000;
         rows.push(Rec("per-fee-mint-reversal-not-reversible".into(), code == Some(6053) && still, format!("err={code:?} pool_vault={} owed={owed_left}", amt(&rt.acct(&pv3).await.unwrap())), 0));
         assert!(code == Some(6053) && still, "{fee_rev:?}");
+        let quote4 = Pubkey::new_unique();
+        let config4 = Pubkey::new_unique();
+        let pool4 = Pubkey::new_unique();
+        rt.store(&quote4, owned(spl_token::ID, mint(9, admin)));
+        rt.store(&config4, owned(DBC, dbc_cfg(&quote4, g)));
+        rt.store(&pool4, owned(DBC, dbc_pool(&config4, admin, &base, 0)));
+        let (prec4, acct4) = old_pool(&prog, &pool4, &base, &quote4, &config4, 8_000, 1_000);
+        rt.store(&prec4, acct4);
+        let (owed4, owed4_acct) = old_owed(&prog, &pool4, 1_000);
+        rt.store(&owed4, owed4_acct);
+        let gv4 = ata(g, &quote4, &spl_token::ID);
+        rt.store(&gv4, owned(spl_token::ID, token(&quote4, g, 12_000)));
+        let pv4 = ata(&prec4, &quote4, &spl_token::ID);
+        rt.store(&pv4, owned(spl_token::ID, token(&quote4, &prec4, 0)));
+        let other = Pubkey::new_unique();
+        rt.store(&other, owned(spl_token::ID, token(&quote4, &other, 7_000)));
+        let m4 = pda(&prog, &[b"pcust", pool4.as_ref()]);
+        rt.send(prog, IX_MIGRATE, &[], vec![
+            AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec4, false),
+            AccountMeta::new(gv4, false), AccountMeta::new(pv4, false), AccountMeta::new_readonly(quote4, false),
+            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(m4, false), AccountMeta::new_readonly(system_program::ID, false),
+            AccountMeta::new_readonly(owed4, false),
+        ]).await.expect("migrate with owed");
+        rt.send(prog, IX_REVERSE, &[], vec![
+            AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec4, false),
+            AccountMeta::new(gv4, false), AccountMeta::new(pv4, false), AccountMeta::new_readonly(quote4, false),
+            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(m4, false), AccountMeta::new_readonly(owed4, false),
+        ]).await.expect("reverse with owed");
+        let owed4_now = u64::from_le_bytes(rt.acct(&owed4).await.unwrap().data[40..48].try_into().unwrap());
+        let p4 = pots(&rt.acct(&prec4).await.unwrap());
+        let other_left = amt(&rt.acct(&other).await.unwrap());
+        let with_owed = owed4_now == 1_000 && p4.0 == 8_000 && p4.1 == 1_000 && amt(&rt.acct(&gv4).await.unwrap()) == 12_000 && amt(&rt.acct(&pv4).await.unwrap()) == 0 && other_left == 7_000;
+        rows.push(Rec("per-classic-reverse-keeps-owed-and-other-vault".into(), with_owed, format!("global={} pool_left={} other={other_left} owed={owed4_now}", amt(&rt.acct(&gv4).await.unwrap()), amt(&rt.acct(&pv4).await.unwrap())), 0));
+        assert!(with_owed, "owed reverse moved the wrong tokens");
+        let quote5 = Pubkey::new_unique();
+        let config5 = Pubkey::new_unique();
+        let pool5 = Pubkey::new_unique();
+        rt.store(&quote5, owned(spl_token::ID, mint(9, admin)));
+        rt.store(&config5, owned(DBC, dbc_cfg(&quote5, g)));
+        rt.store(&pool5, owned(DBC, dbc_pool(&config5, admin, &base, 0)));
+        let (prec5, acct5) = old_pool(&prog, &pool5, &base, &quote5, &config5, 8_000, 1_000);
+        rt.store(&prec5, acct5);
+        let (owed5, owed5_acct) = old_owed(&prog, &pool5, 1_000);
+        rt.store(&owed5, owed5_acct);
+        let gv5 = ata(g, &quote5, &spl_token::ID);
+        rt.store(&gv5, owned(spl_token::ID, token(&quote5, g, 10_000)));
+        let pv5 = ata(&prec5, &quote5, &spl_token::ID);
+        rt.store(&pv5, owned(spl_token::ID, token(&quote5, &prec5, 0)));
+        let m5 = pda(&prog, &[b"pcust", pool5.as_ref()]);
+        rt.send(prog, IX_MIGRATE, &[], vec![
+            AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec5, false),
+            AccountMeta::new(gv5, false), AccountMeta::new(pv5, false), AccountMeta::new_readonly(quote5, false),
+            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(m5, false), AccountMeta::new_readonly(system_program::ID, false),
+            AccountMeta::new_readonly(owed5, false),
+        ]).await.expect("migrate owed for omission");
+        rt.send(prog, IX_REVERSE, &[], vec![
+            AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec5, false),
+            AccountMeta::new(gv5, false), AccountMeta::new(pv5, false), AccountMeta::new_readonly(quote5, false),
+            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(m5, false),
+        ]).await.expect("reverse omitting owed");
+        let owed5_now = u64::from_le_bytes(rt.acct(&owed5).await.unwrap().data[40..48].try_into().unwrap());
+        let omitted = owed5_now == 1_000 && amt(&rt.acct(&pv5).await.unwrap()) == 1_000 && amt(&rt.acct(&gv5).await.unwrap()) == 9_000 && marker_state(&rt.acct(&m5).await.unwrap()) == 2;
+        let second = rt.send(prog, IX_REVERSE, &[], vec![
+            AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec5, false),
+            AccountMeta::new(gv5, false), AccountMeta::new(pv5, false), AccountMeta::new_readonly(quote5, false),
+            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(m5, false), AccountMeta::new_readonly(owed5, false),
+        ]).await;
+        rows.push(Rec("per-classic-reverse-omitting-owed-strands-creator".into(), omitted && second.is_err(), format!("pool_left={} global={} owed={owed5_now} second={:?}", amt(&rt.acct(&pv5).await.unwrap()), amt(&rt.acct(&gv5).await.unwrap()), second.as_ref().err().and_then(|e| custom(e))), 0));
+        assert!(omitted && second.is_err(), "{second:?}");
     }
 }
 

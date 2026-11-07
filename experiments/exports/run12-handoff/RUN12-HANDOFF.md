@@ -1,5 +1,9 @@
 # RUN12 handoff
 
+Superseded for SDK sizes and the account contract by `RUN12-CORRECTED-HANDOFF.md` in this directory. The memo measurement below signed with the fee payer. The builder uses a distinct launch signer. The ELF hashes are unchanged.
+
+
+
 Local only. No deployment, no transaction, no architecture choice. Real Meteora `add_liquidity` and `permanent_lock` are still the mock. Run9 hashes `9b903d80…` and `1447e565…` are still unsafe and were not overwritten. Run11's files were left as they were. Slot 519510577 rents still apply only to the sizes Crank named. These ELFs are larger, so those programdata rents do not apply to them.
 
 ## Custody reversal

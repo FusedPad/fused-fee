@@ -22,6 +22,8 @@
 {"id":"per-escrow-close-keeps-batch","ok":true,"detail":"stranger=Some(6023) close=None replay=Some(6038) consume_after=Some(6051)","cu":0},
 {"id":"per-close-batch-rejects-funded","ok":true,"detail":"err=Some(6052) escrow=250","cu":0},
 {"id":"per-batch-watermark-reusable","ok":true,"detail":"watermark_bytes=17 high=12 replay=Some(6054) batch_bytes_left=0","cu":0},
+{"id":"per-refund-any-signer-recorded-source-only","ok":true,"detail":"refund=None vault_gained=250","cu":0},
+{"id":"per-watermark-out-of-order","ok":true,"detail":"gap14=Some(6054) stranger_close=Some(6023) high=15 replay13=Some(6054)","cu":0},
 {"id":"per-fee-mint-claim","ok":true,"detail":"landed=9801 global_left=0 holder=8019 burn=1782","cu":43964},
 {"id":"per-two-pay-pages-same-round","ok":true,"detail":"first=4500 second=4500","cu":0},
 {"id":"per-wsol-unwrap-pay-v2","ok":true,"detail":"lamports_gained=9000","cu":57363},
@@ -29,5 +31,7 @@
 {"id":"per-classic-migration-preserves-pots","ok":true,"detail":"pool_vault=11000 pots=9000/2000 second=Some(6055)","cu":0},
 {"id":"per-classic-reversal-restores-global","ok":true,"detail":"global=11000 pool=0 pots=9000/2000 stranger=Some(6023) replay=Some(6056)","cu":0},
 {"id":"per-fee-mint-reversal-not-reversible","ok":true,"detail":"err=Some(6053) pool_vault=10000 owed=1000","cu":0},
+{"id":"per-classic-reverse-keeps-owed-and-other-vault","ok":true,"detail":"global=12000 pool_left=0 other=7000 owed=1000","cu":0},
+{"id":"per-classic-reverse-omitting-owed-strands-creator","ok":true,"detail":"pool_left=1000 global=9000 owed=1000 second=Some(6056)","cu":0},
 {"id":"per-caller-qstat-qres","ok":true,"detail":"eight=Some(6048) empty_qstat=Some(6049) no_reserve=None with_bootstrap=true","cu":0}
 ]}

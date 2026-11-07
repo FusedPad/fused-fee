@@ -1,51 +1,59 @@
-# RUN12 handoff
+# RUN12 corrected handoff
 
-Local only. No deployment, no transaction, no architecture choice. Real Meteora `add_liquidity` and `permanent_lock` are still the mock. Run9 hashes `9b903d80…` and `1447e565…` are still unsafe and were not overwritten. Run11's files were left as they were. Slot 519510577 rents still apply only to the sizes Crank named. These ELFs are larger, so those programdata rents do not apply to them.
+Program source is still `b3911bc32a1f92f3bfd9ae1a91b7a2856e0426dc`. The four ELFs were not rebuilt. Crank is pricing 620032 and 606400, and those are the files in this bundle. Nothing was deployed. Neither design is selected. `mock_meteora` is not Meteora `add_liquidity` and not `permanent_lock`.
 
-## Custody reversal
+The bundle file is `run12-corrected-handoff-bundle.tar`. It contains this note, `INSTRUCTION-CONTRACT.json` for the current account list, `MANIFEST.json`, `SDK-SIZES-3SIGNER.json`, the test rows, and the four `.so` files.
 
-Classic per-pool custody can be reversed. A pool with holder 9000 and burn 2000 moved 11000 into the pool vault and left the pots at 9000/2000. A second migrate returned 6055 and moved nothing. `reverse_pool_custody` is signed by the admin, and the pool record PDA signs the token transfer. It put 11000 back in the global vault and left the pool vault at 0. The pots stayed 9000/2000. The global vault then covered the full liability. A stranger was rejected (6023). A second reverse was rejected (6056).
+## SDK sizes, corrected
 
-A 1% fee mint is not reversible by this instruction. Migrate of an exact 10000 liability still returns 6053 and moves nothing. A reverse attempted against a pool vault that already holds exactly 10000, with owed still 1000, also returns 6053. The pool vault stays 10000, the global vault stays 0, and holder, burn, and owed stay 8000/1000/1000. The program will not lower those figures to match a fee-bearing transfer. Funding extra tokens so the destination still receives the full liability is an open product decision. Until that decision, fee-mint per-pool custody is not reversible.
+The earlier run12 figure signed the memo with the fee payer. That was two signatures. The saved builder adds Memo `fusedpad` with a distinct launch signer, and only when `txSize + 64 <= 1232`. That is a third signature. The launch signer is not writable.
 
-## LP batch rent
+Packages checked with `npm view` and installed in scratch: `@meteora-ag/dynamic-bonding-curve-sdk@1.5.13`, `@solana/web3.js@1.99.0`, `@solana/spl-token@0.4.14`. `createPool` and `createPoolWithFirstBuy` came from that SDK. `minimumAmountOut` is 0. Priority is `setComputeUnitPrice` of 100000 microlamports. The limit instruction is `setComputeUnitLimit` of 1400000, which is the builder cap, not a simulation. The instruction is 5 bytes, so a different unit count does not change the packet size. The builder drops that instruction if the legacy packet would exceed 1232. It was kept in every row below. Register is appended only when the packet fits in 1232−16, and in 1152 when a memo is present. It did not fit, so every launch below is two transactions.
 
-`close_lp_batch` closes a finished batch only when every escrow is empty. A close while an escrow still holds 250 is rejected and the 250 stays. On success the batch account is removed and one 17-byte `["lpnonce"]` watermark records the highest closed id. Opening that id again is rejected (shared 6056, per-pool 6054). The watermark stayed 17 bytes.
+This is a local fixture. The config account was encoded in this process. It is not a catalog config and it is not the live site. No transaction was sent.
 
-Crank's 3515360 lamports is the rent of one 564-byte batch while it exists. After `close_lp_batch` that rent comes back. What stays is the single 17-byte watermark. Its devnet rent was not in the slot 519510577 report. Skipping the close leaves the 564-byte account and its 3515360 lamports. That is the retained-record choice. The close is not available for an open or funded batch, so it is not a way to discard a live reservation.
-
-## SDK sizes
-
-`npm view` returned the published versions named in the builder audit: `@meteora-ag/dynamic-bonding-curve-sdk@1.5.13`, `@solana/web3.js@1.99.0`, `@solana/spl-token@0.4.14`. They were installed in a scratch directory. No site file was edited and nothing was submitted.
-
-The measured transactions come from that SDK's `createPoolWithFirstBuy`, then a Memo of `fusedpad` signed by the same payer, then the experiment `register_pool`. The pool config is a local fixture labelled `LOCAL_FIXTURE_NOT_A_DEPLOYED_CONFIG`. Quote is wSOL. The first buy is 100000000 lamports with minimum out 1. This is the SDK's transaction shape. It is not a byte copy of the live site, because the live config account was not fetched.
-
-| Design | One transaction | Create + first buy + memo | Register alone |
+| Case | Create packet | Signatures | Register packet |
 | --- | --- | --- | --- |
-| Shared, 10 register accounts | 1286 bytes, 2 signatures, 9 instructions, 25 accounts, over 1232 | 977 bytes, 2 signatures, fits | 571 bytes, 1 signature, fits |
-| Per-pool, 9 register accounts | 1253 bytes, 2 signatures, 9 instructions, 24 accounts, over 1232 | 977 bytes, 2 signatures, fits | 538 bytes, 1 signature, fits |
+| wSOL, first buy 100000000, shared or per-pool | 1125 | 3 | shared 623, per-pool 590 |
+| wSOL, no first buy, shared or per-pool | 905 | 3 | shared 623, per-pool 590 |
+| 6-decimal SPL fixture, first buy 1000000 | 1096 | 3 | shared 623, per-pool 590 |
+| 6-decimal SPL fixture, no first buy | 905 | 3 | shared 623, per-pool 590 |
 
-The one-transaction launch does not fit. The two-transaction fallback does: create, first buy, and memo in the first, register in the second. Both signatures on the first transaction are the payer and the new base mint.
+The rejected one-transaction size, wSOL plus first buy plus memo plus priority plus limit plus register, is 1426 shared and the same shape on a 6-decimal quote is 1364 per-pool. Both are over the memo budget of 1152. The three signers are the fee payer, the new base mint, and the launch signer.
 
-## Next devnet steps
+## Safety review, no program change
 
-These are rehearsal steps, not an upload approval.
+Classic reverse with the creator account passed: holder 8000, burn 1000, owed 1000. The global vault started at 12000, so 2000 was not part of this pool. After migrate and reverse the global vault was 12000 again, the pool vault was 0, pots stayed 8000/1000, and owed stayed 1000. A different token account holding 7000 of the same mint was not touched. Reverse does not read or write any other pool. The global check is this pool's liability only. It does not prove the shared vault covers every pool on that quote.
 
-1. Crank re-reads rent for the run12 programdata lengths, the 17-byte watermark, and the 165-byte Tokenkeg escrow. Do not reuse slot 519510577 for the new ELF sizes.
-2. On devnet, send the two-transaction launch above against the documented DBC program `dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN`. Keep the register on the second transaction.
-3. A later auto-LP rehearsal has to call the documented DAMM program `cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG`. The local mock is not that call and is not a permanent lock.
-4. For a classic per-pool rehearsal, `reverse_pool_custody` is the restore path. Do not use it as a fee-mint restore. That path is blocked until someone funds the fee without taking it from the pots.
-5. The LP crank calls `close_lp_batch` after the batch is consumed or refunded. Leaving it open keeps 3515360 lamports per batch.
+Omitting the owed account is not safe for the creator. The same 10000 position reversed without the owed account put 9000 back in the global vault and left 1000 in the pool vault. Owed stayed 1000. The marker still flipped to reversed, and a second reverse returned 6056. Pass the `cown` account. The program was not changed, because Crank is pricing these bytes. Until it is changed, a reverse without `cown` is not a creator restore.
 
-## Pinned run12 binaries
+A 1% mint that holds exactly the liability still returns 6053 in both directions and moves nothing. Funding the fee so the destination still receives the full liability is an open decision. It is not taken from the pots.
 
-Build: `cargo-build-sbf --arch v0 --tools-version v1.58 --offline`. Do not upload.
+Refund accepts any signer. The destination must be the source vault stored at open. A stranger refund returned 250 to that vault and the stranger's account stayed empty. Close is admin or crank only. A stranger close returned 6023 and the 564-byte batch stayed. Rent from a successful close goes to that admin or crank.
 
-| Role | Bytes | sha256 |
+Two batches, 13 and 15, were open together. Closing 15 raised the one 17-byte watermark to 15. Id 14, which was never opened, was then rejected. Batch 13 was still open through that and was closed afterward. Reopening 13 was rejected. The watermark stayed 17 bytes. Closing a higher id retires every lower id. A lower batch that is still open can still be finished and closed. It cannot be opened again.
+
+## Still unresolved
+
+Fee-mint per-pool custody needs a separate funding decision. The program will not haircut holder, burn, or owed.
+
+A shared quote writes one global vault and one `qres` on every claim, pay, release, and reservation for that quote. Those transactions cannot land in parallel. Two quotes do not share those accounts.
+
+Per-pool pay writes that pool's vault. Two pools can pay in parallel after custody has moved. A claim still writes the global vault first, so claims on the same quote still contend.
+
+The current 8-account register returns 6048 on both designs. An empty QuoteStat returns 6049. Shared register without the reserve returns 6050. Per-pool register with a synced QuoteStat succeeds and does not take a reserve.
+
+Bootstrap for a new shared quote: `sync_quote_stat` with the absolute count, `init_quote_reserve`, register with QuoteStat and the reserve, `import_quote_reserve`, then seal. Pools that already exist use `import_existing_pool`, because the old program never incremented the reserve. The builder's one-account edit adds QuoteStat only. Shared register needs the reserve as a second new account. Open's account index 7 is now the watermark.
+
+No devnet transaction was sent. The documented DBC and DAMM ids are still only public docs. A lock is not proven until those programs are called.
+
+## Files and hashes
+
+| File | Bytes | sha256 |
 | --- | --- | --- |
 | 3Evo shared | 620032 | `498233a22757af4fd5fc6e6fe05025f64b9ac278fc0691d03e86448c6f448c8e` |
 | 3Evo per-pool | 606400 | `a0d1a6167cafd25f132878d83ddddc2067373c3f46d4e70d73db2509d2376723` |
 | Experiment-id shared | 618752 | `24578a0e3d1b854d16c1558f11a3cb1c94ec142e0890d550a633a485cf11a45b` |
 | Experiment-id per-pool | 605120 | `531e26506443b0d9591a004e42b3ce791dd6a2d852e4588139e4f9bf09ac661c` |
 
-New instructions: `close_lp_batch` disc `[77, 158, 87, 217, 88, 244, 144, 86]`, `reverse_pool_custody` disc `[135, 74, 192, 108, 126, 50, 79, 186]`. Open now takes the 17-byte watermark at account index 7. The result rows and the four `.so` files are beside this note.
+Run9 `9b903d80…` and `1447e565…` were not overwritten and remain unsafe.
