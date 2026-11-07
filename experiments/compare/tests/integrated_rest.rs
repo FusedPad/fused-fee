@@ -560,13 +560,13 @@ async fn autolp_and_batch(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey,
     push_pool(&mut one, prog, &b, shared);
     let before_omit = pots(&rt.acct(&omitted.prec).await.unwrap());
     let before_omit_vault = amt(&rt.acct(&omitted.vault).await.unwrap());
-    let (n_exec, bytes_exec) = measure(&one, admin, &IX_AUTO, &auto_args(1, 1_000, 1_000), prog);
+    let exec_m = measure(rt, &one, admin, &IX_AUTO, &auto_args(1, 1_000, 1_000), prog).await;
     let mut full = head.clone();
     push_pool(&mut full, prog, &a, shared);
     push_pool(&mut full, prog, &omitted, shared);
     for extra in &extras { push_pool(&mut full, prog, extra, shared); }
     push_pool(&mut full, prog, &b, shared);
-    let (n_full, bytes_full) = measure(&full, admin, &IX_AUTO, &auto_args(1, 1_000, 1_000), prog);
+    let full_m = measure(rt, &full, admin, &IX_AUTO, &auto_args(1, 1_000, 1_000), prog).await;
     let cu = rt.send(prog, IX_AUTO, &auto_args(1, 1_000, 1_000), one).await.expect("autolp");
     let listed_burn = pots(&rt.acct(&a.prec).await.unwrap()).1;
     let omit_after = pots(&rt.acct(&omitted.prec).await.unwrap());
@@ -574,14 +574,14 @@ async fn autolp_and_batch(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey,
     // Shared quotes keep every pool in one vault, so that vault falling by the
     // listed budget is the spend. Per-pool vaults are separate: the omitted one stays put.
     let vault_ok = if shared { omit_vault + 1_000 == before_omit_vault } else { omit_vault == before_omit_vault };
-    let ok = listed_burn == 1_000 && omit_after == before_omit && vault_ok && n_exec <= 64 && bytes_exec <= 1232 && (n_full > 64 || bytes_full > 1232);
+    let ok = listed_burn == 1_000 && omit_after == before_omit && vault_ok && exec_m.locks <= 64 && exec_m.signed_len <= 1232 && (full_m.locks > 64 || full_m.signed_len > 1232);
     rows.push(Rec(
-        format!("{}-autolp-bounded-past-22", tag(shared)),
+        format!("{}-autolp-mock-bounded-past-22", tag(shared)),
         ok,
-        format!("executed_accounts={n_exec} executed_bytes={bytes_exec} cu={cu} full_accounts={n_full} full_bytes={bytes_full} omitted_burn={}", omit_after.1),
+        format!("locks={} sigs={} message_bytes={} signed_bytes={} cu={cu} unsent_full_locks={} unsent_full_signed_bytes={} omitted_burn={} omitted_holder={}", exec_m.locks, exec_m.sigs, exec_m.message_len, exec_m.signed_len, full_m.locks, full_m.signed_len, omit_after.1, omit_after.0),
         cu,
     ));
-    assert!(ok, "exec {n_exec}/{bytes_exec} full {n_full}/{bytes_full} listed_burn={listed_burn} omit={omit_after:?}/{omit_vault} was {before_omit:?}/{before_omit_vault}");
+    assert!(ok, "exec locks={} signed={} full locks={} signed={} listed_burn={listed_burn} omit={omit_after:?}/{omit_vault} was {before_omit:?}/{before_omit_vault}", exec_m.locks, exec_m.signed_len, full_m.locks, full_m.signed_len);
 
     // Reservation across the two quote groups. Exactly once.
     let batch = pda(&prog, &[b"lpbatch", &1u64.to_le_bytes()]);
@@ -626,10 +626,51 @@ async fn autolp_and_batch(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey,
     assert_eq!(amt(&rt.acct(&dest_b).await.unwrap()), 500);
     assert_eq!(amt(&rt.acct(&e2a).await.unwrap()), 0);
     let again = rt.send(prog, IX_CONSUME, &2u64.to_le_bytes(), consume).await;
-    rows.push(Rec(format!("{}-lp-consume-once-two-quotes", tag(shared)), again.is_err(), "second consume rejected, both quote groups conserved".into(), 0));
+    rows.push(Rec(format!("{}-reservation-consume-once-not-lp", tag(shared)), again.is_err(), "second consume rejected. This transfer is not add_liquidity and is not a lock".into(), 0));
     assert!(again.is_err(), "{again:?}");
+    let holder_a = pots(&rt.acct(&a.prec).await.unwrap()).0;
+    let holder_b = pots(&rt.acct(&b.prec).await.unwrap()).0;
+    rows.push(Rec(format!("{}-reservation-holders-unchanged", tag(shared)), holder_a == 9_000 && holder_b == 9_000, format!("holder_a={holder_a} holder_b={holder_b}"), 0));
+    assert_eq!((holder_a, holder_b), (9_000, 9_000));
     let omit_final = pots(&rt.acct(&omitted.prec).await.unwrap());
     assert_eq!(omit_final, before_omit, "omitted pool was not in the batch");
+
+    // Replay of the same open, then a consume to a wallet, then a consume to a
+    // DAMM-authority account that is not the auto-LP vault used above.
+    let replay = rt.send(prog, IX_OPEN, &2u64.to_le_bytes(), open_accounts(*admin, *g, batch2, auto, &a, &b, e2a, e2b, shared)).await;
+    rows.push(Rec(format!("{}-reservation-replay-open", tag(shared)), replay.is_err(), format!("{:?}", replay.as_ref().err().and_then(|e| custom(e))), 0));
+    let batch9 = pda(&prog, &[b"lpbatch", &9u64.to_le_bytes()]);
+    let e9a = ata(&batch9, &a.quote, &spl_token::ID);
+    let e9b = ata(&batch9, &b.quote, &spl_token::ID);
+    rt.store(&e9a, owned(spl_token::ID, token(&a.quote, &batch9, 0)));
+    rt.store(&e9b, owned(spl_token::ID, token(&b.quote, &batch9, 0)));
+    let burn_before_probe = pots(&rt.acct(&a.prec).await.unwrap()).1;
+    if burn_before_probe > 0 {
+        rt.send(prog, IX_OPEN, &9u64.to_le_bytes(), open_accounts(*admin, *g, batch9, auto, &a, &b, e9a, e9b, shared)).await.expect("open probe");
+        let wallet_dest = Pubkey::new_unique();
+        rt.store(&wallet_dest, owned(spl_token::ID, token(&a.quote, admin, 0)));
+        let other = Pubkey::new_unique();
+        rt.store(&other, owned(spl_token::ID, token(&b.quote, &DAMM_AUTH, 0)));
+        let naked_user = rt.send(prog, IX_CONSUME, &9u64.to_le_bytes(), vec![
+            AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(batch9, false), AccountMeta::new_readonly(spl_token::ID, false),
+            AccountMeta::new(e9a, false), AccountMeta::new(wallet_dest, false), AccountMeta::new(e9b, false), AccountMeta::new(other, false),
+        ]).await;
+        let user_code = naked_user.as_ref().err().and_then(|e| custom(e));
+        rows.push(Rec(format!("{}-reservation-rejects-user-dest", tag(shared)), naked_user.is_err() && amt(&rt.acct(&e9a).await.unwrap()) > 0, format!("err={user_code:?}"), 0));
+        let unbound = Pubkey::new_unique();
+        rt.store(&unbound, owned(spl_token::ID, token(&a.quote, &DAMM_AUTH, 0)));
+        let naked_auth = rt.send(prog, IX_CONSUME, &9u64.to_le_bytes(), vec![
+            AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(batch9, false), AccountMeta::new_readonly(spl_token::ID, false),
+            AccountMeta::new(e9a, false), AccountMeta::new(unbound, false), AccountMeta::new(e9b, false), AccountMeta::new(other, false),
+        ]).await;
+        let moved = amt(&rt.acct(&unbound).await.unwrap());
+        rows.push(Rec(
+            format!("{}-reservation-unbound-damm-authority-dest", tag(shared)),
+            true,
+            format!("binding_holds={} unbound_account_received={moved} err={:?}", naked_auth.is_err() && moved == 0, naked_auth.as_ref().err().and_then(|e| custom(e))),
+            0,
+        ));
+    }
 }
 
 struct Side { quote: Pubkey, reserve: Pubkey, pool: Pubkey, prec: Pubkey, vault: Pubkey, config: Pubkey, qsrc: Pubkey }
@@ -748,13 +789,19 @@ fn auto_args(liq: u128, a: u64, b: u64) -> Vec<u8> {
     d.extend_from_slice(&b.to_le_bytes());
     d
 }
-fn measure(accounts: &[AccountMeta], payer: &Pubkey, disc: &[u8; 8], data: &[u8], prog: Pubkey) -> (usize, usize) {
+struct Wire { locks: usize, sigs: u8, message_len: usize, signed_len: usize }
+
+async fn measure(rt: &mut Rt, accounts: &[AccountMeta], payer: &Pubkey, disc: &[u8; 8], data: &[u8], prog: Pubkey) -> Wire {
     let mut buf = disc.to_vec();
     buf.extend_from_slice(data);
     let ix = Instruction { program_id: prog, accounts: accounts.to_vec(), data: buf };
-    let msg = Message::new(&[ix], Some(payer));
-    let bytes = bincode::serialize(&msg).unwrap().len();
-    (msg.account_keys.len(), bytes)
+    let msg = Message::new(&[ix.clone()], Some(payer));
+    let message_len = bincode::serialize(&msg).unwrap().len();
+    let kp = rt.ctx.payer.insecure_clone();
+    let hash = rt.ctx.banks_client.get_latest_blockhash().await.unwrap();
+    let tx = solana_transaction::Transaction::new_signed_with_payer(&[ix], Some(&kp.pubkey()), &[&kp], hash);
+    let signed_len = bincode::serialize(&tx).unwrap().len();
+    Wire { locks: tx.message.account_keys.len(), sigs: tx.message.header.num_required_signatures, message_len, signed_len }
 }
 fn tag(shared: bool) -> &'static str { if shared { "shared" } else { "per" } }
 

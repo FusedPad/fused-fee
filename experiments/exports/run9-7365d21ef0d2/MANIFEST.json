@@ -1,0 +1,161 @@
+{
+  "run": "run9",
+  "elf_source_commit": "7365d21ef0d2fdb62b76480f695ce52ab770580f",
+  "elf_source_commit_subject": "Execute the remaining integrated vault paths locally.",
+  "evidence_note": "The ELFs were not rebuilt for this evidence commit. Wire measurements and the unbound-destination probe ran against those bytes.",
+  "build": {
+    "tool": "cargo-build-sbf",
+    "arch": "v0",
+    "tools_version": "v1.58",
+    "offline": true,
+    "profile": "release",
+    "profile_settings": {
+      "overflow-checks": true,
+      "lto": "fat",
+      "codegen-units": 1,
+      "opt-level": "z"
+    },
+    "profile_location": "experiments/integrated/shared_fee/Cargo.toml and experiments/integrated/per_pool_fee/Cargo.toml, each its own [workspace]",
+    "anchor_lang": "0.31.1",
+    "idl": "No Anchor IDL was emitted by the sbf build. Instruction discriminators are listed below from the test constants."
+  },
+  "supersedes": {
+    "warning": "Any INTEGRATED-COMPARISON.md that lists 708808 or 675704 byte binaries, hashes 47360f8d or 1f23a817, 3Evo artifacts of 711144 or 678040 bytes, hashes 2f540943 or e8c8861a, buffer rents 4.95 or 4.72 SOL, or a permanent extension of 0.501120 SOL is stale.",
+    "invalid_rate": "6960 lamports per byte, from (128 + bytes) * 3480 * 2, is not the current devnet rent. Do not apply these devnet figures to mainnet."
+  },
+  "crank_devnet_read": {
+    "source": "Crank paced read-only Helius DEVNET RPC",
+    "commitment": "finalized",
+    "slot": 519505861,
+    "queried_by_this_agent": false,
+    "programdata": "CeFRF4rmjsUh17dfHf835xP9d4yf5iHrFxb8hD3dpFqa",
+    "programdata_space": 522085,
+    "programdata_lamports_sol": "2.652842040",
+    "upgrade_authority": "HiRkRrxCgGzLV3WqKu7HxibS5kTVtDD6LW1vLKSH9Nxw",
+    "wallet_balance_sol": "5.073546881",
+    "quoted_rent_min_sol": {
+      "shared_programdata_594040_plus_45": "3.018602040",
+      "per_programdata_564320_plus_45": "2.867624440"
+    },
+    "buffer_overhead": "Crank marked buffer rent as approximately those programdata minima. Exact loader buffer overhead is not verified in this run. He will recompute the envelope from this pinned manifest, keeping a 0.5 SOL reserve and state-restore room."
+  },
+  "devnet_extension_sol_from_crank_figures": {
+    "shared_permanent_if_programdata_grows_to_594085": "0.365760000",
+    "per_permanent_if_programdata_grows_to_564365": "0.214782400",
+    "additional_after_per_when_growing_to_shared": "0.150977600",
+    "permanent_after_a_sequential_rehearsal_of_both": "0.365760000",
+    "note": "Programdata does not shrink. The larger extension remains after a later upgrade to the smaller ELF. These are devnet differences of the rent minima he reported, not a 6960-lamport calculation, and not mainnet prices."
+  },
+  "binaries": [
+    {
+      "role": "3evo-shared-executed-earlier-not-rebuilt",
+      "program_id": "3EvoYD7bjAgr5evMJDbsLdyNU32zXgKiBycKruojYxpD",
+      "bytes": 594040,
+      "sha256": "9b903d8003a460cab19aa584c8774b9ac06c3e688dd741c2389cc5a68bc790a8",
+      "path": "experiments/exports/run9-7365d21ef0d2/run9-3evo-shared-594040-9b903d8003a460cab19aa584c8774b9ac06c3e688dd741c2389cc5a68bc790a8.so",
+      "upload": "do not upload until approved"
+    },
+    {
+      "role": "3evo-per-executed-earlier-not-rebuilt",
+      "program_id": "3EvoYD7bjAgr5evMJDbsLdyNU32zXgKiBycKruojYxpD",
+      "bytes": 564320,
+      "sha256": "1447e565641b329eddfe384fb0deb17a82a18e73d667e8157aff1b0050092996",
+      "path": "experiments/exports/run9-7365d21ef0d2/run9-3evo-per-564320-1447e565641b329eddfe384fb0deb17a82a18e73d667e8157aff1b0050092996.so",
+      "upload": "do not upload until approved"
+    },
+    {
+      "role": "experiment-id-shared",
+      "program_id": "C1nBL5ufPcQvjkmj6hAmRgoLntHonMuf5WdxVxJenJaE",
+      "bytes": 592760,
+      "sha256": "1aa04cecefde0eb2ed3d6bfdca244bd754e7b395b8db98b6defdf3cfe5671c21",
+      "path": "experiments/exports/run9-7365d21ef0d2/run9-expid-shared-592760-1aa04cecefde0eb2ed3d6bfdca244bd754e7b395b8db98b6defdf3cfe5671c21.so"
+    },
+    {
+      "role": "experiment-id-per",
+      "program_id": "C5hUUPNfyui9sr2EXzVgiZa733W1TRbUdvJcZLMFXdtw",
+      "bytes": 563040,
+      "sha256": "246f4e7b4cebf4e12516946163e6bd92bfab8fa56f7f5e78d8da5422dad4e398",
+      "path": "experiments/exports/run9-7365d21ef0d2/run9-expid-per-563040-246f4e7b4cebf4e12516946163e6bd92bfab8fa56f7f5e78d8da5422dad4e398.so"
+    }
+  ],
+  "run9_wire_on_experiment_ids": {
+    "file": "experiments/results/integrated-rest.json",
+    "shared_autolp_mock": {
+      "locks_including_fee_payer_and_program": 24,
+      "signatures": 1,
+      "message_bytes": 872,
+      "signed_transaction_bytes": 937,
+      "cu": 97551,
+      "unsent_full_list_locks": 68,
+      "unsent_full_list_signed_bytes": 2389
+    },
+    "per_autolp_mock": {
+      "locks_including_fee_payer_and_program": 24,
+      "signatures": 1,
+      "message_bytes": 872,
+      "signed_transaction_bytes": 937,
+      "cu": 116494,
+      "unsent_full_list_locks": 90,
+      "unsent_full_list_signed_bytes": 3115
+    },
+    "repeated_run_same_cu": true
+  },
+  "binding_probe": {
+    "user_owned_destination": "rejected, error 6027 BadDest, escrow unchanged",
+    "other_account_owned_by_DAMM_pool_authority": "accepted. That account received 250. It was not the auto-LP vault. binding_holds=false on both designs",
+    "replay_open_of_existing_batch": "rejected, error 6027",
+    "holders_during_reservation": "stayed 9000 on both quote mints",
+    "omitted_pool": "holder 9000, burn 2000, unchanged by the 2-pool auto-LP and by the reservation"
+  },
+  "case_files": [
+    {"file": "experiments/results/integrated-fee.json", "rows": 17, "harness_ok": 17, "harness_fail": 0, "scope": "experiment ids, core paths including 8-account register 6048"},
+    {"file": "experiments/results/integrated-rest.json", "rows": 36, "harness_ok": 36, "harness_fail": 0, "property_fail": "2 rows record binding_holds=false", "scope": "experiment ids, run9 wire measurement and reservation probe"},
+    {"file": "experiments/results/integrated-3evo-shared-core.json", "rows": 14, "harness_ok": 14, "harness_fail": 0, "scope": "3Evo shared, executed in the prior session, not re-run in run9"},
+    {"file": "experiments/results/integrated-3evo-shared-rest.json", "rows": 14, "harness_ok": 14, "harness_fail": 0, "scope": "3Evo shared rest, prior session"},
+    {"file": "experiments/results/integrated-3evo-per-core.json", "rows": 6, "harness_ok": 6, "harness_fail": 0, "scope": "3Evo per core, prior session"},
+    {"file": "experiments/results/integrated-3evo-per-rest.json", "rows": 14, "harness_ok": 14, "harness_fail": 0, "scope": "3Evo per rest, prior session. Its auto-LP CU was 121018, which is a different ELF from the experiment-id per binary"}
+  ],
+  "skips": [
+    "Token-2022 fee-mint claim through the mock",
+    "Token-2022 fee on the per-pool sweep from the global vault into the pool vault",
+    "import/seal of a fee-mint vault",
+    "wSOL unwrap pay-v2",
+    "two-page cursor progression inside one round",
+    "Anchor IDL file",
+    "exact devnet buffer-account overhead",
+    "devnet fixture rent for reserves, markers, batches, escrows, and pool vaults"
+  ],
+  "instructions": [
+    {"name": "initialize", "disc": [175, 175, 109, 31, 13, 152, 155, 237]},
+    {"name": "register_config", "disc": [32, 247, 82, 131, 35, 183, 7, 57]},
+    {"name": "register_pool", "disc": [85, 229, 114, 47, 75, 145, 166, 100]},
+    {"name": "sync_quote_stat", "disc": [130, 168, 89, 25, 125, 164, 73, 104]},
+    {"name": "crank_claim", "disc": [193, 62, 163, 14, 168, 236, 179, 103]},
+    {"name": "crank_claim_damm", "disc": [129, 173, 59, 184, 182, 112, 147, 238]},
+    {"name": "claim_creator_share", "disc": [223, 73, 251, 122, 3, 19, 20, 33]},
+    {"name": "crank_pay_page_v2", "disc": [187, 255, 119, 89, 187, 17, 96, 79]},
+    {"name": "crank_pay_page_v3", "disc": [26, 92, 113, 244, 121, 99, 140, 121]},
+    {"name": "release_burn_pot", "disc": [224, 64, 74, 119, 186, 164, 250, 47]},
+    {"name": "release_burn_pot_v2", "disc": [1, 142, 214, 119, 205, 117, 241, 120]},
+    {"name": "crank_burn_direct", "disc": [118, 75, 25, 157, 201, 143, 78, 137]},
+    {"name": "set_burn_mint", "disc": [245, 243, 127, 223, 152, 205, 137, 210]},
+    {"name": "mark_graduated", "disc": [125, 72, 57, 129, 59, 15, 247, 251]},
+    {"name": "init_auto_lp", "disc": [166, 15, 73, 164, 58, 151, 116, 19]},
+    {"name": "set_auto_lp", "disc": [77, 69, 121, 149, 171, 199, 117, 85]},
+    {"name": "crank_auto_lp", "disc": [105, 243, 28, 82, 221, 253, 201, 200]},
+    {"name": "check_quote_mint", "disc": [18, 102, 204, 80, 128, 116, 58, 205]},
+    {"name": "init_quote_reserve", "disc": [11, 127, 62, 113, 165, 8, 89, 208]},
+    {"name": "import_quote_reserve", "disc": [63, 237, 29, 130, 75, 236, 148, 88]},
+    {"name": "seal_quote_reserve", "disc": [145, 255, 187, 175, 182, 82, 226, 114]},
+    {"name": "open_lp_reservation", "disc": [199, 255, 0, 21, 197, 1, 87, 215]},
+    {"name": "consume_lp_reservation", "disc": [79, 166, 172, 47, 219, 130, 169, 58]},
+    {"name": "refund_lp_reservation", "disc": [42, 187, 253, 194, 9, 216, 228, 107]}
+  ],
+  "fixture_account_sizes_bytes_unpriced": {
+    "quote_reserve": 82,
+    "import_marker": 40,
+    "lp_batch": 436,
+    "token_account": 165,
+    "close_instruction": "none in these programs, so this rent is not restored by a buffer close"
+  }
+}
