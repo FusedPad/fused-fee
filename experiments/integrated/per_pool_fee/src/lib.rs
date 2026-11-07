@@ -1398,10 +1398,20 @@ pub mod fused_fee {
         lp_batch_close_escrow(ctx.remaining_accounts, ctx.program_id, batch_id)
     }
 
+    /// Close a finished batch and its empty escrows. The 17-byte watermark stays and blocks that id.
+    pub fn close_lp_batch<'info>(ctx: Context<'_, '_, 'info, 'info, LpBatchIx>, batch_id: u64) -> Result<()> {
+        lp_batch_close(ctx.remaining_accounts, ctx.program_id, batch_id)
+    }
+
     /// Move old shared-vault tokens into this pool's vault. Refuses a fee-mint move that would
     /// deliver less than the existing holder, burn, and creator liabilities.
     pub fn migrate_pool_custody<'info>(ctx: Context<'_, '_, 'info, 'info, LpBatchIx>) -> Result<()> {
         migrate_pool_custody_inner(ctx.remaining_accounts, ctx.program_id)
+    }
+
+    /// Return a classic-mint liability to the global vault. The pool record signs. Fee mints are refused.
+    pub fn reverse_pool_custody<'info>(ctx: Context<'_, '_, 'info, 'info, LpBatchIx>) -> Result<()> {
+        reverse_pool_custody_inner(ctx.remaining_accounts, ctx.program_id)
     }
 }
 
@@ -2582,6 +2592,14 @@ pub enum FusedError {
     EscrowNotClosable,
     #[msg("moving this fee-mint balance would deliver less than the existing liabilities")]
     MigrationFeeShort,
+    #[msg("this LP batch id was already closed")]
+    BatchRetired,
+    #[msg("this pool's custody is already in the pool vault")]
+    AlreadyMigrated,
+    #[msg("this pool's custody is already back in the global vault")]
+    AlreadyReversed,
+    #[msg("this pool has not been moved into its own vault")]
+    CustodyNotMoved,
 }
 
 #[derive(Accounts)]

@@ -1469,6 +1469,11 @@ pub mod fused_fee {
         lp_batch_close_escrow(ctx.remaining_accounts, ctx.program_id, batch_id)
     }
 
+    /// Close a finished batch and its empty escrows. The 17-byte watermark stays and blocks that id.
+    pub fn close_lp_batch<'info>(ctx: Context<'_, '_, 'info, 'info, LpBatchIx>, batch_id: u64) -> Result<()> {
+        lp_batch_close(ctx.remaining_accounts, ctx.program_id, batch_id)
+    }
+
     /// Experimental. Seal when every registered pool has been imported and the vault covers the sum.
     pub fn seal_quote_reserve(ctx: Context<SealQuoteReserve>) -> Result<()> {
         let mint = ctx.accounts.mint.key();
@@ -2678,6 +2683,8 @@ pub enum FusedError {
     LpBatchClosed,
     #[msg("the escrow still holds tokens or the batch is not finished")]
     EscrowNotClosable,
+    #[msg("this LP batch id was already closed")]
+    BatchRetired,
 }
 
 #[derive(Accounts)]

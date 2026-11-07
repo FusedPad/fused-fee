@@ -51,6 +51,33 @@ fn lb_key(id: u64, program_id: &Pubkey) -> (Pubkey, u8) {
     Pubkey::find_program_address(&[b"lpbatch", &id.to_le_bytes()], program_id)
 }
 
+fn lp_mark<'info>(mark: &AccountInfo<'info>, payer: &AccountInfo<'info>, system: &AccountInfo<'info>, program_id: &Pubkey) -> Result<u64> {
+    let (key, bump) = Pubkey::find_program_address(&[b"lpnonce"], program_id);
+    require_keys_eq!(mark.key(), key, FusedError::BadAutoLpAccounts);
+    if mark.data_is_empty() {
+        let bump_seed = [bump];
+        let seeds: &[&[u8]] = &[b"lpnonce", &bump_seed];
+        create_pda_account(payer, mark, system, Rent::get()?.minimum_balance(17), 17, program_id, seeds)?;
+        let mut d = mark.try_borrow_mut_data()?;
+        d[..8].copy_from_slice(b"lpnonce!");
+        d[16] = bump;
+        return Ok(0);
+    }
+    let d = mark.try_borrow_data()?;
+    require!(d.len() == 17 && d[..8] == *b"lpnonce!", FusedError::BadAutoLpAccounts);
+    Ok(u64::from_le_bytes(d[8..16].try_into().unwrap()))
+}
+
+fn lp_mark_raise(mark: &AccountInfo, id: u64) -> Result<()> {
+    let mut d = mark.try_borrow_mut_data()?;
+    require!(d.len() == 17 && d[..8] == *b"lpnonce!", FusedError::BadAutoLpAccounts);
+    let cur = u64::from_le_bytes(d[8..16].try_into().unwrap());
+    if id > cur {
+        d[8..16].copy_from_slice(&id.to_le_bytes());
+    }
+    Ok(())
+}
+
 fn lb_load(ai: &AccountInfo, id: u64, program_id: &Pubkey) -> Result<(u8, u8, u8)> {
     let (key, _) = lb_key(id, program_id);
     require_keys_eq!(ai.key(), key, FusedError::BadAutoLpAccounts);
@@ -135,7 +162,9 @@ fn lp_batch_open<'info>(a: &'info [AccountInfo<'info>], program_id: &Pubkey, bat
     let damm_pool = &a[6];
     require_keys_eq!(damm_pool.key(), auto_lp.damm_pool, FusedError::BadPool);
     require_keys_eq!(*damm_pool.owner, DAMM_PROGRAM_ID, FusedError::BadPool);
-    let tail = &a[7..];
+    let last = lp_mark(&a[7], payer, &a[3], program_id)?;
+    require!(batch_id > last, FusedError::BatchRetired);
+    let tail = &a[8..];
     require!(!tail.is_empty() && tail.len() % 5 == 0, FusedError::BadAutoLpAccounts);
     let n = tail.len() / 5;
     require!(n >= 1 && n <= 4, FusedError::BadAutoLpAccounts);
@@ -308,6 +337,61 @@ fn lp_batch_close_escrow<'info>(a: &'info [AccountInfo<'info>], program_id: &Pub
     Ok(())
 }
 
+fn lp_batch_close<'info>(a: &'info [AccountInfo<'info>], program_id: &Pubkey, batch_id: u64) -> Result<()> {
+    require!(a.len() >= 5, FusedError::BadAutoLpAccounts);
+    let payer = &a[0];
+    require!(payer.is_signer && payer.is_writable, FusedError::NotCrank);
+    let global: Account<Global> = Account::try_from(&a[1])?;
+    require_keys_eq!(a[1].key(), Pubkey::find_program_address(&[b"global"], program_id).0, FusedError::BadAutoLpAccounts);
+    require!(payer.key() == global.admin || payer.key() == CRANK_AUTHORITY, FusedError::NotCrank);
+    let (state, n, bump) = lb_load(&a[2], batch_id, program_id)?;
+    require!(state == 2 || state == 3, FusedError::EscrowNotClosable);
+    let tprog = &a[3];
+    require!(is_token_program(tprog.key), FusedError::WrongTokenProgram);
+    let mark = &a[4];
+    require!(mark.is_writable, FusedError::BadAutoLpAccounts);
+    let n = n as usize;
+    require!(a.len() == 5 + n, FusedError::BadAutoLpAccounts);
+    let (bkey, _) = lb_key(batch_id, program_id);
+    let idb = batch_id.to_le_bytes();
+    let bump_seed = [bump];
+    let seeds: &[&[u8]] = &[b"lpbatch", &idb, &bump_seed];
+    for i in 0..n {
+        let (_pool, mint, _source, _amount, _dest) = lb_entry(&a[2], i)?;
+        let escrow = &a[5 + i];
+        require_keys_eq!(escrow.key(), get_associated_token_address_with_program_id(&bkey, &mint, tprog.key), FusedError::BadVault);
+        if escrow.data_is_empty() {
+            continue;
+        }
+        require!(escrow.is_writable, FusedError::BadVault);
+        require!(token_amount(escrow)? == 0, FusedError::EscrowNotClosable);
+        let mut data = vec![9u8];
+        anchor_lang::solana_program::program::invoke_signed(
+            &anchor_lang::solana_program::instruction::Instruction {
+                program_id: *tprog.key,
+                accounts: vec![
+                    AccountMeta::new(*escrow.key, false),
+                    AccountMeta::new(*payer.key, false),
+                    AccountMeta::new_readonly(bkey, true),
+                ],
+                data,
+            },
+            &[escrow.clone(), payer.clone(), a[2].clone(), tprog.clone()],
+            &[seeds],
+        )?;
+        let _ = data;
+    }
+    lp_mark_raise(mark, batch_id)?;
+    let batch = &a[2];
+    let lamports = batch.lamports();
+    **payer.try_borrow_mut_lamports()? = payer.lamports().checked_add(lamports).ok_or(FusedError::Math)?;
+    **batch.try_borrow_mut_lamports()? = 0;
+    batch.assign(&anchor_lang::system_program::ID);
+    batch.realloc(0, false)?;
+    msg!("lp_batch_closed id={} watermark=17", batch_id);
+    Ok(())
+}
+
 /// Move an old shared-vault balance into the pool vault without reducing pots or creator owed.
 fn migrate_pool_custody_inner<'info>(a: &'info [AccountInfo<'info>], program_id: &Pubkey) -> Result<()> {
     require!(a.len() >= 7, FusedError::PoolVault);
@@ -327,8 +411,11 @@ fn migrate_pool_custody_inner<'info>(a: &'info [AccountInfo<'info>], program_id:
     require_keys_eq!(*mint.owner, *tprog.key, FusedError::WrongTokenProgram);
     require_keys_eq!(global_vault.key(), get_associated_token_address_with_program_id(&a[1].key(), &pr.quote_mint, tprog.key), FusedError::BadVault);
     pool_vault_ok(pool_vault, pool_ai.key, &pr.quote_mint, tprog.key)?;
-    let owed = if a.len() >= 8 && !a[7].data_is_empty() {
-        read_owed(&a[7], &pr.pool)?.0
+    require!(a.len() >= 9, FusedError::PoolVault);
+    let marker = &a[7];
+    let system = &a[8];
+    let owed = if a.len() >= 10 && !a[9].data_is_empty() {
+        read_owed(&a[9], &pr.pool)?.0
     } else { 0 };
     let liability = pr.holder_pot.checked_add(pr.burn_pot).ok_or(FusedError::Math)?.checked_add(owed).ok_or(FusedError::Math)?;
     let before_pots = (pr.holder_pot, pr.burn_pot);
@@ -337,6 +424,24 @@ fn migrate_pool_custody_inner<'info>(a: &'info [AccountInfo<'info>], program_id:
         msg!("migration_fee_short liability={} fee_if_transferred_as_is={}", liability, fee);
         return err!(FusedError::MigrationFeeShort);
     }
+    let (mkey, mbump) = Pubkey::find_program_address(&[b"pcust", pr.pool.as_ref()], program_id);
+    require_keys_eq!(marker.key(), mkey, FusedError::BadPool);
+    require_keys_eq!(system.key(), anchor_lang::system_program::ID, FusedError::BadCreator);
+    let state = if marker.data_is_empty() {
+        let bump_seed = [mbump];
+        let seeds: &[&[u8]] = &[b"pcust", pr.pool.as_ref(), &bump_seed];
+        create_pda_account(payer, marker, system, Rent::get()?.minimum_balance(42), 42, program_id, seeds)?;
+        let mut md = marker.try_borrow_mut_data()?;
+        md[..8].copy_from_slice(b"pcustody");
+        md[8..40].copy_from_slice(pr.pool.as_ref());
+        md[41] = mbump;
+        0u8
+    } else {
+        let md = marker.try_borrow_data()?;
+        require!(md.len() == 42 && md[..8] == *b"pcustody", FusedError::BadPool);
+        md[40]
+    };
+    require!(state != 1, FusedError::AlreadyMigrated);
     require!(token_amount(global_vault)? >= liability, FusedError::VaultShort);
     let dec = mint.try_borrow_data()?[44];
     let gb = [global.bump];
@@ -347,7 +452,63 @@ fn migrate_pool_custody_inner<'info>(a: &'info [AccountInfo<'info>], program_id:
     require!(landed >= liability, FusedError::MigrationFeeShort);
     let pr2: Account<PoolRecord> = Account::try_from(pool_ai)?;
     require!(pr2.holder_pot == before_pots.0 && pr2.burn_pot == before_pots.1, FusedError::Math);
+    marker.try_borrow_mut_data()?[40] = 1;
     msg!("custody_moved={} pots_unchanged", landed);
+    Ok(())
+}
+
+/// Move the same liability back to the global vault. The pool record signs the transfer.
+/// A fee mint that cannot deliver the full liability is refused and left unchanged.
+fn reverse_pool_custody_inner<'info>(a: &'info [AccountInfo<'info>], program_id: &Pubkey) -> Result<()> {
+    require!(a.len() >= 8, FusedError::PoolVault);
+    let payer = &a[0];
+    require!(payer.is_signer, FusedError::NotCrank);
+    let global: Account<Global> = Account::try_from(&a[1])?;
+    require_keys_eq!(a[1].key(), Pubkey::find_program_address(&[b"global"], program_id).0, FusedError::BadCreator);
+    require!(payer.key() == global.admin || payer.key() == CRANK_AUTHORITY, FusedError::NotCrank);
+    let pool_ai = &a[2];
+    let global_vault = &a[3];
+    let pool_vault = &a[4];
+    let mint = &a[5];
+    let tprog = &a[6];
+    let marker = &a[7];
+    let pr: Account<PoolRecord> = Account::try_from(pool_ai)?;
+    require_keys_eq!(pool_ai.key(), Pubkey::find_program_address(&[b"pool", pr.pool.as_ref()], program_id).0, FusedError::BadPool);
+    require_keys_eq!(mint.key(), pr.quote_mint, FusedError::BadMint);
+    require_keys_eq!(*mint.owner, *tprog.key, FusedError::WrongTokenProgram);
+    require_keys_eq!(global_vault.key(), get_associated_token_address_with_program_id(&a[1].key(), &pr.quote_mint, tprog.key), FusedError::BadVault);
+    pool_vault_ok(pool_vault, pool_ai.key, &pr.quote_mint, tprog.key)?;
+    let (mkey, _) = Pubkey::find_program_address(&[b"pcust", pr.pool.as_ref()], program_id);
+    require_keys_eq!(marker.key(), mkey, FusedError::BadPool);
+    if marker.data_is_empty() {
+        return err!(FusedError::CustodyNotMoved);
+    }
+    let state = marker.try_borrow_data()?[40];
+    require!(state == 1, FusedError::AlreadyReversed);
+    let owed_before = if a.len() >= 9 && !a[8].data_is_empty() { read_owed(&a[8], &pr.pool)?.0 } else { 0 };
+    let liability = pr.holder_pot.checked_add(pr.burn_pot).ok_or(FusedError::Math)?.checked_add(owed_before).ok_or(FusedError::Math)?;
+    let fee = if *tprog.key == TOKEN_2022_ID { mint_fee(mint, liability)? } else { 0 };
+    if fee > 0 {
+        msg!("reversal_fee_short liability={} fee_if_transferred_as_is={}", liability, fee);
+        return err!(FusedError::MigrationFeeShort);
+    }
+    require!(token_amount(pool_vault)? >= liability, FusedError::VaultShort);
+    let dec = mint.try_borrow_data()?[44];
+    let pb = [pr.bump];
+    let pool_key = pr.pool;
+    let seeds: &[&[u8]] = &[b"pool", pool_key.as_ref(), &pb];
+    let before = token_amount(global_vault)?;
+    transfer_checked_signed(tprog, pool_vault, mint, global_vault, pool_ai, liability, dec, seeds)?;
+    let landed = token_amount(global_vault)?.checked_sub(before).ok_or(FusedError::Math)?;
+    require!(landed >= liability, FusedError::MigrationFeeShort);
+    require!(token_amount(global_vault)? >= liability, FusedError::VaultShort);
+    let pr2: Account<PoolRecord> = Account::try_from(pool_ai)?;
+    require!(pr2.holder_pot == pr.holder_pot && pr2.burn_pot == pr.burn_pot, FusedError::Math);
+    if a.len() >= 9 && !a[8].data_is_empty() {
+        require!(read_owed(&a[8], &pr.pool)?.0 == owed_before, FusedError::Math);
+    }
+    marker.try_borrow_mut_data()?[40] = 2;
+    msg!("custody_reversed={} pots_unchanged global_covers_liability", landed);
     Ok(())
 }
 

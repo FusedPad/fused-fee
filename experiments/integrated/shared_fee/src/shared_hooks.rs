@@ -124,6 +124,33 @@ fn lb_key(id: u64, program_id: &Pubkey) -> (Pubkey, u8) {
     Pubkey::find_program_address(&[b"lpbatch", &id.to_le_bytes()], program_id)
 }
 
+fn lp_mark<'info>(mark: &AccountInfo<'info>, payer: &AccountInfo<'info>, system: &AccountInfo<'info>, program_id: &Pubkey) -> Result<u64> {
+    let (key, bump) = Pubkey::find_program_address(&[b"lpnonce"], program_id);
+    require_keys_eq!(mark.key(), key, FusedError::BadAutoLpAccounts);
+    if mark.data_is_empty() {
+        let bump_seed = [bump];
+        let seeds: &[&[u8]] = &[b"lpnonce", &bump_seed];
+        create_pda_account(payer, mark, system, Rent::get()?.minimum_balance(17), 17, program_id, seeds)?;
+        let mut d = mark.try_borrow_mut_data()?;
+        d[..8].copy_from_slice(b"lpnonce!");
+        d[16] = bump;
+        return Ok(0);
+    }
+    let d = mark.try_borrow_data()?;
+    require!(d.len() == 17 && d[..8] == *b"lpnonce!", FusedError::BadAutoLpAccounts);
+    Ok(u64::from_le_bytes(d[8..16].try_into().unwrap()))
+}
+
+fn lp_mark_raise(mark: &AccountInfo, id: u64) -> Result<()> {
+    let mut d = mark.try_borrow_mut_data()?;
+    require!(d.len() == 17 && d[..8] == *b"lpnonce!", FusedError::BadAutoLpAccounts);
+    let cur = u64::from_le_bytes(d[8..16].try_into().unwrap());
+    if id > cur {
+        d[8..16].copy_from_slice(&id.to_le_bytes());
+    }
+    Ok(())
+}
+
 fn lb_load<'a>(ai: &'a AccountInfo<'a>, id: u64, program_id: &Pubkey) -> Result<(u8, u8, u8)> {
     let (key, _) = lb_key(id, program_id);
     require_keys_eq!(ai.key(), key, FusedError::BadAutoLpAccounts);
@@ -188,7 +215,9 @@ fn lp_batch_open<'info>(a: &'info [AccountInfo<'info>], program_id: &Pubkey, bat
     let damm_pool = &a[6];
     require_keys_eq!(damm_pool.key(), auto_lp.damm_pool, FusedError::BadPool);
     require_keys_eq!(*damm_pool.owner, DAMM_PROGRAM_ID, FusedError::BadPool);
-    let tail = &a[7..];
+    let last = lp_mark(&a[7], payer, &a[3], program_id)?;
+    require!(batch_id > last, FusedError::BatchRetired);
+    let tail = &a[8..];
     require!(!tail.is_empty() && tail.len() % 6 == 0, FusedError::BadAutoLpAccounts);
     let n = tail.len() / 6;
     require!(n >= 1 && n <= 4, FusedError::BadAutoLpAccounts);
@@ -393,5 +422,62 @@ fn lp_batch_close_escrow<'info>(a: &'info [AccountInfo<'info>], program_id: &Pub
     )?;
     let _ = data;
     msg!("lp_escrow_closed id={} batch_retained=1", batch_id);
+    Ok(())
+}
+
+/// Close every empty escrow for this batch, return the batch rent, and raise the one watermark.
+/// An id at or below the watermark cannot be opened again. A nonzero escrow aborts the whole close.
+fn lp_batch_close<'info>(a: &'info [AccountInfo<'info>], program_id: &Pubkey, batch_id: u64) -> Result<()> {
+    require!(a.len() >= 5, FusedError::BadAutoLpAccounts);
+    let payer = &a[0];
+    require!(payer.is_signer && payer.is_writable, FusedError::NotCrank);
+    let global: Account<Global> = Account::try_from(&a[1])?;
+    require_keys_eq!(a[1].key(), Pubkey::find_program_address(&[b"global"], program_id).0, FusedError::BadAutoLpAccounts);
+    require!(payer.key() == global.admin || payer.key() == CRANK_AUTHORITY, FusedError::NotCrank);
+    let (state, n, bump) = lb_load(&a[2], batch_id, program_id)?;
+    require!(state == 2 || state == 3, FusedError::EscrowNotClosable);
+    let tprog = &a[3];
+    require!(is_token_program(tprog.key), FusedError::WrongTokenProgram);
+    let mark = &a[4];
+    require!(mark.is_writable, FusedError::BadAutoLpAccounts);
+    let n = n as usize;
+    require!(a.len() == 5 + n, FusedError::BadAutoLpAccounts);
+    let (bkey, _) = lb_key(batch_id, program_id);
+    let idb = batch_id.to_le_bytes();
+    let bump_seed = [bump];
+    let seeds: &[&[u8]] = &[b"lpbatch", &idb, &bump_seed];
+    for i in 0..n {
+        let (_pool, mint, _source, _amount, _dest) = lb_entry(&a[2], i)?;
+        let escrow = &a[5 + i];
+        require_keys_eq!(escrow.key(), get_associated_token_address_with_program_id(&bkey, &mint, tprog.key), FusedError::BadVault);
+        if escrow.data_is_empty() {
+            continue;
+        }
+        require!(escrow.is_writable, FusedError::BadVault);
+        require!(token_amount(escrow)? == 0, FusedError::EscrowNotClosable);
+        let mut data = vec![9u8];
+        anchor_lang::solana_program::program::invoke_signed(
+            &anchor_lang::solana_program::instruction::Instruction {
+                program_id: *tprog.key,
+                accounts: vec![
+                    AccountMeta::new(*escrow.key, false),
+                    AccountMeta::new(*payer.key, false),
+                    AccountMeta::new_readonly(bkey, true),
+                ],
+                data,
+            },
+            &[escrow.clone(), payer.clone(), a[2].clone(), tprog.clone()],
+            &[seeds],
+        )?;
+        let _ = data;
+    }
+    lp_mark_raise(mark, batch_id)?;
+    let batch = &a[2];
+    let lamports = batch.lamports();
+    **payer.try_borrow_mut_lamports()? = payer.lamports().checked_add(lamports).ok_or(FusedError::Math)?;
+    **batch.try_borrow_mut_lamports()? = 0;
+    batch.assign(&anchor_lang::system_program::ID);
+    batch.realloc(0, false)?;
+    msg!("lp_batch_closed id={} watermark=17", batch_id);
     Ok(())
 }

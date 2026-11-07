@@ -46,6 +46,8 @@ const IX_OPEN: [u8; 8] = [199, 255, 0, 21, 197, 1, 87, 215];
 const IX_CONSUME: [u8; 8] = [79, 166, 172, 47, 219, 130, 169, 58];
 const IX_REFUND: [u8; 8] = [42, 187, 253, 194, 9, 216, 228, 107];
 const IX_CLOSE: [u8; 8] = [55, 254, 149, 79, 122, 41, 15, 20];
+const IX_CLOSE_BATCH: [u8; 8] = [77, 158, 87, 217, 88, 244, 144, 86];
+const IX_REVERSE: [u8; 8] = [135, 74, 192, 108, 126, 50, 79, 186];
 const IX_IMPORT_OLD: [u8; 8] = [168, 188, 249, 36, 4, 67, 3, 37];
 const IX_MIGRATE: [u8; 8] = [7, 158, 186, 54, 226, 94, 254, 47];
 const IX_PAUSE: [u8; 8] = [91, 60, 125, 192, 176, 225, 166, 218];
@@ -628,7 +630,7 @@ async fn autolp_and_batch(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey,
     let esc_b = ata(&batch, &b.quote, &spl_token::ID);
     rt.store(&esc_a, owned(spl_token::ID, token(&a.quote, &batch, 0)));
     rt.store(&esc_b, owned(spl_token::ID, token(&b.quote, &batch, 0)));
-    let open = open_accounts(*admin, *g, batch, auto, damm_pool, &a, &b, esc_a, esc_b, va, vb, shared);
+    let open = open_accounts(*admin, *g, batch, auto, damm_pool, &a, &b, esc_a, esc_b, va, vb, shared, prog);
     let src_a_before = amt(&rt.acct(&a.vault).await.unwrap());
     let src_b_before = amt(&rt.acct(&b.vault).await.unwrap());
     rt.send(prog, IX_OPEN, &1u64.to_le_bytes(), open).await.expect("open batch");
@@ -651,8 +653,8 @@ async fn autolp_and_batch(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey,
     let e2b = ata(&batch2, &b.quote, &spl_token::ID);
     rt.store(&e2a, owned(spl_token::ID, token(&a.quote, &batch2, 0)));
     rt.store(&e2b, owned(spl_token::ID, token(&b.quote, &batch2, 0)));
-    rt.send(prog, IX_OPEN, &2u64.to_le_bytes(), open_accounts(*admin, *g, batch2, auto, damm_pool, &a, &b, e2a, e2b, va, vb, shared)).await.expect("open 2");
-    let replay = rt.send(prog, IX_OPEN, &2u64.to_le_bytes(), open_accounts(*admin, *g, batch2, auto, damm_pool, &a, &b, e2a, e2b, va, vb, shared)).await;
+    rt.send(prog, IX_OPEN, &2u64.to_le_bytes(), open_accounts(*admin, *g, batch2, auto, damm_pool, &a, &b, e2a, e2b, va, vb, shared, prog)).await.expect("open 2");
+    let replay = rt.send(prog, IX_OPEN, &2u64.to_le_bytes(), open_accounts(*admin, *g, batch2, auto, damm_pool, &a, &b, e2a, e2b, va, vb, shared, prog)).await;
     rows.push(Rec(format!("{}-reservation-replay-open", tag(shared)), replay.is_err(), format!("{:?}", replay.as_ref().err().and_then(|e| custom(e))), 0));
     let snap_esc = amt(&rt.acct(&e2a).await.unwrap());
     let snap_burn = pots(&rt.acct(&a.prec).await.unwrap()).1;
@@ -725,7 +727,7 @@ async fn autolp_and_batch(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey,
     let e11b = ata(&batch11, &b.quote, &spl_token::ID);
     rt.store(&e11a, owned(spl_token::ID, token(&a.quote, &batch11, 0)));
     rt.store(&e11b, owned(spl_token::ID, token(&b.quote, &batch11, 0)));
-    rt.send(prog, IX_OPEN, &11u64.to_le_bytes(), open_accounts(*admin, *g, batch11, auto, damm_pool, &a, &b, e11a, e11b, va, vb, shared)).await.expect("open funded batch");
+    rt.send(prog, IX_OPEN, &11u64.to_le_bytes(), open_accounts(*admin, *g, batch11, auto, damm_pool, &a, &b, e11a, e11b, va, vb, shared, prog)).await.expect("open funded batch");
     let funded = amt(&rt.acct(&e11a).await.unwrap());
     let close_funded = rt.send(prog, IX_CLOSE, &11u64.to_le_bytes(), vec![
         AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(batch11, false),
@@ -754,6 +756,43 @@ async fn autolp_and_batch(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey,
         && batch_still.data.len() == 564 && batch_still.owner == prog && rt.acct(&e2a).await.is_none();
     rows.push(Rec(format!("{}-escrow-close-keeps-batch", tag(shared)), ok, format!("stranger={:?} close={:?} replay={:?} consume_after={:?}", stranger_close.as_ref().err().and_then(|e| custom(e)), closed.as_ref().err(), again_close.as_ref().err().and_then(|e| custom(e)), consume_after.as_ref().err().and_then(|e| custom(e))), 0));
     assert!(ok, "escrow close did not keep the batch tombstone");
+    let mark = pda(&prog, &[b"lpnonce"]);
+    let funded_close = rt.send(prog, IX_CLOSE_BATCH, &11u64.to_le_bytes(), vec![
+        AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(batch11, false),
+        AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(mark, false),
+        AccountMeta::new(e11a, false), AccountMeta::new(e11b, false),
+    ]).await;
+    // Batch 11 was refunded, so its escrows are empty and its state is terminal. The attempt above
+    // used the still-funded window only if refund had not happened. It was refunded, so close it for real below
+    // only when the funded rejection did not apply. A separate open is used for the funded rejection.
+    let _ = funded_close;
+    let batch12 = pda(&prog, &[b"lpbatch", &12u64.to_le_bytes()]);
+    let e12a = ata(&batch12, &a.quote, &spl_token::ID);
+    let e12b = ata(&batch12, &b.quote, &spl_token::ID);
+    rt.store(&e12a, owned(spl_token::ID, token(&a.quote, &batch12, 0)));
+    rt.store(&e12b, owned(spl_token::ID, token(&b.quote, &batch12, 0)));
+    rt.send(prog, IX_OPEN, &12u64.to_le_bytes(), open_accounts(*admin, *g, batch12, auto, damm_pool, &a, &b, e12a, e12b, va, vb, shared, prog)).await.expect("open 12");
+    let reject_funded = rt.send(prog, IX_CLOSE_BATCH, &12u64.to_le_bytes(), vec![
+        AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(batch12, false),
+        AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(mark, false),
+        AccountMeta::new(e12a, false), AccountMeta::new(e12b, false),
+    ]).await;
+    let still_funded = amt(&rt.acct(&e12a).await.unwrap());
+    rows.push(Rec(format!("{}-close-batch-rejects-funded", tag(shared)), reject_funded.is_err() && still_funded > 0 && rt.acct(&batch12).await.unwrap().data.len() == 564, format!("err={:?} escrow={still_funded}", reject_funded.as_ref().err().and_then(|e| custom(e))), 0));
+    assert!(reject_funded.is_err() && still_funded > 0, "{reject_funded:?}");
+    rt.send(prog, IX_REFUND, &12u64.to_le_bytes(), refund_accounts(*admin, *g, batch12, &a, &b, e12a, e12b, shared)).await.expect("refund 12");
+    rt.send(prog, IX_CLOSE_BATCH, &12u64.to_le_bytes(), vec![
+        AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(batch12, false),
+        AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(mark, false),
+        AccountMeta::new(e12a, false), AccountMeta::new(e12b, false),
+    ]).await.expect("close batch 12");
+    let watermark = rt.acct(&mark).await.unwrap();
+    let high = u64::from_le_bytes(watermark.data[8..16].try_into().unwrap());
+    let replay_closed = rt.send(prog, IX_OPEN, &12u64.to_le_bytes(), open_accounts(*admin, *g, batch12, auto, damm_pool, &a, &b, e12a, e12b, va, vb, shared, prog)).await;
+    let batch_gone = rt.acct(&batch12).await.map(|a| a.data.len()).unwrap_or(0) == 0;
+    let ok_life = watermark.data.len() == 17 && high >= 12 && replay_closed.is_err() && batch_gone;
+    rows.push(Rec(format!("{}-batch-watermark-reusable", tag(shared)), ok_life, format!("watermark_bytes={} high={high} replay={:?} batch_bytes_left={}", watermark.data.len(), replay_closed.as_ref().err().and_then(|e| custom(e)), rt.acct(&batch12).await.map(|a| a.data.len()).unwrap_or(0)), 0));
+    assert!(ok_life, "{replay_closed:?} high={high}");
 }
 
 struct Side { quote: Pubkey, reserve: Pubkey, pool: Pubkey, prec: Pubkey, vault: Pubkey, config: Pubkey, qsrc: Pubkey }
@@ -838,11 +877,11 @@ fn push_pool(metas: &mut Vec<AccountMeta>, prog: Pubkey, side: &Side, shared: bo
     metas.push(AccountMeta::new_readonly(owed, false));
 }
 
-fn open_accounts(admin: Pubkey, g: Pubkey, batch: Pubkey, auto: Pubkey, damm_pool: Pubkey, a: &Side, b: &Side, ea: Pubkey, eb: Pubkey, da: Pubkey, db: Pubkey, shared: bool) -> Vec<AccountMeta> {
+fn open_accounts(admin: Pubkey, g: Pubkey, batch: Pubkey, auto: Pubkey, damm_pool: Pubkey, a: &Side, b: &Side, ea: Pubkey, eb: Pubkey, da: Pubkey, db: Pubkey, shared: bool, prog: Pubkey) -> Vec<AccountMeta> {
     let mut v = vec![
         AccountMeta::new(admin, true), AccountMeta::new_readonly(g, false), AccountMeta::new(batch, false),
         AccountMeta::new_readonly(system_program::ID, false), AccountMeta::new_readonly(auto, false), AccountMeta::new_readonly(spl_token::ID, false),
-        AccountMeta::new_readonly(damm_pool, false),
+        AccountMeta::new_readonly(damm_pool, false), AccountMeta::new(pda(&prog, &[b"lpnonce"]), false),
     ];
     for (s, e, d) in [(a, ea, da), (b, eb, db)] {
         v.push(AccountMeta::new(s.prec, false));
@@ -1284,10 +1323,12 @@ async fn old_layout(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey, share
         rt.store(&gvault, owned(T22, fee_token(&quote, g, 10_000)));
         let pvault = ata(&prec, &quote, &T22);
         rt.store(&pvault, owned(T22, fee_token(&quote, &prec, 0)));
+        let marker = pda(&prog, &[b"pcust", pool.as_ref()]);
         let moved = rt.send(prog, IX_MIGRATE, &[], vec![
             AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec, false),
             AccountMeta::new(gvault, false), AccountMeta::new(pvault, false), AccountMeta::new_readonly(quote, false),
-            AccountMeta::new_readonly(T22, false), AccountMeta::new_readonly(owed_key, false),
+            AccountMeta::new_readonly(T22, false), AccountMeta::new(marker, false), AccountMeta::new_readonly(system_program::ID, false),
+            AccountMeta::new_readonly(owed_key, false),
         ]).await;
         let code = moved.as_ref().err().and_then(|e| custom(e));
         let pots_now = pots(&rt.acct(&prec).await.unwrap());
@@ -1308,17 +1349,83 @@ async fn old_layout(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey, share
         rt.store(&gv2, owned(spl_token::ID, token(&quote2, g, 11_000)));
         let pv2 = ata(&prec2, &quote2, &spl_token::ID);
         rt.store(&pv2, owned(spl_token::ID, token(&quote2, &prec2, 0)));
+        let marker2 = pda(&prog, &[b"pcust", pool2.as_ref()]);
         rt.send(prog, IX_MIGRATE, &[], vec![
             AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec2, false),
             AccountMeta::new(gv2, false), AccountMeta::new(pv2, false), AccountMeta::new_readonly(quote2, false),
-            AccountMeta::new_readonly(spl_token::ID, false),
+            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(marker2, false), AccountMeta::new_readonly(system_program::ID, false),
         ]).await.expect("classic migrate");
+        let again_move = rt.send(prog, IX_MIGRATE, &[], vec![
+            AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec2, false),
+            AccountMeta::new(gv2, false), AccountMeta::new(pv2, false), AccountMeta::new_readonly(quote2, false),
+            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(marker2, false), AccountMeta::new_readonly(system_program::ID, false),
+        ]).await;
         let p2 = pots(&rt.acct(&prec2).await.unwrap());
-        let ok2 = p2.0 == 9_000 && p2.1 == 2_000 && amt(&rt.acct(&pv2).await.unwrap()) == 11_000 && amt(&rt.acct(&gv2).await.unwrap()) == 0;
-        rows.push(Rec("per-classic-migration-preserves-pots".into(), ok2, format!("pool_vault={} pots={}/{}", amt(&rt.acct(&pv2).await.unwrap()), p2.0, p2.1), 0));
-        assert!(ok2, "classic migrate changed pots");
+        let ok2 = p2.0 == 9_000 && p2.1 == 2_000 && amt(&rt.acct(&pv2).await.unwrap()) == 11_000 && amt(&rt.acct(&gv2).await.unwrap()) == 0
+            && again_move.as_ref().err().and_then(|e| custom(e)) == Some(6055);
+        rows.push(Rec("per-classic-migration-preserves-pots".into(), ok2, format!("pool_vault={} pots={}/{} second={:?}", amt(&rt.acct(&pv2).await.unwrap()), p2.0, p2.1, again_move.as_ref().err().and_then(|e| custom(e))), 0));
+        assert!(ok2, "classic migrate changed pots {again_move:?}");
+        let stranger = Keypair::new();
+        rt.store(&stranger.pubkey(), owned(system_program::ID, vec![]));
+        let stranger_rev = rt.send_with(prog, IX_REVERSE, &[], vec![
+            AccountMeta::new(stranger.pubkey(), true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec2, false),
+            AccountMeta::new(gv2, false), AccountMeta::new(pv2, false), AccountMeta::new_readonly(quote2, false),
+            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(marker2, false),
+        ], &[&stranger]).await;
+        rt.send(prog, IX_REVERSE, &[], vec![
+            AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec2, false),
+            AccountMeta::new(gv2, false), AccountMeta::new(pv2, false), AccountMeta::new_readonly(quote2, false),
+            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(marker2, false),
+        ]).await.expect("classic reverse");
+        let replay_rev = rt.send(prog, IX_REVERSE, &[], vec![
+            AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec2, false),
+            AccountMeta::new(gv2, false), AccountMeta::new(pv2, false), AccountMeta::new_readonly(quote2, false),
+            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(marker2, false),
+        ]).await;
+        let p3 = pots(&rt.acct(&prec2).await.unwrap());
+        let global_back = amt(&rt.acct(&gv2).await.unwrap());
+        let pool_left = amt(&rt.acct(&pv2).await.unwrap());
+        let ok3 = stranger_rev.is_err() && replay_rev.as_ref().err().and_then(|e| custom(e)) == Some(6056)
+            && p3.0 == 9_000 && p3.1 == 2_000 && global_back == 11_000 && pool_left == 0 && global_back >= 11_000;
+        rows.push(Rec("per-classic-reversal-restores-global".into(), ok3, format!("global={global_back} pool={pool_left} pots={}/{} stranger={:?} replay={:?}", p3.0, p3.1, stranger_rev.as_ref().err().and_then(|e| custom(e)), replay_rev.as_ref().err().and_then(|e| custom(e))), 0));
+        assert!(ok3, "{stranger_rev:?} {replay_rev:?} global={global_back}");
+        let quote3 = Pubkey::new_unique();
+        let config3 = Pubkey::new_unique();
+        let pool3 = Pubkey::new_unique();
+        rt.store(&quote3, owned(T22, fee_mint(6, admin)));
+        rt.store(&config3, owned(DBC, dbc_cfg(&quote3, g)));
+        rt.store(&pool3, owned(DBC, dbc_pool(&config3, admin, &base, 0)));
+        let (prec3, acct3) = old_pool(&prog, &pool3, &base, &quote3, &config3, 8_000, 1_000);
+        rt.store(&prec3, acct3);
+        let (owed3, owed3_acct) = old_owed(&prog, &pool3, 1_000);
+        rt.store(&owed3, owed3_acct);
+        let gv3 = ata(g, &quote3, &T22);
+        rt.store(&gv3, owned(T22, fee_token(&quote3, g, 0)));
+        let pv3 = ata(&prec3, &quote3, &T22);
+        rt.store(&pv3, owned(T22, fee_token(&quote3, &prec3, 10_000)));
+        let (m3, mbump) = Pubkey::find_program_address(&[b"pcust", pool3.as_ref()], &prog);
+        let mut md = vec![0u8; 42];
+        md[..8].copy_from_slice(b"pcustody");
+        md[8..40].copy_from_slice(pool3.as_ref());
+        md[40] = 1;
+        md[41] = mbump;
+        rt.store(&m3, Account { lamports: rent(42), data: md, owner: prog, executable: false, rent_epoch: 0 });
+        let fee_rev = rt.send(prog, IX_REVERSE, &[], vec![
+            AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec3, false),
+            AccountMeta::new(gv3, false), AccountMeta::new(pv3, false), AccountMeta::new_readonly(quote3, false),
+            AccountMeta::new_readonly(T22, false), AccountMeta::new(m3, false), AccountMeta::new_readonly(owed3, false),
+        ]).await;
+        let code = fee_rev.as_ref().err().and_then(|e| custom(e));
+        let owed_left = u64::from_le_bytes(rt.acct(&owed3).await.unwrap().data[40..48].try_into().unwrap());
+        let pots3 = pots(&rt.acct(&prec3).await.unwrap());
+        let still = marker_state(&rt.acct(&m3).await.unwrap()) == 1 && amt(&rt.acct(&pv3).await.unwrap()) == 10_000 && amt(&rt.acct(&gv3).await.unwrap()) == 0
+            && pots3.0 == 8_000 && pots3.1 == 1_000 && owed_left == 1_000;
+        rows.push(Rec("per-fee-mint-reversal-not-reversible".into(), code == Some(6053) && still, format!("err={code:?} pool_vault={} owed={owed_left}", amt(&rt.acct(&pv3).await.unwrap())), 0));
+        assert!(code == Some(6053) && still, "{fee_rev:?}");
     }
 }
+
+fn marker_state(a: &Account) -> u8 { a.data[40] }
 
 async fn caller_matrix(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey, shared: bool, rows: &mut Vec<Rec>) {
     let quote = Pubkey::new_unique();

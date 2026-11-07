@@ -1,0 +1,8 @@
+{"shared_sha":"","shared_bytes":0,"per_sha":"a0d1a6167cafd25f132878d83ddddc2067373c3f46d4e70d73db2509d2376723","per_bytes":606400,"rows":[
+{"id":"per-claim-moves-to-pool-vault","ok":true,"detail":"global=0 pool=11000","cu":46266},
+{"id":"per-pay-v3","ok":true,"detail":"paid from pool vault, global untouched","cu":35226},
+{"id":"per-old-8-account-register","ok":true,"detail":"Some(6048)","cu":0},
+{"id":"t22-plain-check","ok":true,"detail":"Ok(2908)","cu":2908},
+{"id":"t22-fee-over-1pct","ok":true,"detail":"Some(6032)","cu":0},
+{"id":"t22-active-hook","ok":true,"detail":"active hook rejected","cu":0}
+]}

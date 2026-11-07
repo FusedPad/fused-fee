@@ -1,0 +1,67 @@
+{
+  "label": "LOCAL_FIXTURE_NOT_A_DEPLOYED_CONFIG",
+  "packages": {
+    "dbc": "1.5.13",
+    "web3": "1.99.0",
+    "splToken": "0.4.14",
+    "verifiedBy": "npm view exact version"
+  },
+  "quote": "So11111111111111111111111111111111111111112",
+  "buyAmountLamports": 100000000,
+  "minimumAmountOut": 1,
+  "config": "generated locally and served only to this process. Not a public config and not submitted.",
+  "createInstructions": 1,
+  "createWithFirstBuyInstructions": 7,
+  "designs": {
+    "shared": {
+      "program": "C1nBL5ufPcQvjkmj6hAmRgoLntHonMuf5WdxVxJenJaE",
+      "registerAccounts": 10,
+      "oneTx_create_firstbuy_memo_register": {
+        "bytes": 1286,
+        "signatures": 2,
+        "instructions": 9,
+        "accounts": 25,
+        "fits1232": false
+      },
+      "tx1_create_firstbuy_memo": {
+        "bytes": 977,
+        "signatures": 2,
+        "instructions": 8,
+        "accounts": 19,
+        "fits1232": true
+      },
+      "tx2_register": {
+        "bytes": 571,
+        "signatures": 1,
+        "instructions": 1,
+        "accounts": 11,
+        "fits1232": true
+      }
+    },
+    "per_pool": {
+      "program": "C5hUUPNfyui9sr2EXzVgiZa733W1TRbUdvJcZLMFXdtw",
+      "registerAccounts": 9,
+      "oneTx_create_firstbuy_memo_register": {
+        "bytes": 1253,
+        "signatures": 2,
+        "instructions": 9,
+        "accounts": 24,
+        "fits1232": false
+      },
+      "tx1_create_firstbuy_memo": {
+        "bytes": 977,
+        "signatures": 2,
+        "instructions": 8,
+        "accounts": 19,
+        "fits1232": true
+      },
+      "tx2_register": {
+        "bytes": 538,
+        "signatures": 1,
+        "instructions": 1,
+        "accounts": 10,
+        "fits1232": true
+      }
+    }
+  }
+}
