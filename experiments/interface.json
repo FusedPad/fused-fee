@@ -1,0 +1,41 @@
+{
+  "note": "Hand-written interface for the experimental programs. Not an Anchor IDL. Tags are the first byte. fused_fee is unchanged.",
+  "shared_reserve": {
+    "program_id": "6URwbPipuA4MJLG7LCRRZuWnms3JZ9cRG3z9indXWz8G",
+    "seeds": ["xb/global", "xb/reserve/mint", "xb/pool/pool_id", "xb/escrow/batch_u64"],
+    "instructions": {
+      "1 init_global": ["payer SW", "global W", "system"],
+      "2 init_reserve": ["payer SW", "global", "reserve W", "mint", "system"],
+      "3 register_pool": ["payer SW", "global", "reserve W", "pool W", "mint", "system", "data: pool_id"],
+      "4 import_pool": ["admin SW", "global", "reserve W", "pool W", "data: holder, burn, owed"],
+      "5 seal": ["admin SW", "global", "reserve W", "vault W"],
+      "6 deposit": ["admin SW", "global", "reserve W", "pool W", "vault W", "source W", "mint", "token program", "data: amount, kind, decimals"],
+      "7 pay_holder": ["admin SW", "global", "reserve W", "pool W", "vault W", "dest W", "mint", "token program", "data: amount, decimals"],
+      "8 release_burn": "same accounts as pay, tag 8",
+      "9 claim_creator": "same accounts as pay, tag 9",
+      "10 set_paused": ["admin SW", "global W", "data: 0 or 1"],
+      "11 lp_fund": ["admin SW", "global", "reserve W", "vault W", "escrow W", "escrow token W", "mint", "token program", "system", "then up to 4 pool W", "data: batch, count, amounts"],
+      "12 lp_consume": ["admin SW", "global", "escrow W", "escrow token W", "dest W", "mint", "token program", "data: batch"],
+      "13 lp_refund": ["admin SW", "global", "reserve W", "vault W", "escrow W", "escrow token W", "mint", "token program", "then the same pools"],
+      "14 close_reserve": ["admin SW", "global", "reserve W"]
+    }
+  },
+  "per_pool_vault": {
+    "program_id": "6YMEjhBqVTMaSRWcmVkLrnHZ22FWEDJEpTeonAg8GKSy",
+    "seeds": ["xa/global", "xa/pool/pool_id", "xa/escrow/batch_u64"],
+    "instructions": {
+      "1 init_global": ["payer SW", "global W", "system"],
+      "2 register_pool": ["payer SW", "global", "pool W", "vault W", "mint", "system", "data: pool_id"],
+      "3 deposit": ["admin SW", "global", "pool W", "vault W", "source W", "mint", "token program"],
+      "4 pay_holder": ["admin SW", "global", "pool W", "vault W", "dest W", "mint", "token program"],
+      "5 release_burn": "same as pay, tag 5",
+      "6 claim_creator": "same as pay, tag 6",
+      "7 set_paused": ["admin SW", "global W", "data: 0 or 1"],
+      "8 migrate_in": ["admin SW", "global", "pool W", "vault W", "source W", "mint", "token program", "data: holder, burn, owed, decimals"],
+      "9 lp_fund": ["admin SW", "global", "escrow W", "escrow token W", "mint", "token program", "system", "then up to 4 pairs of pool W, vault W"],
+      "10 lp_consume": ["admin SW", "global", "escrow W", "escrow token W", "dest W", "mint", "token program"],
+      "11 lp_refund": ["admin SW", "global", "escrow W", "escrow token W", "mint", "token program", "then the same pairs"],
+      "12 close_pool": ["admin SW", "global", "pool W", "vault"]
+    }
+  }
+}

@@ -1,0 +1,13 @@
+[package]
+name = "shared_reserve"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "shared_reserve"
+
+[dependencies]
+solana-program = "=2.3.0"
+exp_common = { path = "../exp_common" }
