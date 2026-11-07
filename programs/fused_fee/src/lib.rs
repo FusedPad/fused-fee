@@ -1062,9 +1062,9 @@ pub mod fused_fee {
         //   [15] damm_program
         //   [16] QuoteStat PDA seeds=["qstat", token_a_mint]
         //   [17] QuoteStat PDA seeds=["qstat", token_b_mint]
-        //   [18..] writable PoolRecords for EVERY pool with quote in {token_a, token_b}
-        //          (count per mint MUST equal QuoteStat.pool_count), then CreatorOwed PDAs
-        //          (each AFTER its PoolRecord).
+        //   [18..] pairs: writable PoolRecord, then its CreatorOwed PDA ["cown", pool]
+        //          (empty PDA means owed = 0). One pair per pool. Repeats are rejected.
+        //          Count per mint must equal QuoteStat.pool_count.
         //
         // Per PoolRecord: lp_budget = burn_pot * lp_share_bps / 10000.
         // Spend from burn is capped by sum(budgets) on-chain (C2). Surplus (unbooked) may
@@ -1112,61 +1112,68 @@ pub mod fused_fee {
         let mut count_b: u64 = 0;
         let mut seen_pools: Vec<(Pubkey, Pubkey)> = Vec::new();
 
-        for ai in a.iter().skip(18) {
+        // Each pool is followed by its CreatorOwed PDA. An empty PDA means owed = 0.
+        // Repeating one pool to satisfy QuoteStat.pool_count is rejected.
+        let tail: Vec<&AccountInfo<'info>> = a.iter().skip(18).collect();
+        let mut i = 0usize;
+        while i < tail.len() {
+            let ai = tail[i];
             require_keys_eq!(*ai.owner, *ctx.program_id, FusedError::BadAutoLpAccounts);
-            let is_owed = {
-                let d = ai.try_borrow_data()?;
-                d.len() == OWED_LEN && d[..8] == OWED_TAG
-            };
-            if is_owed {
+            require!(ai.is_writable, FusedError::BadAutoLpAccounts);
+            let pr: Account<PoolRecord> = Account::try_from(ai)?;
+            let (expected, _) = Pubkey::find_program_address(&[b"pool", pr.pool.as_ref()], ctx.program_id);
+            require_keys_eq!(ai.key(), expected, FusedError::BadAutoLpAccounts);
+            require!(
+                !seen_pools.iter().any(|(p, _)| *p == pr.pool),
+                FusedError::BadAutoLpAccounts
+            );
+            let budget = (pr.burn_pot as u128)
+                .checked_mul(lp_share_bps as u128)
+                .ok_or(FusedError::Math)?
+                .checked_div(10_000u128)
+                .ok_or(FusedError::Math)? as u64;
+            if pr.quote_mint == auto_lp.token_a_mint {
+                holder_a = holder_a.checked_add(pr.holder_pot).ok_or(FusedError::Math)?;
+                burn_a = burn_a.checked_add(pr.burn_pot).ok_or(FusedError::Math)?;
+                budget_a = budget_a.checked_add(budget).ok_or(FusedError::Math)?;
+                count_a = count_a.checked_add(1).ok_or(FusedError::Math)?;
+            } else if pr.quote_mint == auto_lp.token_b_mint {
+                holder_b = holder_b.checked_add(pr.holder_pot).ok_or(FusedError::Math)?;
+                burn_b = burn_b.checked_add(pr.burn_pot).ok_or(FusedError::Math)?;
+                budget_b = budget_b.checked_add(budget).ok_or(FusedError::Math)?;
+                count_b = count_b.checked_add(1).ok_or(FusedError::Math)?;
+            } else {
+                return err!(FusedError::BadMint);
+            }
+            i += 1;
+            let owed_ai = tail.get(i).ok_or(error!(FusedError::BadAutoLpAccounts))?;
+            let owed_key = creator_owed_key(&pr.pool, ctx.program_id);
+            require_keys_eq!(owed_ai.key(), owed_key, FusedError::BadAutoLpAccounts);
+            let owed = if owed_ai.data_is_empty() {
+                0
+            } else {
+                require_keys_eq!(*owed_ai.owner, *ctx.program_id, FusedError::BadAutoLpAccounts);
                 let (pool, owed) = {
-                    let d = ai.try_borrow_data()?;
+                    let d = owed_ai.try_borrow_data()?;
+                    require!(d.len() == OWED_LEN && d[..8] == OWED_TAG, FusedError::BadAutoLpAccounts);
                     let pool = Pubkey::try_from(&d[8..40]).map_err(|_| error!(FusedError::BadCreator))?;
                     let owed = u64::from_le_bytes(d[40..48].try_into().unwrap());
                     (pool, owed)
                 };
-                require_keys_eq!(ai.key(), creator_owed_key(&pool, ctx.program_id), FusedError::BadAutoLpAccounts);
-                let quote = seen_pools
-                    .iter()
-                    .find(|(p, _)| *p == pool)
-                    .map(|(_, q)| *q)
-                    .ok_or_else(|| error!(FusedError::BadAutoLpAccounts))?;
-                if quote == auto_lp.token_a_mint {
-                    owed_a = owed_a.checked_add(owed).ok_or(FusedError::Math)?;
-                } else if quote == auto_lp.token_b_mint {
-                    owed_b = owed_b.checked_add(owed).ok_or(FusedError::Math)?;
-                } else {
-                    return err!(FusedError::BadMint);
-                }
+                require_keys_eq!(pool, pr.pool, FusedError::BadAutoLpAccounts);
+                owed
+            };
+            if pr.quote_mint == auto_lp.token_a_mint {
+                owed_a = owed_a.checked_add(owed).ok_or(FusedError::Math)?;
             } else {
-                require!(ai.is_writable, FusedError::BadAutoLpAccounts);
-                let pr: Account<PoolRecord> = Account::try_from(ai)?;
-                let (expected, _) = Pubkey::find_program_address(&[b"pool", pr.pool.as_ref()], ctx.program_id);
-                require_keys_eq!(ai.key(), expected, FusedError::BadAutoLpAccounts);
-                let budget = (pr.burn_pot as u128)
-                    .checked_mul(lp_share_bps as u128)
-                    .ok_or(FusedError::Math)?
-                    .checked_div(10_000u128)
-                    .ok_or(FusedError::Math)? as u64;
-                if pr.quote_mint == auto_lp.token_a_mint {
-                    holder_a = holder_a.checked_add(pr.holder_pot).ok_or(FusedError::Math)?;
-                    burn_a = burn_a.checked_add(pr.burn_pot).ok_or(FusedError::Math)?;
-                    budget_a = budget_a.checked_add(budget).ok_or(FusedError::Math)?;
-                    count_a = count_a.checked_add(1).ok_or(FusedError::Math)?;
-                } else if pr.quote_mint == auto_lp.token_b_mint {
-                    holder_b = holder_b.checked_add(pr.holder_pot).ok_or(FusedError::Math)?;
-                    burn_b = burn_b.checked_add(pr.burn_pot).ok_or(FusedError::Math)?;
-                    budget_b = budget_b.checked_add(budget).ok_or(FusedError::Math)?;
-                    count_b = count_b.checked_add(1).ok_or(FusedError::Math)?;
-                } else {
-                    return err!(FusedError::BadMint);
-                }
-                seen_pools.push((pr.pool, pr.quote_mint));
-                pool_ais.push(ai);
-                pool_keys.push(pr.pool);
-                pool_quotes.push(pr.quote_mint);
-                pool_budgets.push(budget);
+                owed_b = owed_b.checked_add(owed).ok_or(FusedError::Math)?;
             }
+            seen_pools.push((pr.pool, pr.quote_mint));
+            pool_ais.push(ai);
+            pool_keys.push(pr.pool);
+            pool_quotes.push(pr.quote_mint);
+            pool_budgets.push(budget);
+            i += 1;
         }
         // PERFECT M3: crank cannot understate the reserved set.
         require!(count_a == expect_a, FusedError::BadAutoLpAccounts);

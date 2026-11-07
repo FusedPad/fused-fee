@@ -2008,6 +2008,8 @@ fn auto_lp_call(
     for p in pools {
         let (rec, _) = pda(&[b"pool", p.as_ref()]);
         metas.push(AccountMeta::new(rec, false));
+        let (owed, _) = pda(&[b"cown", p.as_ref()]);
+        metas.push(AccountMeta::new_readonly(owed, false));
     }
     ix(IX_CRANK_AUTO_LP, &auto_lp_args(liq, thresh_a, thresh_b), metas)
 }
@@ -2091,11 +2093,10 @@ async fn known_gap_duplicate_and_owed(rt: &mut Rt, global: &Pubkey, admin: &Pubk
     ixn.accounts.push(AccountMeta::new(rec_dup, false));
     let (rec_b_meta, _) = pda(&[b"pool", pool_b.as_ref()]);
     ixn.accounts.push(AccountMeta::new(rec_b_meta, false));
+    let before_a = token_amount_of(&rt.account(&vault_a).await.unwrap());
     let res = rt.send(&[ixn], &[]).await;
-    assert_ok(&res, "known gap: duplicate pool alias and omitted creator owed");
-    assert_eq!(token_amount_of(&rt.account(&vault_a).await.unwrap()), 2_000);
-    assert_eq!(pool_pots(&rt.account(&rec_a2).await.unwrap()).1, 20_000, "omitted holder pot still booked");
-    assert_eq!(u64_at(&rt.account(&owed).await.unwrap().data, 40), 5_000, "owed still recorded");
-    // Vault can no longer cover the omitted holder.
-    assert!(token_amount_of(&rt.account(&vault_a).await.unwrap()) < 20_000);
+    assert_err(&res, ERR_BAD_AUTO_LP, "duplicate pool or omitted owed");
+    assert_eq!(token_amount_of(&rt.account(&vault_a).await.unwrap()), before_a);
+    assert_eq!(pool_pots(&rt.account(&rec_a2).await.unwrap()).1, 20_000);
+    assert_eq!(u64_at(&rt.account(&owed).await.unwrap().data, 40), 5_000);
 }
