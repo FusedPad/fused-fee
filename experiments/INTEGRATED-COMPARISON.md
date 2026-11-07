@@ -2,66 +2,127 @@
 
 https://github.com/FusedPad/fused-fee/pull/3
 
-These are experimental copies of `fused_fee`. They are not selected and they were not deployed. The earlier toy programs and `INTEGRATION-GAP.md` stay as prior evidence.
+These are experimental copies of `fused_fee`. Neither design is selected. Nothing here was deployed, spent, or sent to a public cluster. The earlier toy programs and `INTEGRATION-GAP.md` stay as prior evidence. The hashes in the previous revision of this note (`47360f8d…` / `1f23a817…`, and the untested 3Evo files `2f540943…` / `e8c8861a…`) are superseded by the binaries below.
 
-Both copies keep the seeds `global`, `pool`, `qstat`, and `cown`. The global PDA is still the Meteora fee-claimer and still signs the shared quote vault on a claim. Pool records stay at `["pool", pool]`.
+Both copies keep the seeds `global`, `pool`, `qstat`, and `cown`. The global PDA is still the Meteora fee-claimer and still signs the claim into the global quote vault. Pool records stay at `["pool", pool]`. Economics are unchanged: curve claims split 20/110 to burn and the rest to holders; a graduated claim sets aside 8/100 for the creator when that creator has no DAMM LP, then applies 20/110 to the rest; auto-LP still takes 5000 bps of the burn pot.
 
 ## What the bank actually ran
 
-SPL Token in the bank is real. The DBC claim is the local stand-in `mock_meteora`, which transfers 11000 quote tokens. It is not mainnet Meteora and it is not a permanent DAMM lock.
+SPL Token and Token-2022 inside the bank are the real programs. Meteora is `harness/mock_meteora.so`, loaded at both the DBC and DAMM ids. The mock claim moves the requested quote amount. The mock position-fee claim always moves 11000. The mock add-liquidity moves the two thresholds and sets a byte on the position. The mock permanent-lock sets a second byte. That is not a mainnet Meteora lock, and an escrow transfer is not permanent LP.
+
+The same cases were executed twice: once on the experiment ids, and once on separate local banks whose only program id was `3EvoYD7bjAgr5evMJDbsLdyNU32zXgKiBycKruojYxpD`. The 3Evo runs are not inferred from the other ids. Compute units differ between those builds.
+
+### Experiment ids
 
 | Case | Result | Compute units |
 | --- | --- | --- |
-| Shared reserve: seal an empty quote after one imported pool | pass | 11738 |
-| Shared reserve: mock claim books holder 9000, burn 2000, vault 11000, and the reserve matches | pass | 29138 |
-| Shared reserve: pay page v3 pays 9000 and the reserve holder total goes to 0 | pass | 35767 |
-| Shared reserve: release v2 sends burn 2000 to the admin token account | pass | 25358 |
-| Shared reserve: a new pool register without the reserve account | fails 6050 `ReserveMissing` | |
-| Per-pool: mock claim leaves the global vault at 0 and the pool vault at 11000 | pass | 36176 |
-| Per-pool: pay page v3 pays 9000 from the pool vault; the global vault stays 0 | pass | 33800 |
-| Token-2022 mint with no extensions, `check_quote_mint` on the shared build | pass | 1648 |
-| Token-2022 transfer fee above 1% | fails 6032 `TransferFeeTooHigh` | |
-| Token-2022 active transfer hook, on the per-pool build | fails 6029 `HookActive` | |
+| Shared: seal, mock claim 9000/2000, pay v3, release v2 | pass | 15161, 39247, 43764, 30889 |
+| Shared: register without the reserve | 6050 `ReserveMissing` | |
+| Shared: historical 8-account register (quote only, no QuoteStat) | 6048 `QuoteStatRequired` | |
+| Shared: claim before seal | 6052 `ReserveNotLive` | |
+| Shared: second import of the same pool during backfill | 6053 `AlreadyImported` | |
+| Shared: register during backfill, then seal | 6051 until that pool is imported, then seal succeeds | |
+| Shared: import after seal | 6052 | |
+| Shared: claim with the reserve omitted, and with a substituted account | 6050, then 6051 | |
+| Shared: two claims in one transaction, the second names a missing pool | both roll back; pot and vault stay 0 | |
+| Shared: pay v2 pays 18000 from two claims | pass | 41277 |
+| Shared: vault lowered by 1 with `set_account`, then release v1 | 6034 `VaultShort`, burn pot unchanged. This shortfall was manufactured. It is not a normal-sequence hole | |
+| Shared: direct burn clears the burn pot | pass | 23746 |
+| Shared: mock DAMM claim | holder 8280, burn 1840, creator owed 880 | 57058 |
+| Shared: creator claim pays 880; release v2 pays the 1840 burn | pass | 40409, 29387 |
+| Shared: DAMM claim without the tail accounts | rejected | |
+| Shared: Token-2022 pay of 10000 at 1% | source debited 10000, destination received 9900, fee 100 | 35755 |
+| Shared: auto-LP with 24 pools present, 2 listed | 24 accounts, 872 message bytes, 97551 CU. A 24-pool list is 68 accounts and 2324 bytes and was not sent | |
+| Shared: duplicate pool in that auto-LP list | 6045 | |
+| Shared: open a two-quote LP reservation, refund, refund again | second refund 6054. Vaults and burn pots return to the pre-open amounts | |
+| Shared: consume that reservation, then consume again | second consume rejected. Each quote's 500 units landed on a DAMM-authority token account | |
+| Per-pool: claim leaves global at 0 and the pool vault at 11000; pay v3 pays from the pool vault | pass | 47705, 41230 |
+| Per-pool: historical 8-account register | 6048 | |
+| Per-pool: two claims in one transaction | pool vault stays 0 | |
+| Per-pool: pay v2 pays 9000 from the pool vault; global stays 0 | pass | 40068 |
+| Per-pool: manufactured 1-unit short, then release v1 | 6034, burn stays 2000. Preexisting fixture | |
+| Per-pool: release v1 and direct burn both leave the global vault at 0 | pass | 17586, 18089 |
+| Per-pool: mock DAMM claim, creator claim of 880, release v2 of 1840 | pass, and the global vault is 0 after the claim | 56507, 27399, 20874 |
+| Per-pool: Token-2022 1% pay | debited 10000, received 9900, fee 100, from the pool vault | 45219 |
+| Per-pool: auto-LP with 24 pools present, 2 listed | 24 accounts, 872 bytes, 105994 CU. A full list is 90 accounts and 3050 bytes | |
+| Per-pool: reservation refund twice, then consume twice, across two quotes | same exactly-once result. Omitted pool burn stayed 2000 | |
+| Token-2022 mint with no extension | `check_quote_mint` passes | 2908 |
+| Token-2022 fee above 1%, and an active hook | 6032 and 6029 | |
 
-Numbers are in `experiments/results/integrated-fee.json`.
+The Token-2022 pay seeded the pot with `set_account` because the mock claim uses classic SPL `Transfer` and cannot fund a fee mint. The debit, the 100-unit fee, and the 9900 credit are the real Token-2022 program.
 
-## Binaries that were tested
+### 3Evo id, executed locally
+
+Same cases, one design per bank. Shared auto-LP on this id used 103563 CU. Per-pool auto-LP used 121018 CU. The 1% fee pay debited 10000 and credited 9900 on both. The 8-account register returned 6048 on both. Rows are in `experiments/results/integrated-3evo-shared-core.json`, `integrated-3evo-shared-rest.json`, `integrated-3evo-per-core.json`, and `integrated-3evo-per-rest.json`.
+
+## Binaries
+
+Release profile on both experiment crates: `overflow-checks`, `lto = fat`, `codegen-units = 1`, `opt-level = z`. That is the same shape as the production profile. Guards and tests were not removed to chase a smaller file.
 
 | Build | Program id | sha256 | Bytes |
 | --- | --- | --- | --- |
-| Shared reserve | `C1nBL5ufPcQvjkmj6hAmRgoLntHonMuf5WdxVxJenJaE` | `47360f8d231b3b641f5e7ff731a640e70964ea78839cb03e033cfd1badb9012b` | 708808 |
-| Per-pool vault | `C5hUUPNfyui9sr2EXzVgiZa733W1TRbUdvJcZLMFXdtw` | `1f23a817023547178a42caa8dfb3c4d961e987b5e339507c685cd7def07be56d` | 675704 |
+| Shared reserve | `C1nBL5ufPcQvjkmj6hAmRgoLntHonMuf5WdxVxJenJaE` | `1aa04cecefde0eb2ed3d6bfdca244bd754e7b395b8db98b6defdf3cfe5671c21` | 592760 |
+| Per-pool vault | `C5hUUPNfyui9sr2EXzVgiZa733W1TRbUdvJcZLMFXdtw` | `246f4e7b4cebf4e12516946163e6bd92bfab8fa56f7f5e78d8da5422dad4e398` | 563040 |
+| Shared, 3Evo id, executed | `3EvoYD7bjAgr5evMJDbsLdyNU32zXgKiBycKruojYxpD` | `9b903d8003a460cab19aa584c8774b9ac06c3e688dd741c2389cc5a68bc790a8` | 594040 |
+| Per-pool, 3Evo id, executed | `3EvoYD7bjAgr5evMJDbsLdyNU32zXgKiBycKruojYxpD` | `1447e565641b329eddfe384fb0deb17a82a18e73d667e8157aff1b0050092996` | 564320 |
 
-Source is `experiments/integrated/shared_fee` and `experiments/integrated/per_pool_fee`. Economics are unchanged: 20/110 burn, the rest holders, and 8/100 creator on a graduated claim when the creator has no DAMM LP.
+The 3Evo files are `experiments/artifacts/fused_fee-3evo-SHARED-RESERVE-experimental-DO-NOT-UPLOAD-YET.so` and `fused_fee-3evo-PER-POOL-experimental-DO-NOT-UPLOAD-YET.so`. They replace the older untested artifacts of the same names. Do not upload them.
 
-Shared design adds `["qres", quote_mint]`. Register requires it as `remaining_accounts[2]`, after the quote mint and QuoteStat. Claims, pay v2, pay v3, both burn releases, direct burn, creator claim, and auto-LP were patched to update that account and to refuse a payout when the vault is below the reserve total. This run executed register, claim, pay v3, and release v2.
+Buffer rent is `(128 + elf_bytes) * 3480 * 2`. Programdata extend past the recorded 522085 bytes is `(elf + 45 - 522085) * 3480 * 2`. Against the previously recorded rehearsal balance of 5.073546881 SOL, which was not read again in this run:
 
-Per-pool design keeps the claim landing in the global associated token account, then moves that delta into a token account owned by the pool record. Pay v3, release v2, release v1, direct burn, and creator claim were patched to sign with `["pool", pool, bump]` and to require that vault owner. This run executed the claim move and pay v3.
+| File | Buffer | Extend | Peak if both are funded together |
+| --- | --- | --- | --- |
+| 3Evo shared | 4.135409 SOL | 0.501120 SOL (72000 bytes) | 4.636529 SOL |
+| 3Evo per-pool | 3.928558 SOL | 0.294269 SOL (42280 bytes) | 4.222827 SOL |
 
-## Not executed in this run
+One of those peaks, by itself, is under the old recorded balance. Both buffers at the same time are about 8.06 SOL and do not fit. The extend is not refundable. The 530000-byte / 3.70 SOL buffer plan still does not cover either file. No buffer was created and no upgrade was sent.
 
-The handlers below are in the built files. This bank did not call them, so they are not passes:
+## Account ceiling
 
-- `crank_claim_damm` on either copy
-- pay page v2
-- `claim_creator_share`
-- `crank_burn_direct`
-- `crank_auto_lp` with the two reserve accounts at indexes 18 and 19 on the shared copy
-- a real Token-2022 transfer that charges a fee. The policy rejection above 1% ran. A transfer at or under 1% did not.
-- a manufactured short vault against the integrated reserve
-- two claims in one transaction
+`crank_auto_lp` no longer treats a full quote-group scan as the way to scale. Each call accepts 1 to 4 pools. The shared copy reads the quote's liability from `["qres", mint]`, not from the pools that happened to be listed. The per-pool copy moves only the listed pools' LP budgets out of those pools' own vaults. An omitted pool's burn pot stayed 2000 on both designs while 24 pools existed.
 
-`crank_auto_lp` still calls the Meteora stand-in for add and permanent lock when it is invoked. That CPI was not invoked here. A later devnet rehearsal is still required before anyone treats a lock as real. The per-pool claim test moves tokens with real SPL. It does not lock liquidity.
+A synthetic message that listed every pool was measured and not submitted: 68 accounts / 2324 bytes on the shared layout, 90 accounts / 3050 bytes on the per-pool layout. Both are past the 1232-byte packet and the 64-account lock limit. The executed call was 24 accounts and 872 bytes.
 
-## 3Evo offline files
+## Reservation
 
-Built after the tests, by changing only `declare_id` to `3EvoYD7bjAgr5evMJDbsLdyNU32zXgKiBycKruojYxpD`. They were not executed and not deployed. Seeds were not changed. Do not upload either one onto the funded rehearsal account until a migration is reviewed: claims and payouts fail closed until the new reserve is sealed, or until each pool vault exists.
+`open_lp_reservation`, `consume_lp_reservation`, and `refund_lp_reservation` are experimental. A batch id is `["lpbatch", id]`. Open moves at most four pools' LP budgets (5000 bps of each burn pot) into escrow ATAs owned by that batch, and it reduces those burn pots immediately so the same tokens cannot be paid out. Consume sends each escrow amount once to a token account owned by the DAMM pool authority. Refund sends it back and restores the pots. A second consume and a second refund fail. One batch in the test held two quote mints; each mint's vault plus escrow plus destination was conserved, and a pool that was not in the batch was unchanged.
 
-| File | sha256 | Bytes | Buffer rent | Programdata extend past 522085 |
-| --- | --- | --- | --- | --- |
-| `experiments/artifacts/fused_fee-3evo-SHARED-RESERVE-experimental-DO-NOT-UPLOAD-YET.so` | `2f5409438600c378f5e3bc926d3efcee77cdd9bb762f0f5ca2d99f8ff20ea319` | 711144 | 4.950453 SOL | 189104 bytes, 1.31616384 SOL |
-| `experiments/artifacts/fused_fee-3evo-PER-POOL-experimental-DO-NOT-UPLOAD-YET.so` | `e8c8861a91f333d71c785152b6ae1c537766d0ecc56dfde6e95d37239a3353aa` | 678040 | 4.720049 SOL | 156000 bytes, 1.08576 SOL |
+Consume does not call the mock add-liquidity. `crank_auto_lp` does. The reservation transfer is classic SPL `Transfer`. It is not the Token-2022 fee path, and it is not a permanent lock.
 
-Buffer rent uses `(128 + bytes) * 3480 * 2` and is refundable only if the buffer is closed. The extend is not. Both files are larger than the 530000-byte planning cap, so the 3.70 SOL buffer ceiling does not cover them. That is a real size blocker for uploading these builds onto the current rehearsal programdata under that plan. It is not a reason to upload the smaller toy programs instead. Those toys use different seeds and would leave the current vaults without a signer.
+## Caller matrix
 
-The smaller layout-compatible file from the previous note, sha256 `db42525e…`, is still the current fee program with the 3Evo id and no vault redesign. It is also not approved to deploy.
+Historical register is 7 named accounts plus the quote mint at `remaining_accounts[0]`. Both builds reject that call with 6048. That was executed on the experiment ids and on the 3Evo id. A shared register that includes QuoteStat and omits the reserve fails 6050.
+
+Shared claims, pay v2, pay v3, both releases, direct burn, the DAMM tail, and creator claim take the reserve account in the position named below. Until `seal_quote_reserve`, a claim fails 6052. Pay v3 of an empty page still returns before it reads the reserve; a page that would move tokens checks the reserve. The empty-page case was not the rejection under test.
+
+| Instruction | Shared accounts that changed | Per-pool accounts that changed |
+| --- | --- | --- |
+| `initialize` | unchanged: admin, global, system | same |
+| `init_quote_reserve` | new. admin, global, `["qres", mint]`, mint, system. State is backfill and no tokens move | not present |
+| `import_quote_reserve` | admin must be writable. Remaining: `["qimp", pool]` and system. A second import while backfilling is 6053. Import after seal is 6052 | not present |
+| `seal_quote_reserve` | requires `pool_count == imported` and vault >= holder + burn + owed. A pool registered during backfill blocks the seal until it is imported | not present |
+| `register_pool` | remaining: quote, QuoteStat, reserve | remaining: quote, QuoteStat. No reserve |
+| `crank_claim` | remaining[0] is the live reserve | remaining[0] is the pool vault. The claim still lands in the global ATA, then the delta moves | 
+| `crank_claim_damm` | the old 5 tail accounts, then the reserve | the old 5, then the pool vault |
+| `claim_creator_share` | the old 8, then the reserve. Pays the global vault | the old 8, and the vault must be the pool vault |
+| `crank_pay_page_v2` | `quote_reserve` after the native mint, before holder pairs | `quote_vault` is the pool vault. Transfers sign with `["pool", pool, bump]` |
+| `crank_pay_page_v3` | `quote_reserve` is the last named account | no reserve. The vault owner is the pool record |
+| `release_burn_pot` | remaining[0] is the reserve | the vault owner is the pool record |
+| `release_burn_pot_v2` | reserve is the last account | the vault is the pool ATA |
+| `crank_burn_direct` | remaining[0] is the reserve | the vault owner is the pool record |
+| `crank_auto_lp` | reserves at indexes 18 and 19, then pairs of pool and creator-owed. 1 to 4 pools | triples of pool, pool vault, creator-owed. 1 to 4 pools |
+| `open_lp_reservation` | groups of pool, global ATA, mint, escrow, reserve | groups of pool, pool vault, mint, escrow |
+| `consume_lp_reservation` | pairs of escrow and a DAMM-authority destination | same |
+| `refund_lp_reservation` | groups of escrow, source, pool, reserve | groups of escrow, source, pool |
+
+`init_auto_lp` and `set_auto_lp` keep their old accounts. The new reservation reads the auto-LP share from that PDA.
+
+## Unresolved
+
+- Neither design is chosen. Auto-LP stays off on production. Production `declare_id` was not edited.
+- The mock is not mainnet Meteora. A later rehearsal would still be required before a lock is treated as real.
+- The LP reservation and `crank_auto_lp` are both bounded to 4 pools. The reservation does not itself call add-liquidity.
+- The 1% fee transfer was a real Token-2022 pay. The pot it paid was seeded, because the mock claim cannot fund a fee mint.
+- Import was tested on local fixtures, including a pool registered while the reserve was still in backfill. The 19 live quote vaults were not imported.
+- Both ELFs are still over 530000 bytes. The 3.70 SOL buffer plan does not cover them. The previously recorded 5.07 SOL balance was not read again. No deployment was attempted.
+- The two designs cannot be buffered at the same time on that balance. An extend is permanent.

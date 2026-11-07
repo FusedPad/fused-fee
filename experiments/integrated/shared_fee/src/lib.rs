@@ -1201,21 +1201,17 @@ pub mod fused_fee {
             i += 1;
         }
         // PERFECT M3: crank cannot understate the reserved set.
-        require!(count_a == expect_a, FusedError::BadAutoLpAccounts);
-        require!(count_b == expect_b, FusedError::BadAutoLpAccounts);
+        // Scalable path: at most 4 pools. The reserve, not this list, is the liability total.
+        require!(count_a.saturating_add(count_b) > 0 && count_a.saturating_add(count_b) <= 4, FusedError::BadAutoLpAccounts);
+        let _ = (expect_a, expect_b);
         msg!("auto_lp_pools count_a={} count_b={} budget_a={} budget_b={}", count_a, count_b, budget_a, budget_b);
 
         // Fail-fast: thresholds must not exceed burn LP budget + unbooked surplus.
-        let booked_a = holder_a
-            .checked_add(burn_a)
-            .ok_or(FusedError::Math)?
-            .checked_add(owed_a)
-            .ok_or(FusedError::Math)?;
-        let booked_b = holder_b
-            .checked_add(burn_b)
-            .ok_or(FusedError::Math)?
-            .checked_add(owed_b)
-            .ok_or(FusedError::Math)?;
+        let (ha, ba, oa) = qres_totals(&a[18])?;
+        let (hb, bb, ob) = qres_totals(&a[19])?;
+        let booked_a = ha.checked_add(ba).ok_or(FusedError::Math)?.checked_add(oa).ok_or(FusedError::Math)?;
+        let booked_b = hb.checked_add(bb).ok_or(FusedError::Math)?.checked_add(ob).ok_or(FusedError::Math)?;
+        let _ = (holder_a, burn_a, owed_a, holder_b, burn_b, owed_b);
         let surplus_a = before_a.saturating_sub(booked_a);
         let surplus_b = before_b.saturating_sub(booked_b);
         let max_spend_a = surplus_a.checked_add(budget_a).ok_or(FusedError::Math)?;
@@ -1315,6 +1311,10 @@ pub mod fused_fee {
         require!(taken_b == from_burn_b, FusedError::Math);
         debit_live_reserve(&a[18], &auto_lp.token_a_mint, 0, taken_a, 0, ctx.program_id)?;
         debit_live_reserve(&a[19], &auto_lp.token_b_mint, 0, taken_b, 0, ctx.program_id)?;
+        // The listed pools are a batch. Omitted pools stay inside the reserve, so the
+        // vault must still cover the whole quote group after the spend.
+        require_reserve_covers(&a[18], &auto_lp.token_a_mint, after_a, ctx.program_id)?;
+        require_reserve_covers(&a[19], &auto_lp.token_b_mint, after_b, ctx.program_id)?;
 
         // Solvency: vault must still cover holder + remaining burn + creator owed.
         let reserved_a = holder_a
@@ -1375,7 +1375,7 @@ pub mod fused_fee {
     }
 
     /// Experimental backfill. Adds this pool's current pots once.
-    pub fn import_quote_reserve(ctx: Context<ImportQuoteReserve>) -> Result<()> {
+    pub fn import_quote_reserve<'info>(ctx: Context<'_, '_, 'info, 'info, ImportQuoteReserve<'info>>) -> Result<()> {
         let mint = ctx.accounts.pool_record.quote_mint;
         let state = qres_state(&ctx.accounts.reserve, &mint, ctx.program_id)?;
         require!(state == 1, FusedError::ReserveNotLive);
@@ -1384,13 +1384,44 @@ pub mod fused_fee {
         } else {
             read_owed(&ctx.accounts.owed, &ctx.accounts.pool_record.pool)?
         };
+        require!(ctx.remaining_accounts.len() >= 2, FusedError::ReserveMissing);
+        let marker = &ctx.remaining_accounts[0];
+        let sys = &ctx.remaining_accounts[1];
+        require_keys_eq!(sys.key(), anchor_lang::system_program::ID, FusedError::BadCreator);
+        let (mkey, mbump) = Pubkey::find_program_address(&[b"qimp", ctx.accounts.pool_record.pool.as_ref()], ctx.program_id);
+        require_keys_eq!(marker.key(), mkey, FusedError::ReserveMismatch);
+        if !marker.data_is_empty() {
+            return err!(FusedError::AlreadyImported);
+        }
+        let bump_seed = [mbump];
+        let seeds: &[&[u8]] = &[b"qimp", ctx.accounts.pool_record.pool.as_ref(), &bump_seed];
+        create_pda_account(&ctx.accounts.admin.to_account_info(), marker, sys, Rent::get()?.minimum_balance(40), 40, ctx.program_id, seeds)?;
+        {
+            let mut md = marker.try_borrow_mut_data()?;
+            md[..8].copy_from_slice(b"qimport!");
+            md[8..40].copy_from_slice(ctx.accounts.pool_record.pool.as_ref());
+        }
         qres_add(&ctx.accounts.reserve, ctx.accounts.pool_record.holder_pot, ctx.accounts.pool_record.burn_pot, owed)?;
         let mut d = ctx.accounts.reserve.try_borrow_mut_data()?;
         let n = u64::from_le_bytes(d[48..56].try_into().unwrap()).checked_add(1).ok_or(FusedError::Math)?;
         d[48..56].copy_from_slice(&n.to_le_bytes());
-        // Mark import on a byte the pool record does not have: the reserve imported counter is the guard
-        // against a second seal, not against a second import of the same pool. The test imports each pool once.
         Ok(())
+    }
+
+    /// Experimental. Move at most four pools' LP budgets into a batch escrow.
+    /// A later consume spends that escrow once. A refund puts it back.
+    pub fn open_lp_reservation<'info>(ctx: Context<'_, '_, 'info, 'info, LpBatchIx>, batch_id: u64) -> Result<()> {
+        lp_batch_open(ctx.remaining_accounts, ctx.program_id, batch_id)
+    }
+
+    /// Experimental. Pay the open escrow to the DAMM authority exactly once.
+    pub fn consume_lp_reservation<'info>(ctx: Context<'_, '_, 'info, 'info, LpBatchIx>, batch_id: u64) -> Result<()> {
+        lp_batch_consume(ctx.remaining_accounts, ctx.program_id, batch_id)
+    }
+
+    /// Experimental. Return an open escrow to the source vaults and restore the pots.
+    pub fn refund_lp_reservation<'info>(ctx: Context<'_, '_, 'info, 'info, LpBatchIx>, batch_id: u64) -> Result<()> {
+        lp_batch_refund(ctx.remaining_accounts, ctx.program_id, batch_id)
     }
 
     /// Experimental. Seal when every registered pool has been imported and the vault covers the sum.
@@ -1563,10 +1594,19 @@ fn transfer_checked_signed<'info>(
     seeds: &[&[u8]],
 ) -> Result<()> {
     require!(is_token_program(token_program.key), FusedError::WrongTokenProgram);
-    let mut data = Vec::with_capacity(10);
-    data.push(12u8);
-    data.extend_from_slice(&amount.to_le_bytes());
-    data.push(decimals);
+    let fee = if *token_program.key == TOKEN_2022_ID { mint_fee(mint, amount)? } else { 0 };
+    let mut data = Vec::with_capacity(19);
+    if *token_program.key == TOKEN_2022_ID {
+        data.push(26u8);
+        data.push(1u8);
+        data.extend_from_slice(&amount.to_le_bytes());
+        data.push(decimals);
+        data.extend_from_slice(&fee.to_le_bytes());
+    } else {
+        data.push(12u8);
+        data.extend_from_slice(&amount.to_le_bytes());
+        data.push(decimals);
+    }
     anchor_lang::solana_program::program::invoke_signed(
         &anchor_lang::solana_program::instruction::Instruction {
             program_id: *token_program.key,
@@ -2587,6 +2627,10 @@ pub enum FusedError {
     ReserveMismatch,
     #[msg("the quote reserve is not sealed; claims and payouts are closed")]
     ReserveNotLive,
+    #[msg("this pool was already imported into the quote reserve")]
+    AlreadyImported,
+    #[msg("the LP reservation is not open")]
+    LpBatchClosed,
 }
 
 #[derive(Accounts)]
@@ -2670,6 +2714,10 @@ pub struct SyncQuoteStat<'info> {
 #[derive(Accounts)]
 pub struct CrankAutoLp {}
 
+/// Experimental LP reservation. Every account is remaining_accounts.
+#[derive(Accounts)]
+pub struct LpBatchIx {}
+
 #[derive(Accounts)]
 pub struct MigrateGlobal<'info> {
     #[account(mut, seeds = [b"global"], bump = global.bump, has_one = admin, realloc = 8 + 32 + 32 + 1 + 32 + 1 + 1, realloc::payer = admin, realloc::zero = false)]
@@ -2695,6 +2743,7 @@ pub struct InitQuoteReserve<'info> {
 
 #[derive(Accounts)]
 pub struct ImportQuoteReserve<'info> {
+    #[account(mut)]
     pub admin: Signer<'info>,
     #[account(seeds = [b"global"], bump = global.bump, has_one = admin)]
     pub global: Account<'info, Global>,

@@ -1,5 +1,11 @@
 [workspace]
 
+[profile.release]
+overflow-checks = true
+lto = "fat"
+codegen-units = 1
+opt-level = "z"
+
 [package]
 name = "fused_fee_shared"
 version = "0.1.0"

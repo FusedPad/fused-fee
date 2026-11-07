@@ -1111,8 +1111,7 @@ pub mod fused_fee {
         require!(lp_share_bps <= 10_000, FusedError::BadAutoLpShare);
         msg!("auto_lp_share_bps={}", lp_share_bps);
 
-        let before_a = token_amount(tok_a)?;
-        let before_b = token_amount(tok_b)?;
+        // before_a / before_b are measured after pool vaults are gathered into the global ATAs.
 
         // Need quote stats + at least room for them; pools may be zero if both counts are 0.
         require!(a.len() >= 18, FusedError::BadAutoLpAccounts);
@@ -1147,6 +1146,7 @@ pub mod fused_fee {
         let mut count_a: u64 = 0;
         let mut count_b: u64 = 0;
         let mut seen_pools: Vec<(Pubkey, Pubkey)> = Vec::new();
+        let mut vault_ais: Vec<&AccountInfo<'info>> = Vec::new();
 
         // Each pool is followed by its CreatorOwed PDA. An empty PDA means owed = 0.
         // Repeating one pool to satisfy QuoteStat.pool_count is rejected.
@@ -1182,6 +1182,11 @@ pub mod fused_fee {
                 return err!(FusedError::BadMint);
             }
             i += 1;
+            let vault_ai = tail.get(i).ok_or(error!(FusedError::PoolVault))?;
+            let vault_prog = if pr.quote_mint == auto_lp.token_a_mint { prog_a } else { prog_b };
+            pool_vault_ok(vault_ai, ai.key, &pr.quote_mint, vault_prog.key)?;
+            vault_ais.push(vault_ai);
+            i += 1;
             let owed_ai = tail.get(i).ok_or(error!(FusedError::BadAutoLpAccounts))?;
             let owed_key = creator_owed_key(&pr.pool, ctx.program_id);
             require_keys_eq!(owed_ai.key(), owed_key, FusedError::BadAutoLpAccounts);
@@ -1212,9 +1217,30 @@ pub mod fused_fee {
             i += 1;
         }
         // PERFECT M3: crank cannot understate the reserved set.
-        require!(count_a == expect_a, FusedError::BadAutoLpAccounts);
-        require!(count_b == expect_b, FusedError::BadAutoLpAccounts);
+        require!(count_a.saturating_add(count_b) > 0 && count_a.saturating_add(count_b) <= 4, FusedError::BadAutoLpAccounts);
+        let _ = (expect_a, expect_b);
         msg!("auto_lp_pools count_a={} count_b={} budget_a={} budget_b={}", count_a, count_b, budget_a, budget_b);
+        for i in 0..pool_budgets.len() {
+            let budget = pool_budgets[i];
+            if budget == 0 {
+                continue;
+            }
+            let bump = {
+                let pr: Account<PoolRecord> = Account::try_from(pool_ais[i])?;
+                pr.bump
+            };
+            let quote = pool_quotes[i];
+            let pool_id = pool_keys[i];
+            let dest = if quote == auto_lp.token_a_mint { tok_a } else { tok_b };
+            let prog = if quote == auto_lp.token_a_mint { prog_a } else { prog_b };
+            let mint_ai = if quote == auto_lp.token_a_mint { mint_a } else { mint_b };
+            let dec = mint_ai.try_borrow_data()?[44];
+            let pb = [bump];
+            let seeds: &[&[u8]] = &[b"pool", pool_id.as_ref(), &pb];
+            transfer_checked_signed(prog, vault_ais[i], mint_ai, dest, pool_ais[i], budget, dec, seeds)?;
+        }
+        let before_a = token_amount(tok_a)?;
+        let before_b = token_amount(tok_b)?;
 
         // Fail-fast: thresholds must not exceed burn LP budget + unbooked surplus.
         let booked_a = holder_a
@@ -1336,14 +1362,35 @@ pub mod fused_fee {
             .ok_or(FusedError::Math)?
             .checked_add(owed_b)
             .ok_or(FusedError::Math)?;
-        require!(after_a >= reserved_a, FusedError::VaultShort);
-        require!(after_b >= reserved_b, FusedError::VaultShort);
+        // Listed pools' remaining liabilities stay in their own vaults, not the global ATA.
+        for i in 0..pool_ais.len() {
+            let pr: Account<PoolRecord> = Account::try_from(pool_ais[i])?;
+            let left = pr.holder_pot.checked_add(pr.burn_pot).ok_or(FusedError::Math)?;
+            let have = token_amount(vault_ais[i])?;
+            require!(have >= left, FusedError::VaultShort);
+        }
+        let _ = (reserved_a, reserved_b);
 
         msg!(
             "auto_lp_added={} spent_a={} spent_b={} from_burn_a={} from_burn_b={} reserved_a={} reserved_b={} lp_share_bps={}",
             liquidity_delta, spent_a, spent_b, from_burn_a, from_burn_b, reserved_a, reserved_b, lp_share_bps
         );
         Ok(())
+    }
+
+    /// Experimental. Move at most four pools' LP budgets from their own vaults into one escrow.
+    pub fn open_lp_reservation<'info>(ctx: Context<'_, '_, 'info, 'info, LpBatchIx>, batch_id: u64) -> Result<()> {
+        lp_batch_open(ctx.remaining_accounts, ctx.program_id, batch_id)
+    }
+
+    /// Experimental. Pay the open escrow to the DAMM authority exactly once.
+    pub fn consume_lp_reservation<'info>(ctx: Context<'_, '_, 'info, 'info, LpBatchIx>, batch_id: u64) -> Result<()> {
+        lp_batch_consume(ctx.remaining_accounts, ctx.program_id, batch_id)
+    }
+
+    /// Experimental. Return an open escrow to each pool vault and restore that pool's burn pot.
+    pub fn refund_lp_reservation<'info>(ctx: Context<'_, '_, 'info, 'info, LpBatchIx>, batch_id: u64) -> Result<()> {
+        lp_batch_refund(ctx.remaining_accounts, ctx.program_id, batch_id)
     }
 }
 
@@ -1495,10 +1542,19 @@ fn transfer_checked_signed<'info>(
     seeds: &[&[u8]],
 ) -> Result<()> {
     require!(is_token_program(token_program.key), FusedError::WrongTokenProgram);
-    let mut data = Vec::with_capacity(10);
-    data.push(12u8);
-    data.extend_from_slice(&amount.to_le_bytes());
-    data.push(decimals);
+    let fee = if *token_program.key == TOKEN_2022_ID { mint_fee(mint, amount)? } else { 0 };
+    let mut data = Vec::with_capacity(19);
+    if *token_program.key == TOKEN_2022_ID {
+        data.push(26u8);
+        data.push(1u8);
+        data.extend_from_slice(&amount.to_le_bytes());
+        data.push(decimals);
+        data.extend_from_slice(&fee.to_le_bytes());
+    } else {
+        data.push(12u8);
+        data.extend_from_slice(&amount.to_le_bytes());
+        data.push(decimals);
+    }
     anchor_lang::solana_program::program::invoke_signed(
         &anchor_lang::solana_program::instruction::Instruction {
             program_id: *token_program.key,
@@ -2509,6 +2565,8 @@ pub enum FusedError {
     QuoteStatUninitialized,
     #[msg("the pool vault is missing or is not owned by the pool record")]
     PoolVault,
+    #[msg("the LP reservation is not open")]
+    LpBatchClosed,
 }
 
 #[derive(Accounts)]
@@ -2590,6 +2648,10 @@ pub struct SyncQuoteStat<'info> {
 /// V5: accounts passed as remaining_accounts (keeps the binary small, same pattern as claim_creator_share).
 #[derive(Accounts)]
 pub struct CrankAutoLp {}
+
+/// Experimental LP reservation. Every account is remaining_accounts.
+#[derive(Accounts)]
+pub struct LpBatchIx {}
 
 #[derive(Accounts)]
 pub struct MigrateGlobal<'info> {
