@@ -1741,6 +1741,7 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
+ "bincode",
  "solana-account",
  "solana-account-info",
  "solana-hash",
@@ -1750,6 +1751,7 @@ dependencies = [
  "solana-program-test",
  "solana-pubkey",
  "solana-rent",
+ "solana-sha256-hasher",
  "solana-signer",
  "solana-system-interface",
  "solana-transaction",

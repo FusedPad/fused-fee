@@ -1,0 +1,22 @@
+{
+  "label": "pr-ae170b8",
+  "so_sha256": "1fdd85b47f76775c5937a21edf08e4e5db69b2c1f1df91185a653e53c8fa0968",
+  "so_bytes": 522968,
+  "rows": [
+    {"case":"old8-absent","caller":"8","counter":"absent","ok":false,"err":"6048","pool":false,"qs":"absent","cu":22437},
+    {"case":"new9-empty","caller":"9-writable","counter":"empty-pda","ok":false,"err":"6049","pool":false,"qs":"absent","cu":26628},
+    {"case":"new9-readonly","caller":"9-readonly","counter":"empty-pda","ok":false,"err":"6000","pool":false,"qs":"absent","cu":34936},
+    {"case":"index7-not-quote-8","caller":"8-wrong-index7","counter":"absent","ok":false,"err":"6048","pool":false,"qs":"absent","cu":22437},
+    {"case":"index7-not-quote-9","caller":"9-wrong-index7","counter":"existing-0","ok":false,"err":"6000","pool":false,"qs":"count=0 len=49 owner=AZY2uXFPUfgTkhoNaXNL3oaZMdb4r3NfHYymA3s4mMw9","cu":21496},
+    {"case":"new9-existing-4","caller":"9-writable","counter":"existing-4","ok":true,"err":"none","pool":true,"qs":"count=5 len=49 owner=AZY2uXFPUfgTkhoNaXNL3oaZMdb4r3NfHYymA3s4mMw9","cu":25399},
+    {"case":"stale-setup-old8","caller":"8","counter":"absent","ok":false,"err":"6048","pool":false,"qs":"absent","cu":20937},
+    {"case":"stale-absolute-7","caller":"9-writable","counter":"synced-7-zero-pools","ok":true,"err":"none","pool":true,"qs":"count=8 len=49 owner=AZY2uXFPUfgTkhoNaXNL3oaZMdb4r3NfHYymA3s4mMw9","cu":25399},
+    {"case":"sync-new-quote-0","caller":"sync","counter":"create-0","ok":true,"err":"none","pool":false,"qs":"count=0 len=49 owner=AZY2uXFPUfgTkhoNaXNL3oaZMdb4r3NfHYymA3s4mMw9","cu":20236},
+    {"case":"register-after-sync-0","caller":"9-writable","counter":"existing-0","ok":true,"err":"none","pool":true,"qs":"count=1 len=49 owner=AZY2uXFPUfgTkhoNaXNL3oaZMdb4r3NfHYymA3s4mMw9","cu":28399},
+    {"case":"sync-and-register-one-tx","caller":"sync+9","counter":"empty-then-0","ok":true,"err":"none","pool":true,"qs":"count=1 len=49 owner=AZY2uXFPUfgTkhoNaXNL3oaZMdb4r3NfHYymA3s4mMw9","cu":45635},
+    {"case":"two-registers-one-tx","caller":"9+9","counter":"existing-0","ok":true,"err":"none","pool":true,"qs":"count=2 len=49 owner=AZY2uXFPUfgTkhoNaXNL3oaZMdb4r3NfHYymA3s4mMw9","cu":50798},
+    {"case":"rollback-second-ix","caller":"9+9-bad","counter":"existing-0","ok":false,"err":"6000","pool":false,"qs":"count=0 len=49 owner=AZY2uXFPUfgTkhoNaXNL3oaZMdb4r3NfHYymA3s4mMw9 before=count=0 len=49 owner=AZY2uXFPUfgTkhoNaXNL3oaZMdb4r3NfHYymA3s4mMw9","cu":46643},
+    {"case":"rollback-wrong-qs","caller":"9-wrong-pda","counter":"absent","ok":false,"err":"6002","pool":false,"qs":"absent","cu":26543},
+    {"case":"tenth-ignored-or-not","caller":"10","counter":"existing-1","ok":true,"err":"none","pool":true,"qs":"count=2 len=49 owner=AZY2uXFPUfgTkhoNaXNL3oaZMdb4r3NfHYymA3s4mMw9","cu":37701}
+  ]
+}
