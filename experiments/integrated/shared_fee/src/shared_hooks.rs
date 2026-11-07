@@ -348,3 +348,50 @@ fn lp_batch_refund<'info>(a: &'info [AccountInfo<'info>], program_id: &Pubkey, b
     msg!("lp_batch_refunded id={}", batch_id);
     Ok(())
 }
+
+/// Return rent from an empty escrow. The batch account stays, so this batch id cannot be opened again.
+fn lp_batch_close_escrow<'info>(a: &'info [AccountInfo<'info>], program_id: &Pubkey, batch_id: u64) -> Result<()> {
+    require!(a.len() >= 5, FusedError::BadAutoLpAccounts);
+    let payer = &a[0];
+    require!(payer.is_signer && payer.is_writable, FusedError::NotCrank);
+    let global: Account<Global> = Account::try_from(&a[1])?;
+    require_keys_eq!(a[1].key(), Pubkey::find_program_address(&[b"global"], program_id).0, FusedError::BadAutoLpAccounts);
+    require!(payer.key() == global.admin || payer.key() == CRANK_AUTHORITY, FusedError::NotCrank);
+    let (state, n, bump) = lb_load(&a[2], batch_id, program_id)?;
+    require!(state == 2 || state == 3, FusedError::EscrowNotClosable);
+    let tprog = &a[3];
+    require!(is_token_program(tprog.key), FusedError::WrongTokenProgram);
+    let escrow = &a[4];
+    require!(escrow.is_writable, FusedError::BadVault);
+    require!(token_amount(escrow)? == 0, FusedError::EscrowNotClosable);
+    let (bkey, _) = lb_key(batch_id, program_id);
+    let mut matched = false;
+    for i in 0..n as usize {
+        let (_pool, mint, _source, _amount, _dest) = lb_entry(&a[2], i)?;
+        if escrow.key() == get_associated_token_address_with_program_id(&bkey, &mint, tprog.key) {
+            matched = true;
+            break;
+        }
+    }
+    require!(matched, FusedError::BadVault);
+    let idb = batch_id.to_le_bytes();
+    let bump_seed = [bump];
+    let seeds: &[&[u8]] = &[b"lpbatch", &idb, &bump_seed];
+    let mut data = vec![9u8];
+    anchor_lang::solana_program::program::invoke_signed(
+        &anchor_lang::solana_program::instruction::Instruction {
+            program_id: *tprog.key,
+            accounts: vec![
+                AccountMeta::new(*escrow.key, false),
+                AccountMeta::new(*payer.key, false),
+                AccountMeta::new_readonly(bkey, true),
+            ],
+            data,
+        },
+        &[escrow.clone(), payer.clone(), a[2].clone(), tprog.clone()],
+        &[seeds],
+    )?;
+    let _ = data;
+    msg!("lp_escrow_closed id={} batch_retained=1", batch_id);
+    Ok(())
+}

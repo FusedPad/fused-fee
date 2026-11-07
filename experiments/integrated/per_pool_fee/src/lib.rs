@@ -1392,6 +1392,17 @@ pub mod fused_fee {
     pub fn refund_lp_reservation<'info>(ctx: Context<'_, '_, 'info, 'info, LpBatchIx>, batch_id: u64) -> Result<()> {
         lp_batch_refund(ctx.remaining_accounts, ctx.program_id, batch_id)
     }
+
+    /// Close one empty escrow after the batch is consumed or refunded. The batch account stays.
+    pub fn close_lp_escrow<'info>(ctx: Context<'_, '_, 'info, 'info, LpBatchIx>, batch_id: u64) -> Result<()> {
+        lp_batch_close_escrow(ctx.remaining_accounts, ctx.program_id, batch_id)
+    }
+
+    /// Move old shared-vault tokens into this pool's vault. Refuses a fee-mint move that would
+    /// deliver less than the existing holder, burn, and creator liabilities.
+    pub fn migrate_pool_custody<'info>(ctx: Context<'_, '_, 'info, 'info, LpBatchIx>) -> Result<()> {
+        migrate_pool_custody_inner(ctx.remaining_accounts, ctx.program_id)
+    }
 }
 
 /// FIX: read (config, base_mint, is_migrated) from a Meteora DBC VirtualPool account.
@@ -2567,6 +2578,10 @@ pub enum FusedError {
     PoolVault,
     #[msg("the LP reservation is not open")]
     LpBatchClosed,
+    #[msg("the escrow still holds tokens or the batch is not finished")]
+    EscrowNotClosable,
+    #[msg("moving this fee-mint balance would deliver less than the existing liabilities")]
+    MigrationFeeShort,
 }
 
 #[derive(Accounts)]

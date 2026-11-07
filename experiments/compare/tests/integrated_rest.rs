@@ -3,6 +3,7 @@
 
 use solana_account::{Account, AccountSharedData};
 use solana_instruction::{AccountMeta, Instruction};
+use solana_keypair::Keypair;
 use solana_message::Message;
 use solana_program_test::{ProgramTest, ProgramTestContext};
 use solana_pubkey::Pubkey;
@@ -44,6 +45,11 @@ const IX_SEAL: [u8; 8] = [145, 255, 187, 175, 182, 82, 226, 114];
 const IX_OPEN: [u8; 8] = [199, 255, 0, 21, 197, 1, 87, 215];
 const IX_CONSUME: [u8; 8] = [79, 166, 172, 47, 219, 130, 169, 58];
 const IX_REFUND: [u8; 8] = [42, 187, 253, 194, 9, 216, 228, 107];
+const IX_CLOSE: [u8; 8] = [55, 254, 149, 79, 122, 41, 15, 20];
+const IX_IMPORT_OLD: [u8; 8] = [168, 188, 249, 36, 4, 67, 3, 37];
+const IX_MIGRATE: [u8; 8] = [7, 158, 186, 54, 226, 94, 254, 47];
+const IX_PAUSE: [u8; 8] = [91, 60, 125, 192, 176, 225, 166, 218];
+const MEMO: Pubkey = solana_pubkey::pubkey!("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
 const DBC_POOL_DISC: [u8; 8] = [213, 224, 5, 209, 98, 69, 119, 92];
 const DBC_CFG_DISC: [u8; 8] = [26, 108, 14, 123, 116, 230, 129, 43];
 
@@ -58,6 +64,25 @@ impl Rt {
         buf.extend_from_slice(data);
         let ix = Instruction { program_id: program, accounts, data: buf };
         let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], bh);
+        match self.ctx.banks_client.process_transaction_with_metadata(tx).await {
+            Ok(r) => match r.result {
+                Ok(()) => Ok(r.metadata.map(|m| m.compute_units_consumed).unwrap_or(0)),
+                Err(e) => Err(format!("{e:?} logs={:?}", r.metadata.map(|m| m.log_messages).unwrap_or_default())),
+            },
+            Err(e) => Err(format!("{e:?}")),
+        }
+    }
+    async fn send_with(&mut self, program: Pubkey, disc: [u8; 8], data: &[u8], accounts: Vec<AccountMeta>, extra: &[&Keypair]) -> Result<u64, String> {
+        self.slot += 1;
+        let _ = self.ctx.warp_to_slot(self.slot);
+        let bh = self.ctx.banks_client.get_latest_blockhash().await.unwrap();
+        let payer = self.ctx.payer.insecure_clone();
+        let mut buf = disc.to_vec();
+        buf.extend_from_slice(data);
+        let ix = Instruction { program_id: program, accounts, data: buf };
+        let mut signers: Vec<&Keypair> = vec![&payer];
+        signers.extend(extra);
+        let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &signers, bh);
         match self.ctx.banks_client.process_transaction_with_metadata(tx).await {
             Ok(r) => match r.result {
                 Ok(()) => Ok(r.metadata.map(|m| m.compute_units_consumed).unwrap_or(0)),
@@ -235,6 +260,8 @@ async fn shared_cases(rt: &mut Rt, prog: Pubkey, rows: &mut Vec<Rec>) {
     fee_mint_claim(rt, prog, &g, &admin, true, rows).await;
     two_pages(rt, prog, &g, &admin, true, rows).await;
     wsol_unwrap(rt, prog, &g, &admin, true, rows).await;
+    old_layout(rt, prog, &g, &admin, true, rows).await;
+    caller_matrix(rt, prog, &g, &admin, true, rows).await;
 }
 
 async fn per_cases(rt: &mut Rt, prog: Pubkey, rows: &mut Vec<Rec>) {
@@ -333,6 +360,8 @@ async fn per_cases(rt: &mut Rt, prog: Pubkey, rows: &mut Vec<Rec>) {
     fee_mint_claim(rt, prog, &g, &admin, false, rows).await;
     two_pages(rt, prog, &g, &admin, false, rows).await;
     wsol_unwrap(rt, prog, &g, &admin, false, rows).await;
+    old_layout(rt, prog, &g, &admin, false, rows).await;
+    caller_matrix(rt, prog, &g, &admin, false, rows).await;
 }
 
 async fn damm_and_creator(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey, shared: bool, rows: &mut Vec<Rec>) {
@@ -686,6 +715,45 @@ async fn autolp_and_batch(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey,
     assert_eq!((holder_a, holder_b), (9_000, 9_000));
     let omit_final = pots(&rt.acct(&omitted.prec).await.unwrap());
     assert_eq!(omit_final, before_omit, "omitted pool was not in the batch");
+
+    let batch_len = rt.acct(&batch2).await.unwrap().data.len();
+    let escrow_len = rt.acct(&e2a).await.unwrap().data.len();
+    let escrow_owner = rt.acct(&e2a).await.unwrap().owner;
+    rows.push(Rec(format!("{}-escrow-size", tag(shared)), batch_len == 564 && escrow_len == 165 && escrow_owner == spl_token::ID, format!("batch_bytes={batch_len} escrow_bytes={escrow_len} token_program={escrow_owner}"), 0));
+    let batch11 = pda(&prog, &[b"lpbatch", &11u64.to_le_bytes()]);
+    let e11a = ata(&batch11, &a.quote, &spl_token::ID);
+    let e11b = ata(&batch11, &b.quote, &spl_token::ID);
+    rt.store(&e11a, owned(spl_token::ID, token(&a.quote, &batch11, 0)));
+    rt.store(&e11b, owned(spl_token::ID, token(&b.quote, &batch11, 0)));
+    rt.send(prog, IX_OPEN, &11u64.to_le_bytes(), open_accounts(*admin, *g, batch11, auto, damm_pool, &a, &b, e11a, e11b, va, vb, shared)).await.expect("open funded batch");
+    let funded = amt(&rt.acct(&e11a).await.unwrap());
+    let close_funded = rt.send(prog, IX_CLOSE, &11u64.to_le_bytes(), vec![
+        AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(batch11, false),
+        AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(e11a, false),
+    ]).await;
+    rows.push(Rec(format!("{}-close-rejects-funded-escrow", tag(shared)), close_funded.is_err() && amt(&rt.acct(&e11a).await.unwrap()) == funded, format!("err={:?} still={funded}", close_funded.as_ref().err().and_then(|e| custom(e))), 0));
+    assert!(close_funded.is_err() && amt(&rt.acct(&e11a).await.unwrap()) == funded, "{close_funded:?}");
+    rt.send(prog, IX_REFUND, &11u64.to_le_bytes(), refund_accounts(*admin, *g, batch11, &a, &b, e11a, e11b, shared)).await.expect("refund funded batch");
+    let stranger = Keypair::new();
+    rt.store(&stranger.pubkey(), owned(system_program::ID, vec![]));
+    let stranger_close = rt.send_with(prog, IX_CLOSE, &2u64.to_le_bytes(), vec![
+        AccountMeta::new(stranger.pubkey(), true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(batch2, false),
+        AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(e2a, false),
+    ], &[&stranger]).await;
+    let closed = rt.send(prog, IX_CLOSE, &2u64.to_le_bytes(), vec![
+        AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(batch2, false),
+        AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(e2a, false),
+    ]).await;
+    let again_close = rt.send(prog, IX_CLOSE, &2u64.to_le_bytes(), vec![
+        AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(batch2, false),
+        AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(e2a, false),
+    ]).await;
+    let consume_after = rt.send(prog, IX_CONSUME, &2u64.to_le_bytes(), consume_to(*admin, *g, batch2, auto, damm_pool, e2a, va, e2b, vb)).await;
+    let batch_still = rt.acct(&batch2).await.unwrap();
+    let ok = stranger_close.is_err() && closed.is_ok() && again_close.is_err() && consume_after.is_err()
+        && batch_still.data.len() == 564 && batch_still.owner == prog && rt.acct(&e2a).await.is_none();
+    rows.push(Rec(format!("{}-escrow-close-keeps-batch", tag(shared)), ok, format!("stranger={:?} close={:?} replay={:?} consume_after={:?}", stranger_close.as_ref().err().and_then(|e| custom(e)), closed.as_ref().err(), again_close.as_ref().err().and_then(|e| custom(e)), consume_after.as_ref().err().and_then(|e| custom(e))), 0));
+    assert!(ok, "escrow close did not keep the batch tombstone");
 }
 
 struct Side { quote: Pubkey, reserve: Pubkey, pool: Pubkey, prec: Pubkey, vault: Pubkey, config: Pubkey, qsrc: Pubkey }
@@ -1112,4 +1180,246 @@ async fn wsol_unwrap(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey, shar
     let ok = after == before + 9_000 && pots(&rt.acct(&prec).await.unwrap()).0 == 0;
     rows.push(Rec(format!("{}-wsol-unwrap-pay-v2", tag(shared)), ok, format!("lamports_gained={}", after - before), cu));
     assert!(ok, "gained {}", after - before);
+}
+
+fn old_pool(prog: &Pubkey, pool: &Pubkey, base: &Pubkey, quote: &Pubkey, config: &Pubkey, holder: u64, burn: u64) -> (Pubkey, Account) {
+    let (prec, bump) = Pubkey::find_program_address(&[b"pool", pool.as_ref()], prog);
+    let mut d = vec![0u8; 162];
+    d[..8].copy_from_slice(&[117, 217, 136, 145, 181, 104, 107, 17]);
+    d[8..40].copy_from_slice(pool.as_ref());
+    d[40..72].copy_from_slice(base.as_ref());
+    d[72..104].copy_from_slice(quote.as_ref());
+    d[104..136].copy_from_slice(config.as_ref());
+    d[137..145].copy_from_slice(&1u64.to_le_bytes());
+    d[145..153].copy_from_slice(&holder.to_le_bytes());
+    d[153..161].copy_from_slice(&burn.to_le_bytes());
+    d[161] = bump;
+    (prec, Account { lamports: rent(162), data: d, owner: *prog, executable: false, rent_epoch: 0 })
+}
+
+fn old_owed(prog: &Pubkey, pool: &Pubkey, owed: u64) -> (Pubkey, Account) {
+    let (key, bump) = Pubkey::find_program_address(&[b"cown", pool.as_ref()], prog);
+    let mut d = vec![0u8; 57];
+    d[..8].copy_from_slice(&[83, 80, 110, 53, 75, 132, 102, 33]);
+    d[8..40].copy_from_slice(pool.as_ref());
+    d[40..48].copy_from_slice(&owed.to_le_bytes());
+    d[56] = bump;
+    (key, Account { lamports: rent(57), data: d, owner: *prog, executable: false, rent_epoch: 0 })
+}
+
+async fn old_layout(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey, shared: bool, rows: &mut Vec<Rec>) {
+    let base = Pubkey::new_unique();
+    rt.store(&base, owned(spl_token::ID, mint(6, admin)));
+    let config = Pubkey::new_unique();
+    let pool = Pubkey::new_unique();
+    if shared {
+        let quote = Pubkey::new_unique();
+        rt.store(&quote, owned(T22, fee_mint(6, admin)));
+        rt.store(&config, owned(DBC, dbc_cfg(&quote, g)));
+        rt.store(&pool, owned(DBC, dbc_pool(&config, admin, &base, 0)));
+        let (prec, acct) = old_pool(&prog, &pool, &base, &quote, &config, 8_000, 1_000);
+        rt.store(&prec, acct);
+        let (owed_key, owed_acct) = old_owed(&prog, &pool, 1_000);
+        rt.store(&owed_key, owed_acct);
+        let gvault = ata(g, &quote, &T22);
+        rt.store(&gvault, owned(T22, fee_token(&quote, g, 10_000)));
+        let reserve = pda(&prog, &[b"qres", quote.as_ref()]);
+        rt.send(prog, IX_INIT_RES, &[], vec![
+            AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(reserve, false),
+            AccountMeta::new_readonly(quote, false), AccountMeta::new_readonly(system_program::ID, false),
+        ]).await.expect("old init");
+        let marker = pda(&prog, &[b"qimp", pool.as_ref()]);
+        rt.send(prog, IX_IMPORT_OLD, &[], vec![
+            AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(reserve, false),
+            AccountMeta::new_readonly(prec, false), AccountMeta::new_readonly(owed_key, false),
+            AccountMeta::new(marker, false), AccountMeta::new_readonly(system_program::ID, false),
+        ]).await.expect("import existing");
+        rt.send(prog, IX_SEAL, &[], vec![
+            AccountMeta::new_readonly(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(reserve, false),
+            AccountMeta::new_readonly(quote, false), AccountMeta::new(gvault, false), AccountMeta::new_readonly(T22, false),
+        ]).await.expect("seal existing");
+        let res = rt.acct(&reserve).await.unwrap();
+        let rh = u64::from_le_bytes(res.data[56..64].try_into().unwrap());
+        let rb = u64::from_le_bytes(res.data[64..72].try_into().unwrap());
+        let ro = u64::from_le_bytes(res.data[72..80].try_into().unwrap());
+        let pots_now = pots(&rt.acct(&prec).await.unwrap());
+        let owed_now = u64::from_le_bytes(rt.acct(&owed_key).await.unwrap().data[40..48].try_into().unwrap());
+        let ok = rh == 8_000 && rb == 1_000 && ro == 1_000 && pots_now.0 == 8_000 && pots_now.1 == 1_000 && owed_now == 1_000 && amt(&rt.acct(&gvault).await.unwrap()) == 10_000;
+        rows.push(Rec("shared-old-layout-fee-mint-import".into(), ok, format!("reserve={rh}/{rb}/{ro} vault={}", amt(&rt.acct(&gvault).await.unwrap())), 0));
+        assert!(ok, "shared import changed liabilities");
+        rt.send(prog, IX_PAUSE, &[1], vec![AccountMeta::new_readonly(*admin, true), AccountMeta::new(*g, false)]).await.expect("pause");
+        let qsrc = Pubkey::new_unique();
+        rt.store(&qsrc, owned(T22, fee_token(&quote, g, 50_000)));
+        let base_dest = Pubkey::new_unique();
+        rt.store(&base_dest, owned(spl_token::ID, token(&base, g, 0)));
+        let base_vault = Pubkey::new_unique();
+        rt.store(&base_vault, owned(system_program::ID, vec![]));
+        let mut claim_data = Vec::new();
+        claim_data.extend_from_slice(&1u64.to_le_bytes());
+        claim_data.extend_from_slice(&10_000u64.to_le_bytes());
+        let paused = rt.send(prog, IX_CLAIM, &claim_data, vec![
+            AccountMeta::new_readonly(*g, false), AccountMeta::new(prec, false), AccountMeta::new_readonly(DBC_AUTH, false),
+            AccountMeta::new_readonly(config, false), AccountMeta::new(pool, false), AccountMeta::new(base_dest, false),
+            AccountMeta::new(gvault, false), AccountMeta::new(base_vault, false), AccountMeta::new(qsrc, false),
+            AccountMeta::new_readonly(base, false), AccountMeta::new_readonly(quote, false),
+            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new_readonly(T22, false),
+            AccountMeta::new_readonly(Pubkey::new_unique(), false), AccountMeta::new_readonly(DBC, false),
+            AccountMeta::new_readonly(spl_token::ID, false), AccountMeta::new(reserve, false),
+        ]).await;
+        let code = paused.as_ref().err().and_then(|e| custom(e));
+        let still = amt(&rt.acct(&gvault).await.unwrap()) == 10_000 && pots(&rt.acct(&prec).await.unwrap()).0 == 8_000;
+        rows.push(Rec("shared-paused-claim-keeps-import".into(), code == Some(6004) && still, format!("err={code:?}"), 0));
+        assert!(code == Some(6004) && still, "{paused:?}");
+        rt.send(prog, IX_PAUSE, &[0], vec![AccountMeta::new_readonly(*admin, true), AccountMeta::new(*g, false)]).await.expect("unpause");
+    } else {
+        let quote = Pubkey::new_unique();
+        rt.store(&quote, owned(T22, fee_mint(6, admin)));
+        rt.store(&config, owned(DBC, dbc_cfg(&quote, g)));
+        rt.store(&pool, owned(DBC, dbc_pool(&config, admin, &base, 0)));
+        let (prec, acct) = old_pool(&prog, &pool, &base, &quote, &config, 8_000, 1_000);
+        rt.store(&prec, acct);
+        let (owed_key, owed_acct) = old_owed(&prog, &pool, 1_000);
+        rt.store(&owed_key, owed_acct);
+        let gvault = ata(g, &quote, &T22);
+        rt.store(&gvault, owned(T22, fee_token(&quote, g, 10_000)));
+        let pvault = ata(&prec, &quote, &T22);
+        rt.store(&pvault, owned(T22, fee_token(&quote, &prec, 0)));
+        let moved = rt.send(prog, IX_MIGRATE, &[], vec![
+            AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec, false),
+            AccountMeta::new(gvault, false), AccountMeta::new(pvault, false), AccountMeta::new_readonly(quote, false),
+            AccountMeta::new_readonly(T22, false), AccountMeta::new_readonly(owed_key, false),
+        ]).await;
+        let code = moved.as_ref().err().and_then(|e| custom(e));
+        let pots_now = pots(&rt.acct(&prec).await.unwrap());
+        let owed_now = u64::from_le_bytes(rt.acct(&owed_key).await.unwrap().data[40..48].try_into().unwrap());
+        let ok = code == Some(6053) && pots_now.0 == 8_000 && pots_now.1 == 1_000 && owed_now == 1_000
+            && amt(&rt.acct(&gvault).await.unwrap()) == 10_000 && amt(&rt.acct(&pvault).await.unwrap()) == 0;
+        rows.push(Rec("per-fee-mint-migration-refuses-haircut".into(), ok, format!("err={code:?} vault={} pool_vault={} owed={owed_now}", amt(&rt.acct(&gvault).await.unwrap()), amt(&rt.acct(&pvault).await.unwrap())), 0));
+        assert!(ok, "{moved:?} pots={pots_now:?}");
+        let quote2 = Pubkey::new_unique();
+        let config2 = Pubkey::new_unique();
+        let pool2 = Pubkey::new_unique();
+        rt.store(&quote2, owned(spl_token::ID, mint(9, admin)));
+        rt.store(&config2, owned(DBC, dbc_cfg(&quote2, g)));
+        rt.store(&pool2, owned(DBC, dbc_pool(&config2, admin, &base, 0)));
+        let (prec2, acct2) = old_pool(&prog, &pool2, &base, &quote2, &config2, 9_000, 2_000);
+        rt.store(&prec2, acct2);
+        let gv2 = ata(g, &quote2, &spl_token::ID);
+        rt.store(&gv2, owned(spl_token::ID, token(&quote2, g, 11_000)));
+        let pv2 = ata(&prec2, &quote2, &spl_token::ID);
+        rt.store(&pv2, owned(spl_token::ID, token(&quote2, &prec2, 0)));
+        rt.send(prog, IX_MIGRATE, &[], vec![
+            AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(prec2, false),
+            AccountMeta::new(gv2, false), AccountMeta::new(pv2, false), AccountMeta::new_readonly(quote2, false),
+            AccountMeta::new_readonly(spl_token::ID, false),
+        ]).await.expect("classic migrate");
+        let p2 = pots(&rt.acct(&prec2).await.unwrap());
+        let ok2 = p2.0 == 9_000 && p2.1 == 2_000 && amt(&rt.acct(&pv2).await.unwrap()) == 11_000 && amt(&rt.acct(&gv2).await.unwrap()) == 0;
+        rows.push(Rec("per-classic-migration-preserves-pots".into(), ok2, format!("pool_vault={} pots={}/{}", amt(&rt.acct(&pv2).await.unwrap()), p2.0, p2.1), 0));
+        assert!(ok2, "classic migrate changed pots");
+    }
+}
+
+async fn caller_matrix(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey, shared: bool, rows: &mut Vec<Rec>) {
+    let quote = Pubkey::new_unique();
+    let base = Pubkey::new_unique();
+    let config = Pubkey::new_unique();
+    let pool = Pubkey::new_unique();
+    rt.store(&quote, owned(spl_token::ID, mint(9, admin)));
+    rt.store(&base, owned(spl_token::ID, mint(6, admin)));
+    rt.store(&config, owned(DBC, dbc_cfg(&quote, g)));
+    rt.store(&pool, owned(DBC, dbc_pool(&config, admin, &base, 0)));
+    let cfg = pda(&prog, &[b"config", quote.as_ref()]);
+    rt.send(prog, IX_REG_CFG, &quote.to_bytes(), vec![
+        AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new_readonly(config, false),
+        AccountMeta::new(cfg, false), AccountMeta::new_readonly(system_program::ID, false), AccountMeta::new_readonly(quote, false),
+    ]).await.expect("matrix cfg");
+    let mut data = Vec::new();
+    data.extend_from_slice(pool.as_ref());
+    data.extend_from_slice(base.as_ref());
+    data.extend_from_slice(quote.as_ref());
+    let prec = pda(&prog, &[b"pool", pool.as_ref()]);
+    let named = vec![
+        AccountMeta::new(*admin, true), AccountMeta::new_readonly(cfg, false), AccountMeta::new(prec, false),
+        AccountMeta::new_readonly(system_program::ID, false), AccountMeta::new_readonly(*g, false),
+        AccountMeta::new_readonly(pool, false), AccountMeta::new_readonly(config, false),
+    ];
+    let mut eight = named.clone();
+    eight.push(AccountMeta::new_readonly(quote, false));
+    let c8 = rt.send(prog, IX_REG_POOL, &data, eight).await.err().and_then(|e| custom(&e));
+    let qs = pda(&prog, &[b"qstat", quote.as_ref()]);
+    let mut empty_qs = named.clone();
+    empty_qs.push(AccountMeta::new_readonly(quote, false));
+    empty_qs.push(AccountMeta::new(qs, false));
+    let c_empty = rt.send(prog, IX_REG_POOL, &data, empty_qs).await.err().and_then(|e| custom(&e));
+    let mut sync = quote.to_bytes().to_vec();
+    sync.extend_from_slice(&0u64.to_le_bytes());
+    rt.send(prog, IX_SYNC, &sync, vec![
+        AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(qs, false), AccountMeta::new_readonly(system_program::ID, false),
+    ]).await.expect("matrix sync");
+    let reserve = pda(&prog, &[b"qres", quote.as_ref()]);
+    let mut no_res = named.clone();
+    no_res.push(AccountMeta::new_readonly(quote, false));
+    no_res.push(AccountMeta::new(qs, false));
+    let c_no_res = if shared { rt.send(prog, IX_REG_POOL, &data, no_res).await.err().and_then(|e| custom(&e)) } else { None };
+    if shared {
+        rt.send(prog, IX_INIT_RES, &[], vec![
+            AccountMeta::new(*admin, true), AccountMeta::new_readonly(*g, false), AccountMeta::new(reserve, false),
+            AccountMeta::new_readonly(quote, false), AccountMeta::new_readonly(system_program::ID, false),
+        ]).await.expect("matrix res");
+    }
+    let mut good = named.clone();
+    good.push(AccountMeta::new_readonly(quote, false));
+    good.push(AccountMeta::new(qs, false));
+    if shared { good.push(AccountMeta::new(reserve, false)); }
+    let reg = rt.send(prog, IX_REG_POOL, &data, good).await;
+    let ok = c8 == Some(6048) && c_empty == Some(6049) && reg.is_ok() && (!shared || c_no_res == Some(6050));
+    rows.push(Rec(format!("{}-caller-qstat-qres", tag(shared)), ok, format!("eight={c8:?} empty_qstat={c_empty:?} no_reserve={c_no_res:?} with_bootstrap={:?}", reg.is_ok()), 0));
+    assert!(ok, "eight={c8:?} empty={c_empty:?} nores={c_no_res:?} reg={reg:?}");
+    if shared {
+        let wire = register_wires(&prog, admin, &quote, &base, &pool, &config);
+        rows.push(Rec("register-signed-sizes".into(), wire.eight < 1232 && wire.with_qstat < 1232, format!("eight={} qstat={} qstat_qres={} memo_qstat={} sdk_create=blocked", wire.eight, wire.with_qstat, wire.with_both, wire.memo_qstat), 0));
+    }
+}
+
+struct Wires { eight: usize, with_qstat: usize, with_both: usize, memo_qstat: usize }
+
+fn register_wires(prog: &Pubkey, payer: &Pubkey, quote: &Pubkey, base: &Pubkey, pool: &Pubkey, config: &Pubkey) -> Wires {
+    let cfg = pda(prog, &[b"config", quote.as_ref()]);
+    let prec = pda(prog, &[b"pool", pool.as_ref()]);
+    let qs = pda(prog, &[b"qstat", quote.as_ref()]);
+    let qres = pda(prog, &[b"qres", quote.as_ref()]);
+    let mut data = IX_REG_POOL.to_vec();
+    data.extend_from_slice(pool.as_ref());
+    data.extend_from_slice(base.as_ref());
+    data.extend_from_slice(quote.as_ref());
+    let base_keys = vec![
+        AccountMeta::new(*payer, true), AccountMeta::new_readonly(cfg, false), AccountMeta::new(prec, false),
+        AccountMeta::new_readonly(system_program::ID, false), AccountMeta::new_readonly(pda(prog, &[b"global"]), false),
+        AccountMeta::new_readonly(*pool, false), AccountMeta::new_readonly(*config, false), AccountMeta::new_readonly(*quote, false),
+    ];
+    let mut with_qstat = base_keys.clone();
+    with_qstat.push(AccountMeta::new(qs, false));
+    let mut with_both = with_qstat.clone();
+    with_both.push(AccountMeta::new(qres, false));
+    let eight = signed_len(prog, &base_keys, &data, &[]);
+    let qstat_len = signed_len(prog, &with_qstat, &data, &[]);
+    let both_len = signed_len(prog, &with_both, &data, &[]);
+    let memo = Instruction { program_id: MEMO, accounts: vec![AccountMeta::new_readonly(Pubkey::new_unique(), true)], data: b"fusedpad".to_vec() };
+    let memo_len = signed_len(prog, &with_qstat, &data, &[memo]);
+    Wires { eight, with_qstat: qstat_len, with_both: both_len, memo_qstat: memo_len }
+}
+
+fn signed_len(prog: &Pubkey, keys: &[AccountMeta], data: &[u8], extra: &[Instruction]) -> usize {
+    let ix = Instruction { program_id: *prog, accounts: keys.to_vec(), data: data.to_vec() };
+    let mut ixs = vec![ix];
+    ixs.extend(extra.iter().cloned());
+    let msg = Message::new(&ixs, Some(&keys[0].pubkey));
+    let kp = Keypair::new();
+    let mut tx = Transaction::new_unsigned(msg);
+    tx.message.account_keys[0] = kp.pubkey();
+    // Size depends on key bytes only by width, not value. One or two signatures.
+    let n = tx.message.header.num_required_signatures as usize;
+    let msg_len = bincode::serialize(&tx.message).unwrap().len();
+    1 + n * 64 + msg_len
 }

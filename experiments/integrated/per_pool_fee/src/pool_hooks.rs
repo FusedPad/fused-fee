@@ -262,6 +262,95 @@ fn lp_batch_refund<'info>(a: &'info [AccountInfo<'info>], program_id: &Pubkey, b
     Ok(())
 }
 
+fn lp_batch_close_escrow<'info>(a: &'info [AccountInfo<'info>], program_id: &Pubkey, batch_id: u64) -> Result<()> {
+    require!(a.len() >= 5, FusedError::BadAutoLpAccounts);
+    let payer = &a[0];
+    require!(payer.is_signer && payer.is_writable, FusedError::NotCrank);
+    let global: Account<Global> = Account::try_from(&a[1])?;
+    require_keys_eq!(a[1].key(), Pubkey::find_program_address(&[b"global"], program_id).0, FusedError::BadAutoLpAccounts);
+    require!(payer.key() == global.admin || payer.key() == CRANK_AUTHORITY, FusedError::NotCrank);
+    let (state, n, bump) = lb_load(&a[2], batch_id, program_id)?;
+    require!(state == 2 || state == 3, FusedError::EscrowNotClosable);
+    let tprog = &a[3];
+    require!(is_token_program(tprog.key), FusedError::WrongTokenProgram);
+    let escrow = &a[4];
+    require!(escrow.is_writable, FusedError::BadVault);
+    require!(token_amount(escrow)? == 0, FusedError::EscrowNotClosable);
+    let (bkey, _) = lb_key(batch_id, program_id);
+    let mut matched = false;
+    for i in 0..n as usize {
+        let (_pool, mint, _source, _amount, _dest) = lb_entry(&a[2], i)?;
+        if escrow.key() == get_associated_token_address_with_program_id(&bkey, &mint, tprog.key) {
+            matched = true;
+            break;
+        }
+    }
+    require!(matched, FusedError::BadVault);
+    let idb = batch_id.to_le_bytes();
+    let bump_seed = [bump];
+    let seeds: &[&[u8]] = &[b"lpbatch", &idb, &bump_seed];
+    let mut data = vec![9u8];
+    anchor_lang::solana_program::program::invoke_signed(
+        &anchor_lang::solana_program::instruction::Instruction {
+            program_id: *tprog.key,
+            accounts: vec![
+                AccountMeta::new(*escrow.key, false),
+                AccountMeta::new(*payer.key, false),
+                AccountMeta::new_readonly(bkey, true),
+            ],
+            data,
+        },
+        &[escrow.clone(), payer.clone(), a[2].clone(), tprog.clone()],
+        &[seeds],
+    )?;
+    let _ = data;
+    msg!("lp_escrow_closed id={} batch_retained=1", batch_id);
+    Ok(())
+}
+
+/// Move an old shared-vault balance into the pool vault without reducing pots or creator owed.
+fn migrate_pool_custody_inner<'info>(a: &'info [AccountInfo<'info>], program_id: &Pubkey) -> Result<()> {
+    require!(a.len() >= 7, FusedError::PoolVault);
+    let payer = &a[0];
+    require!(payer.is_signer, FusedError::NotCrank);
+    let global: Account<Global> = Account::try_from(&a[1])?;
+    require_keys_eq!(a[1].key(), Pubkey::find_program_address(&[b"global"], program_id).0, FusedError::BadCreator);
+    require!(payer.key() == global.admin || payer.key() == CRANK_AUTHORITY, FusedError::NotCrank);
+    let pool_ai = &a[2];
+    let global_vault = &a[3];
+    let pool_vault = &a[4];
+    let mint = &a[5];
+    let tprog = &a[6];
+    let pr: Account<PoolRecord> = Account::try_from(pool_ai)?;
+    require_keys_eq!(pool_ai.key(), Pubkey::find_program_address(&[b"pool", pr.pool.as_ref()], program_id).0, FusedError::BadPool);
+    require_keys_eq!(mint.key(), pr.quote_mint, FusedError::BadMint);
+    require_keys_eq!(*mint.owner, *tprog.key, FusedError::WrongTokenProgram);
+    require_keys_eq!(global_vault.key(), get_associated_token_address_with_program_id(&a[1].key(), &pr.quote_mint, tprog.key), FusedError::BadVault);
+    pool_vault_ok(pool_vault, pool_ai.key, &pr.quote_mint, tprog.key)?;
+    let owed = if a.len() >= 8 && !a[7].data_is_empty() {
+        read_owed(&a[7], &pr.pool)?.0
+    } else { 0 };
+    let liability = pr.holder_pot.checked_add(pr.burn_pot).ok_or(FusedError::Math)?.checked_add(owed).ok_or(FusedError::Math)?;
+    let before_pots = (pr.holder_pot, pr.burn_pot);
+    let fee = if *tprog.key == TOKEN_2022_ID { mint_fee(mint, liability)? } else { 0 };
+    if fee > 0 {
+        msg!("migration_fee_short liability={} fee_if_transferred_as_is={}", liability, fee);
+        return err!(FusedError::MigrationFeeShort);
+    }
+    require!(token_amount(global_vault)? >= liability, FusedError::VaultShort);
+    let dec = mint.try_borrow_data()?[44];
+    let gb = [global.bump];
+    let seeds: &[&[u8]] = &[b"global", &gb];
+    let before = token_amount(pool_vault)?;
+    transfer_checked_signed(tprog, global_vault, mint, pool_vault, &a[1], liability, dec, seeds)?;
+    let landed = token_amount(pool_vault)?.checked_sub(before).ok_or(FusedError::Math)?;
+    require!(landed >= liability, FusedError::MigrationFeeShort);
+    let pr2: Account<PoolRecord> = Account::try_from(pool_ai)?;
+    require!(pr2.holder_pot == before_pots.0 && pr2.burn_pot == before_pots.1, FusedError::Math);
+    msg!("custody_moved={} pots_unchanged", landed);
+    Ok(())
+}
+
 fn move_claim_to_pool<'info>(
     token_program: &AccountInfo<'info>,
     global_vault: &AccountInfo<'info>,

@@ -1408,6 +1408,45 @@ pub mod fused_fee {
         Ok(())
     }
 
+    /// Backfill a pool the old program created before this reserve existed.
+    /// Increments both the pool count and the imported count. A pool already
+    /// counted by register_pool must use import_quote_reserve instead.
+    pub fn import_existing_pool<'info>(ctx: Context<'_, '_, 'info, 'info, ImportQuoteReserve<'info>>) -> Result<()> {
+        let mint = ctx.accounts.pool_record.quote_mint;
+        let state = qres_state(&ctx.accounts.reserve, &mint, ctx.program_id)?;
+        require!(state == 1, FusedError::ReserveNotLive);
+        let (owed, _) = if ctx.accounts.owed.data_is_empty() {
+            (0, 0)
+        } else {
+            read_owed(&ctx.accounts.owed, &ctx.accounts.pool_record.pool)?
+        };
+        require!(ctx.remaining_accounts.len() >= 2, FusedError::ReserveMissing);
+        let marker = &ctx.remaining_accounts[0];
+        let sys = &ctx.remaining_accounts[1];
+        require_keys_eq!(sys.key(), anchor_lang::system_program::ID, FusedError::BadCreator);
+        let (mkey, mbump) = Pubkey::find_program_address(&[b"qimp", ctx.accounts.pool_record.pool.as_ref()], ctx.program_id);
+        require_keys_eq!(marker.key(), mkey, FusedError::ReserveMismatch);
+        if !marker.data_is_empty() {
+            return err!(FusedError::AlreadyImported);
+        }
+        let bump_seed = [mbump];
+        let seeds: &[&[u8]] = &[b"qimp", ctx.accounts.pool_record.pool.as_ref(), &bump_seed];
+        create_pda_account(&ctx.accounts.admin.to_account_info(), marker, sys, Rent::get()?.minimum_balance(40), 40, ctx.program_id, seeds)?;
+        {
+            let mut md = marker.try_borrow_mut_data()?;
+            md[..8].copy_from_slice(b"qimport!");
+            md[8..40].copy_from_slice(ctx.accounts.pool_record.pool.as_ref());
+        }
+        qres_add(&ctx.accounts.reserve, ctx.accounts.pool_record.holder_pot, ctx.accounts.pool_record.burn_pot, owed)?;
+        let mut d = ctx.accounts.reserve.try_borrow_mut_data()?;
+        let imported = u64::from_le_bytes(d[48..56].try_into().unwrap()).checked_add(1).ok_or(FusedError::Math)?;
+        let pools = u64::from_le_bytes(d[40..48].try_into().unwrap()).checked_add(1).ok_or(FusedError::Math)?;
+        d[48..56].copy_from_slice(&imported.to_le_bytes());
+        d[40..48].copy_from_slice(&pools.to_le_bytes());
+        msg!("existing_imported holder={} burn={} owed={}", ctx.accounts.pool_record.holder_pot, ctx.accounts.pool_record.burn_pot, owed);
+        Ok(())
+    }
+
     /// Experimental. Move at most four pools' LP budgets into a batch escrow.
     /// A later consume spends that escrow once. A refund puts it back.
     pub fn open_lp_reservation<'info>(ctx: Context<'_, '_, 'info, 'info, LpBatchIx>, batch_id: u64) -> Result<()> {
@@ -1422,6 +1461,12 @@ pub mod fused_fee {
     /// Experimental. Return an open escrow to the source vaults and restore the pots.
     pub fn refund_lp_reservation<'info>(ctx: Context<'_, '_, 'info, 'info, LpBatchIx>, batch_id: u64) -> Result<()> {
         lp_batch_refund(ctx.remaining_accounts, ctx.program_id, batch_id)
+    }
+
+    /// Close one empty escrow after the batch is consumed or refunded.
+    /// The batch account is kept, so the same batch id cannot be opened again.
+    pub fn close_lp_escrow<'info>(ctx: Context<'_, '_, 'info, 'info, LpBatchIx>, batch_id: u64) -> Result<()> {
+        lp_batch_close_escrow(ctx.remaining_accounts, ctx.program_id, batch_id)
     }
 
     /// Experimental. Seal when every registered pool has been imported and the vault covers the sum.
@@ -2631,6 +2676,8 @@ pub enum FusedError {
     AlreadyImported,
     #[msg("the LP reservation is not open")]
     LpBatchClosed,
+    #[msg("the escrow still holds tokens or the batch is not finished")]
+    EscrowNotClosable,
 }
 
 #[derive(Accounts)]

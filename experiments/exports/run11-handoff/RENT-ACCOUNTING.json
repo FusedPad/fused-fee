@@ -1,0 +1,63 @@
+{
+  "source": "Crank read-only DEVNET RPC, finalized slot 519510577. This agent did not query, spend, or use a secret.",
+  "applies_to_sizes_only": {
+    "note": "These lamports supersede earlier rent rows and apply only to the byte sizes below. They are devnet figures for the c2083f7 binaries, not mainnet prices, and not the run11 ELF sizes.",
+    "c2083f7_shared_programdata_bytes": 598053,
+    "c2083f7_shared_programdata_lamports": 3038759480,
+    "c2083f7_per_programdata_bytes": 568597,
+    "c2083f7_per_programdata_lamports": 2889123000,
+    "c2083f7_shared_buffer_bytes": 598045,
+    "c2083f7_shared_buffer_lamports": 3038718840,
+    "c2083f7_per_buffer_bytes": 568589,
+    "c2083f7_per_buffer_lamports": 2889082360,
+    "existing_programdata_bytes": 522085,
+    "existing_programdata_lamports": 2652842040,
+    "existing_programdata": "CeFRF4rmjsUh17dfHf835xP9d4yf5iHrFxb8hD3dpFqa",
+    "upgrade_authority_balance_lamports": 5073546881,
+    "upgrade_authority": "HiRkRrxCgGzLV3WqKu7HxibS5kTVtDD6LW1vLKSH9Nxw",
+    "max_extend_lamports_shared_minus_existing": 385917440,
+    "per_extend_lamports_per_minus_existing": 236280960
+  },
+  "account_rents_same_slot": {
+    "quote_reserve_82_bytes_lamports": 1066800,
+    "import_marker_40_bytes_lamports": 853440,
+    "batch_564_bytes_lamports": 3515360
+  },
+  "multiplicities": {
+    "shared": {
+      "qres": "one per quote mint, retained for the life of that quote",
+      "import_marker": "one per pool, created by import, retained",
+      "global_quote_vault": "one per quote mint",
+      "batch_tombstone": "one per reservation id, retained on purpose so the id cannot be opened again",
+      "escrow": "one per quote mint inside that batch. Executed size 165 bytes, token program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA. Closable after the batch is consumed or refunded and the balance is zero. Devnet rent for 165 bytes was not in this Crank report."
+    },
+    "per_pool": {
+      "qres": "none",
+      "import_marker": "none",
+      "pool_vault": "one per pool, separate from the global vault. Classic tests use 165 bytes. A 1% fee-mint vault in the migration test is 178 bytes under TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb. Those rents were not in this Crank report.",
+      "global_quote_vault": "still one per quote, because a claim lands there before the move",
+      "batch_tombstone": "one per reservation id, same 564-byte retained account",
+      "escrow": "same 165-byte Tokenkeg account per mint in the batch, closable when empty and the batch is terminal"
+    },
+    "do_not": "Do not charge a quote reserve and an import marker on the per-pool design. Those accounts exist only on the shared design."
+  },
+  "six_hour_batch": {
+    "retained_per_new_batch_id_lamports": 3515360,
+    "retained_bytes": 564,
+    "why_retained": "Closing the batch account would let the same id be opened again. The escrow can be closed. The batch cannot.",
+    "escrow_rent": "returned to the admin when close_lp_escrow succeeds. Not priced here."
+  },
+  "run11_elfs_unpriced": {
+    "reason": "close_lp_escrow, import_existing_pool, and migrate_pool_custody changed the ELF. Slot 519510577 rents do not apply to these files.",
+    "shared_3evo_bytes": 609296,
+    "shared_3evo_programdata_bytes": 609341,
+    "shared_3evo_sha256": "659a899e2e6fdd1edd8dfec2a70a457c6f7d25d795155a7836a1f6751dfe5c93",
+    "per_3evo_bytes": 582240,
+    "per_3evo_programdata_bytes": 582285,
+    "per_3evo_sha256": "ee74870f323d797cb6d7b45aabaf4e7b7122333d27255cf14993a81f74f7f4c3",
+    "shared_expid_bytes": 608016,
+    "shared_expid_sha256": "b0ff39459ece549ace130a9d99e93efdcdbe33d5d9aecda2d04ba378be34a030",
+    "per_expid_bytes": 580960,
+    "per_expid_sha256": "47086d4d573f05e288196e3962e5c3baec5947004ac32b74ea7af46be8c9a467"
+  }
+}
