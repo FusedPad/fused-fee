@@ -1,0 +1,16 @@
+{"rows":[
+{"id":"shared-double-import","ok":true,"detail":"Some(6053)","cu":0},
+{"id":"shared-register-during-backfill-blocks-seal","ok":true,"detail":"Some(6051)","cu":0},
+{"id":"shared-import-after-seal","ok":true,"detail":"Some(6052)","cu":0},
+{"id":"shared-claim-omitted-reserve","ok":true,"detail":"Some(6050)","cu":0},
+{"id":"shared-claim-substituted-reserve","ok":true,"detail":"Some(6051)","cu":0},
+{"id":"shared-damm-omitted-tail","ok":true,"detail":"fail closed","cu":0},
+{"id":"shared-damm-claim","ok":true,"detail":"holder=8280 burn=1840 owed=880","cu":55558},
+{"id":"shared-creator-claim","ok":true,"detail":"paid 880 from the vault that holds the claim","cu":37415},
+{"id":"shared-release-v2","ok":true,"detail":"burn 1840 released","cu":27887},
+{"id":"shared-t22-fee-1pct-pay","ok":true,"detail":"debited=10000 received=9900 fee=100","cu":37252},
+{"id":"shared-autolp-duplicate-pool","ok":true,"detail":"Some(6045)","cu":0},
+{"id":"shared-autolp-bounded-past-22","ok":true,"detail":"executed_accounts=24 executed_bytes=872 cu=103563 full_accounts=68 full_bytes=2324 omitted_burn=2000","cu":103563},
+{"id":"shared-lp-refund-once","ok":true,"detail":"Some(6054)","cu":0},
+{"id":"shared-lp-consume-once-two-quotes","ok":true,"detail":"second consume rejected, both quote groups conserved","cu":0}
+]}

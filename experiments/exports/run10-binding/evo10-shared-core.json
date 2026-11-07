@@ -1,0 +1,16 @@
+{"shared_sha":"3deff208a647b64d6fa5fa11a9060821cfacdd16b93f2b012327cb6d8c91ec03","shared_bytes":598008,"per_sha":"","per_bytes":0,"rows":[
+{"id":"shared-seal","ok":true,"detail":"empty quote sealed","cu":13664},
+{"id":"shared-claim","ok":true,"detail":"holder=9000 burn=2000 vault=11000","cu":37810},
+{"id":"shared-pay-v3","ok":true,"detail":"paid=9000 reserve_holder=0","cu":42261},
+{"id":"shared-release","ok":true,"detail":"burn 2000 to admin","cu":27889},
+{"id":"shared-register-without-reserve","ok":true,"detail":"err=Some(6050)","cu":0},
+{"id":"shared-claim-before-seal","ok":true,"detail":"Some(6052)","cu":0},
+{"id":"shared-two-claim-rollback","ok":true,"detail":"neither pot nor vault moved","cu":0},
+{"id":"shared-pay-v2","ok":true,"detail":"paid=18000","cu":45771},
+{"id":"shared-preexisting-short-release-v1","ok":true,"detail":"err=Some(6034) burn_still=4000","cu":0},
+{"id":"shared-direct-burn","ok":true,"detail":"burn pot cleared","cu":26746},
+{"id":"shared-old-8-account-register","ok":true,"detail":"Some(6048)","cu":0},
+{"id":"t22-plain-check","ok":true,"detail":"Ok(2908)","cu":2908},
+{"id":"t22-fee-over-1pct","ok":true,"detail":"Some(6032)","cu":0},
+{"id":"t22-active-hook","ok":true,"detail":"active hook rejected","cu":0}
+]}

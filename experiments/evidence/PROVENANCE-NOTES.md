@@ -1,0 +1,6 @@
+# Provenance / notes for WEB-BUILDER-AUDIT-20261107.md
+- Source: Michael pasted the web builder's reply in chat message t661u (7 Nov 2026 ~01:00 UTC = 01:00 Europe/Isle_of_Man). Saved verbatim from the full t661u text given to this agent (NOT the partial t660u).
+- Status: user-pasted builder ASSERTIONS. Not independently verified by Solana Dev; no website source read; builder reports no git HEAD, so no source revision.
+- Consistent with box history: /workspace/security-autolp-review/MAINNET-UPGRADE-PLAN.md L36 and Nov 1 audit RegisterPool log "quote_stat omitted at rem[1]" (site sends 7 named + quote mint, no QuoteStat).
+- WARNING: builder section 8 "Program first" rollout is UNVERIFIED and DANGEROUS if the program makes QuoteStat mandatory: old clients (8 accounts) would fail every register once the program is upgraded, before the site updates. Before choosing an order: simulate old-8 and new-9 account calls against BOTH old and new program builds; preflight QuoteStat init for existing quotes and for brand-new quote mints (the site never creates QuoteStat); check 1232-byte fit/bundling and /admin batch size.
+- No code edits, secrets, env, keyfiles, external services or transactions were used to make these files.

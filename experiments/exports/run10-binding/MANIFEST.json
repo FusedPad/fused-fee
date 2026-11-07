@@ -1,0 +1,38 @@
+{
+  "run": "run10-binding",
+  "supersedes": "run9 commit 399c08b. Those ELFs are unsafe experimental because reservation consume paid 250 to a DAMM-authority token account that was not the configured vault.",
+  "unsafe_hashes_do_not_upload": [
+    {"sha256": "9b903d8003a460cab19aa584c8774b9ac06c3e688dd741c2389cc5a68bc790a8", "bytes": 594040, "role": "run9 3Evo shared"},
+    {"sha256": "1447e565641b329eddfe384fb0deb17a82a18e73d667e8157aff1b0050092996", "bytes": 564320, "role": "run9 3Evo per"},
+    {"sha256": "1aa04cecefde0eb2ed3d6bfdca244bd754e7b395b8db98b6defdf3cfe5671c21", "bytes": 592760, "role": "run9 experiment-id shared"},
+    {"sha256": "246f4e7b4cebf4e12516946163e6bd92bfab8fa56f7f5e78d8da5422dad4e398", "bytes": 563040, "role": "run9 experiment-id per"}
+  ],
+  "build": {
+    "tool": "cargo-build-sbf --arch v0 --tools-version v1.58 --offline",
+    "profile": {"overflow-checks": true, "lto": "fat", "codegen-units": 1, "opt-level": "z"},
+    "anchor_lang": "0.31.1",
+    "idl": "not emitted. See INSTRUCTION-CONTRACT.json"
+  },
+  "binaries": [
+    {"role": "3evo-shared", "bytes": 598008, "sha256": "3deff208a647b64d6fa5fa11a9060821cfacdd16b93f2b012327cb6d8c91ec03", "program_id": "3EvoYD7bjAgr5evMJDbsLdyNU32zXgKiBycKruojYxpD", "programdata_bytes": 598053},
+    {"role": "3evo-per", "bytes": 568552, "sha256": "60d036ae8a8a2fd0ffd92cba67378cfc9d6be795bb441434d07a9221d9ba9265", "program_id": "3EvoYD7bjAgr5evMJDbsLdyNU32zXgKiBycKruojYxpD", "programdata_bytes": 568597},
+    {"role": "expid-shared", "bytes": 596728, "sha256": "2e631f6b54e7b718d21a9c4a4d7dbdcb8ec2bea3059f359ab35dcfbea4dd11cc", "program_id": "C1nBL5ufPcQvjkmj6hAmRgoLntHonMuf5WdxVxJenJaE"},
+    {"role": "expid-per", "bytes": 567272, "sha256": "af8e96981e01df03a658dc3fee4348ff25d1a5b75e01ec84bfceb1e753070e6f", "program_id": "C5hUUPNfyui9sr2EXzVgiZa733W1TRbUdvJcZLMFXdtw"}
+  ],
+  "rent": {
+    "crank_slot_519505861_applies_only_to_unsafe_594040_and_564320": true,
+    "new_sizes_unpriced": "Do not reuse 3.018602040 or 2.867624440 SOL, and do not use 6960 lamports per byte. Crank's next envelope has to be read for programdata lengths 598053 and 568597. Devnet rents are not mainnet prices. Keep the 0.5 SOL reserve. This run spent nothing."
+  },
+  "binding": {
+    "run9": "FAIL both designs, unbound DAMM-authority account received 250",
+    "run10": "PASS both designs on experiment ids and on 3Evo. User, same-authority alternate, wrong quote, and wrong pool return 6027. Wrong escrow returns 6024. Escrow, burn, holder, and configured vault balances stay unchanged. The vaults named inside the configured DAMM pool account receive 500 each. Consume is not add_liquidity and not a lock."
+  },
+  "case_counts": {
+    "expid_integrated_fee_json": {"rows": 17, "harness_fail": 0},
+    "expid_integrated_rest_json": {"rows": 42, "harness_fail": 0, "includes_binding_rejections": true},
+    "evo_shared_core": {"rows": 14, "harness_fail": 0},
+    "evo_shared_rest": {"rows": 21, "harness_fail": 0},
+    "evo_per_core": {"rows": 6, "harness_fail": 0},
+    "evo_per_rest": {"rows": 21, "harness_fail": 0}
+  }
+}

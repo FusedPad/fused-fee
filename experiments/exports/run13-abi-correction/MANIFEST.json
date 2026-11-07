@@ -1,0 +1,18 @@
+{
+  "bundle": "run13-abi-correction-bundle.tar",
+  "kind": "documentation correction only",
+  "source_pin": "380a54d",
+  "program_source_changed": false,
+  "elfs_rebuilt": false,
+  "previous_bundle_sha256": "ee634954e991cc4eb5d16e234c649f854a335b3fc9480994942d0f6922f835c4",
+  "elfs_kept": [
+    {"role": "3Evo shared", "bytes": 621672, "sha256": "d87ce272c943bb7b115cc7c2555f1977e38244d2beac576d727d4a7347f834b6"},
+    {"role": "3Evo per-pool", "bytes": 607824, "sha256": "225c7768650666540c5f66d82ea2c4ac2be7567f9189ff998648abc1cc63fba9"},
+    {"role": "experiment-id shared", "bytes": 620392, "sha256": "cb0b1d4952e8123a29a2e8cd80d243faab4c8be54c90cb07b215ae0de4ada92c"},
+    {"role": "experiment-id per-pool", "bytes": 606544, "sha256": "321acc6eedf0d8a510c968eac64a6e853e75f3a6138a3625d18eeb7f5fff13bf"}
+  ],
+  "schema": "custom raw ABI. No Anchor IDL is emitted by the sbf build.",
+  "prices": "Unchanged. Crank's rents for 621672 and 607824 still apply because the bytes did not change.",
+  "fee_mint": "6053 remains a refusal. No product choice was added.",
+  "mock": "mock_meteora is not a real Meteora lock."
+}

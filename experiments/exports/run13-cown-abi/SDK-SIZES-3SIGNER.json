@@ -1,0 +1,437 @@
+{
+  "label": "LOCAL_FIXTURE_NOT_A_DEPLOYED_CONFIG",
+  "notLiveParity": "Not a live site transaction. Config account was encoded in this process. No RPC read and no submission.",
+  "packages": {
+    "dbc": "1.5.13",
+    "web3": "1.99.0",
+    "splToken": "0.4.14",
+    "verifiedBy": "npm view exact version"
+  },
+  "memo": {
+    "program": "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr",
+    "text": "fusedpad",
+    "signer": "distinct launch signer, not the fee payer, not writable"
+  },
+  "priorityMicroLamports": 100000,
+  "computeLimit": {
+    "units": 1400000,
+    "source": "builder cap, not a simulation",
+    "droppedWhenSerializedBytesExceed": 1232,
+    "note": "The limit instruction is 5 bytes. A different unit count does not change the packet size."
+  },
+  "previousRun12Mistake": "Memo was signed by the fee payer, so the packet had two signatures. The saved builder uses a third, distinct launch signer.",
+  "wsol": {
+    "quote": "So11111111111111111111111111111111111111112",
+    "buyAmount": 100000000,
+    "minimumAmountOut": 0,
+    "designs": {
+      "shared": {
+        "program": "C1nBL5ufPcQvjkmj6hAmRgoLntHonMuf5WdxVxJenJaE",
+        "registerAccounts": 10,
+        "oneStep_withFirstBuy": {
+          "memoKept": true,
+          "registerKept": false,
+          "rejectedCombinedBytes": 1426,
+          "limitKept": true,
+          "budget": 1152,
+          "limitUnits": 1400000,
+          "simulated": false,
+          "tx": {
+            "bytes": 1125,
+            "signatures": 3,
+            "instructions": 10,
+            "accounts": 21,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn",
+              "6oGWXXpULvUqyMoZ2fqwZzb4GQxor1DyGXHzX6eo4Jxv",
+              "2QakZ2PKNgJ2Rxqrvvwr9pJFaw1ZN5hyq7jk7qtGt3ci"
+            ]
+          }
+        },
+        "oneStep_noFirstBuy": {
+          "memoKept": true,
+          "registerKept": false,
+          "rejectedCombinedBytes": 1206,
+          "limitKept": true,
+          "budget": 1152,
+          "limitUnits": 1400000,
+          "simulated": false,
+          "tx": {
+            "bytes": 905,
+            "signatures": 3,
+            "instructions": 4,
+            "accounts": 17,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn",
+              "6oGWXXpULvUqyMoZ2fqwZzb4GQxor1DyGXHzX6eo4Jxv",
+              "2QakZ2PKNgJ2Rxqrvvwr9pJFaw1ZN5hyq7jk7qtGt3ci"
+            ]
+          }
+        },
+        "twoStep_withFirstBuy": {
+          "tx1": {
+            "bytes": 1125,
+            "signatures": 3,
+            "instructions": 10,
+            "accounts": 21,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn",
+              "6oGWXXpULvUqyMoZ2fqwZzb4GQxor1DyGXHzX6eo4Jxv",
+              "2QakZ2PKNgJ2Rxqrvvwr9pJFaw1ZN5hyq7jk7qtGt3ci"
+            ]
+          },
+          "tx1_memoKept": true,
+          "tx1_limitKept": true,
+          "tx2_register": {
+            "bytes": 623,
+            "signatures": 1,
+            "instructions": 3,
+            "accounts": 12,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn"
+            ]
+          },
+          "tx2_limitKept": true
+        },
+        "twoStep_noFirstBuy": {
+          "tx1": {
+            "bytes": 905,
+            "signatures": 3,
+            "instructions": 4,
+            "accounts": 17,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn",
+              "6oGWXXpULvUqyMoZ2fqwZzb4GQxor1DyGXHzX6eo4Jxv",
+              "2QakZ2PKNgJ2Rxqrvvwr9pJFaw1ZN5hyq7jk7qtGt3ci"
+            ]
+          },
+          "tx1_memoKept": true,
+          "tx1_limitKept": true,
+          "tx2_register": {
+            "bytes": 623,
+            "signatures": 1,
+            "instructions": 3,
+            "accounts": 12,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn"
+            ]
+          },
+          "tx2_limitKept": true
+        }
+      },
+      "per_pool": {
+        "program": "C5hUUPNfyui9sr2EXzVgiZa733W1TRbUdvJcZLMFXdtw",
+        "registerAccounts": 9,
+        "oneStep_withFirstBuy": {
+          "memoKept": true,
+          "registerKept": false,
+          "rejectedCombinedBytes": 1393,
+          "limitKept": true,
+          "budget": 1152,
+          "limitUnits": 1400000,
+          "simulated": false,
+          "tx": {
+            "bytes": 1125,
+            "signatures": 3,
+            "instructions": 10,
+            "accounts": 21,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn",
+              "6oGWXXpULvUqyMoZ2fqwZzb4GQxor1DyGXHzX6eo4Jxv",
+              "2QakZ2PKNgJ2Rxqrvvwr9pJFaw1ZN5hyq7jk7qtGt3ci"
+            ]
+          }
+        },
+        "oneStep_noFirstBuy": {
+          "memoKept": true,
+          "registerKept": false,
+          "rejectedCombinedBytes": 1173,
+          "limitKept": true,
+          "budget": 1152,
+          "limitUnits": 1400000,
+          "simulated": false,
+          "tx": {
+            "bytes": 905,
+            "signatures": 3,
+            "instructions": 4,
+            "accounts": 17,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn",
+              "6oGWXXpULvUqyMoZ2fqwZzb4GQxor1DyGXHzX6eo4Jxv",
+              "2QakZ2PKNgJ2Rxqrvvwr9pJFaw1ZN5hyq7jk7qtGt3ci"
+            ]
+          }
+        },
+        "twoStep_withFirstBuy": {
+          "tx1": {
+            "bytes": 1125,
+            "signatures": 3,
+            "instructions": 10,
+            "accounts": 21,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn",
+              "6oGWXXpULvUqyMoZ2fqwZzb4GQxor1DyGXHzX6eo4Jxv",
+              "2QakZ2PKNgJ2Rxqrvvwr9pJFaw1ZN5hyq7jk7qtGt3ci"
+            ]
+          },
+          "tx1_memoKept": true,
+          "tx1_limitKept": true,
+          "tx2_register": {
+            "bytes": 590,
+            "signatures": 1,
+            "instructions": 3,
+            "accounts": 11,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn"
+            ]
+          },
+          "tx2_limitKept": true
+        },
+        "twoStep_noFirstBuy": {
+          "tx1": {
+            "bytes": 905,
+            "signatures": 3,
+            "instructions": 4,
+            "accounts": 17,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn",
+              "6oGWXXpULvUqyMoZ2fqwZzb4GQxor1DyGXHzX6eo4Jxv",
+              "2QakZ2PKNgJ2Rxqrvvwr9pJFaw1ZN5hyq7jk7qtGt3ci"
+            ]
+          },
+          "tx1_memoKept": true,
+          "tx1_limitKept": true,
+          "tx2_register": {
+            "bytes": 590,
+            "signatures": 1,
+            "instructions": 3,
+            "accounts": 11,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn"
+            ]
+          },
+          "tx2_limitKept": true
+        }
+      }
+    }
+  },
+  "spl6": {
+    "quote": "2xZihs56QjXexRCd5pQmjV8GQobJQUWFtM59E6B93ZiG",
+    "buyAmount": 1000000,
+    "minimumAmountOut": 0,
+    "designs": {
+      "shared": {
+        "program": "C1nBL5ufPcQvjkmj6hAmRgoLntHonMuf5WdxVxJenJaE",
+        "registerAccounts": 10,
+        "oneStep_withFirstBuy": {
+          "memoKept": true,
+          "registerKept": false,
+          "rejectedCombinedBytes": 1397,
+          "limitKept": true,
+          "budget": 1152,
+          "limitUnits": 1400000,
+          "simulated": false,
+          "tx": {
+            "bytes": 1096,
+            "signatures": 3,
+            "instructions": 7,
+            "accounts": 21,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn",
+              "3ybsSEWuCDuwmpJ48NXrn5R5XqUC7DeSF9fhYaTT4WKD",
+              "2QakZ2PKNgJ2Rxqrvvwr9pJFaw1ZN5hyq7jk7qtGt3ci"
+            ]
+          }
+        },
+        "oneStep_noFirstBuy": {
+          "memoKept": true,
+          "registerKept": false,
+          "rejectedCombinedBytes": 1206,
+          "limitKept": true,
+          "budget": 1152,
+          "limitUnits": 1400000,
+          "simulated": false,
+          "tx": {
+            "bytes": 905,
+            "signatures": 3,
+            "instructions": 4,
+            "accounts": 17,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn",
+              "3ybsSEWuCDuwmpJ48NXrn5R5XqUC7DeSF9fhYaTT4WKD",
+              "2QakZ2PKNgJ2Rxqrvvwr9pJFaw1ZN5hyq7jk7qtGt3ci"
+            ]
+          }
+        },
+        "twoStep_withFirstBuy": {
+          "tx1": {
+            "bytes": 1096,
+            "signatures": 3,
+            "instructions": 7,
+            "accounts": 21,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn",
+              "3ybsSEWuCDuwmpJ48NXrn5R5XqUC7DeSF9fhYaTT4WKD",
+              "2QakZ2PKNgJ2Rxqrvvwr9pJFaw1ZN5hyq7jk7qtGt3ci"
+            ]
+          },
+          "tx1_memoKept": true,
+          "tx1_limitKept": true,
+          "tx2_register": {
+            "bytes": 623,
+            "signatures": 1,
+            "instructions": 3,
+            "accounts": 12,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn"
+            ]
+          },
+          "tx2_limitKept": true
+        },
+        "twoStep_noFirstBuy": {
+          "tx1": {
+            "bytes": 905,
+            "signatures": 3,
+            "instructions": 4,
+            "accounts": 17,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn",
+              "3ybsSEWuCDuwmpJ48NXrn5R5XqUC7DeSF9fhYaTT4WKD",
+              "2QakZ2PKNgJ2Rxqrvvwr9pJFaw1ZN5hyq7jk7qtGt3ci"
+            ]
+          },
+          "tx1_memoKept": true,
+          "tx1_limitKept": true,
+          "tx2_register": {
+            "bytes": 623,
+            "signatures": 1,
+            "instructions": 3,
+            "accounts": 12,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn"
+            ]
+          },
+          "tx2_limitKept": true
+        }
+      },
+      "per_pool": {
+        "program": "C5hUUPNfyui9sr2EXzVgiZa733W1TRbUdvJcZLMFXdtw",
+        "registerAccounts": 9,
+        "oneStep_withFirstBuy": {
+          "memoKept": true,
+          "registerKept": false,
+          "rejectedCombinedBytes": 1364,
+          "limitKept": true,
+          "budget": 1152,
+          "limitUnits": 1400000,
+          "simulated": false,
+          "tx": {
+            "bytes": 1096,
+            "signatures": 3,
+            "instructions": 7,
+            "accounts": 21,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn",
+              "3ybsSEWuCDuwmpJ48NXrn5R5XqUC7DeSF9fhYaTT4WKD",
+              "2QakZ2PKNgJ2Rxqrvvwr9pJFaw1ZN5hyq7jk7qtGt3ci"
+            ]
+          }
+        },
+        "oneStep_noFirstBuy": {
+          "memoKept": true,
+          "registerKept": false,
+          "rejectedCombinedBytes": 1173,
+          "limitKept": true,
+          "budget": 1152,
+          "limitUnits": 1400000,
+          "simulated": false,
+          "tx": {
+            "bytes": 905,
+            "signatures": 3,
+            "instructions": 4,
+            "accounts": 17,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn",
+              "3ybsSEWuCDuwmpJ48NXrn5R5XqUC7DeSF9fhYaTT4WKD",
+              "2QakZ2PKNgJ2Rxqrvvwr9pJFaw1ZN5hyq7jk7qtGt3ci"
+            ]
+          }
+        },
+        "twoStep_withFirstBuy": {
+          "tx1": {
+            "bytes": 1096,
+            "signatures": 3,
+            "instructions": 7,
+            "accounts": 21,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn",
+              "3ybsSEWuCDuwmpJ48NXrn5R5XqUC7DeSF9fhYaTT4WKD",
+              "2QakZ2PKNgJ2Rxqrvvwr9pJFaw1ZN5hyq7jk7qtGt3ci"
+            ]
+          },
+          "tx1_memoKept": true,
+          "tx1_limitKept": true,
+          "tx2_register": {
+            "bytes": 590,
+            "signatures": 1,
+            "instructions": 3,
+            "accounts": 11,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn"
+            ]
+          },
+          "tx2_limitKept": true
+        },
+        "twoStep_noFirstBuy": {
+          "tx1": {
+            "bytes": 905,
+            "signatures": 3,
+            "instructions": 4,
+            "accounts": 17,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn",
+              "3ybsSEWuCDuwmpJ48NXrn5R5XqUC7DeSF9fhYaTT4WKD",
+              "2QakZ2PKNgJ2Rxqrvvwr9pJFaw1ZN5hyq7jk7qtGt3ci"
+            ]
+          },
+          "tx1_memoKept": true,
+          "tx1_limitKept": true,
+          "tx2_register": {
+            "bytes": 590,
+            "signatures": 1,
+            "instructions": 3,
+            "accounts": 11,
+            "fits1232": true,
+            "signers": [
+              "ExpcbsqX63mbuHE6RozajkLGReXu5w5S8GM3SMBdQvpn"
+            ]
+          },
+          "tx2_limitKept": true
+        }
+      }
+    }
+  }
+}

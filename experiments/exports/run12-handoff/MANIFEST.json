@@ -1,0 +1,18 @@
+{
+  "bundle": "run12-corrected-handoff-bundle.tar",
+  "program_source_commit": "b3911bc32a1f92f3bfd9ae1a91b7a2856e0426dc",
+  "elfs_rebuilt_for_this_packaging": false,
+  "reason": "No safety flaw required a program change. The bytes Crank is pricing stay the bytes in this bundle.",
+  "build": "cargo-build-sbf --arch v0 --tools-version v1.58 --offline",
+  "profile": "overflow-checks, lto fat, codegen-units 1, opt-level z",
+  "mock_meteora": "not Meteora add_liquidity and not permanent_lock",
+  "elfs": [
+    {"role": "3Evo shared", "bytes": 620032, "sha256": "498233a22757af4fd5fc6e6fe05025f64b9ac278fc0691d03e86448c6f448c8e", "file": "run12-3evo-shared-620032-498233a22757af4fd5fc6e6fe05025f64b9ac278fc0691d03e86448c6f448c8e.so"},
+    {"role": "3Evo per-pool", "bytes": 606400, "sha256": "a0d1a6167cafd25f132878d83ddddc2067373c3f46d4e70d73db2509d2376723", "file": "run12-3evo-per-606400-a0d1a6167cafd25f132878d83ddddc2067373c3f46d4e70d73db2509d2376723.so"},
+    {"role": "experiment-id shared", "bytes": 618752, "sha256": "24578a0e3d1b854d16c1558f11a3cb1c94ec142e0890d550a633a485cf11a45b", "file": "run12-expid-shared-618752-24578a0e3d1b854d16c1558f11a3cb1c94ec142e0890d550a633a485cf11a45b.so"},
+    {"role": "experiment-id per-pool", "bytes": 605120, "sha256": "531e26506443b0d9591a004e42b3ce791dd6a2d852e4588139e4f9bf09ac661c", "file": "run12-expid-per-605120-531e26506443b0d9591a004e42b3ce791dd6a2d852e4588139e4f9bf09ac661c.so"}
+  ],
+  "contract": "INSTRUCTION-CONTRACT.json",
+  "sdk_sizes": "SDK-SIZES-3SIGNER.json",
+  "report": "RUN12-CORRECTED-HANDOFF.md"
+}

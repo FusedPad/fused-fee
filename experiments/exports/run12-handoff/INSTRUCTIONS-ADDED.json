@@ -1,0 +1,18 @@
+{
+  "run": "run12-handoff",
+  "close_lp_batch": {
+    "disc": [77, 158, 87, 217, 88, 244, 144, 86],
+    "both_designs": true,
+    "accounts": ["admin or crank", "global", "batch", "token program", "lpnonce watermark", "one escrow per batch entry"],
+    "refuses_when": "batch is still open, or any escrow amount is nonzero",
+    "keeps": "one 17-byte lpnonce account. The 564-byte batch is closed."
+  },
+  "reverse_pool_custody": {
+    "disc": [135, 74, 192, 108, 126, 50, 79, 186],
+    "per_pool_only": true,
+    "accounts": ["admin or crank", "global", "pool record", "global vault", "pool vault", "mint", "token program", "pcust marker", "owed or omitted"],
+    "signer_of_transfer": "pool record PDA, seeds [pool, pool_pubkey]",
+    "classic": "moves the full holder+burn+owed amount back and leaves those fields unchanged",
+    "fee_mint": "MigrationFeeShort 6053, no movement, not reversible without a separate funding decision"
+  }
+}

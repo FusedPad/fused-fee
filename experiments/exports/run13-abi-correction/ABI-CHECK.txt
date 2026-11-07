@@ -1,0 +1,2 @@
+wrote /workspace/experiments/abi/INSTRUCTION-CONTRACT.json instructions 68 shared errors 57 per errors 58
+rest suite exit 0 after the ABI assertions; program sources were not modified

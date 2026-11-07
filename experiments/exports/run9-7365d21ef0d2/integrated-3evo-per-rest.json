@@ -1,0 +1,16 @@
+{"rows":[
+{"id":"per-two-claim-rollback","ok":true,"detail":"pool vault stayed empty","cu":0},
+{"id":"per-pay-v2-from-pool-vault","ok":true,"detail":"paid 9000 from pool vault, global stayed 0","cu":35562},
+{"id":"per-preexisting-short-release-v1","ok":true,"detail":"labeled preexisting err=Some(6034)","cu":0},
+{"id":"per-release-v1-from-pool-vault","ok":true,"detail":"burn left the pool vault","cu":17586},
+{"id":"per-direct-burn-from-pool-vault","ok":true,"detail":"burned from the pool vault","cu":18089},
+{"id":"per-damm-omitted-tail","ok":true,"detail":"fail closed","cu":0},
+{"id":"per-damm-claim","ok":true,"detail":"holder=8280 burn=1840 owed=880","cu":59507},
+{"id":"per-creator-claim","ok":true,"detail":"paid 880 from the vault that holds the claim","cu":34905},
+{"id":"per-release-v2","ok":true,"detail":"burn 1840 released","cu":25374},
+{"id":"per-t22-fee-1pct-pay","ok":true,"detail":"debited=10000 received=9900 fee=100","cu":31716},
+{"id":"per-autolp-duplicate-pool","ok":true,"detail":"Some(6045)","cu":0},
+{"id":"per-autolp-bounded-past-22","ok":true,"detail":"executed_accounts=24 executed_bytes=872 cu=121018 full_accounts=90 full_bytes=3050 omitted_burn=2000","cu":121018},
+{"id":"per-lp-refund-once","ok":true,"detail":"Some(6051)","cu":0},
+{"id":"per-lp-consume-once-two-quotes","ok":true,"detail":"second consume rejected, both quote groups conserved","cu":0}
+]}

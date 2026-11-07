@@ -1,0 +1,601 @@
+{
+  "run": "run12-corrected",
+  "idl": "none emitted by cargo-build-sbf",
+  "economics": {
+    "curve_burn_numerator": 20,
+    "curve_split_denominator": 110,
+    "creator_share_of_graduated_claim": "8/100 when the creator has no DAMM LP, then 20/110 on the remainder",
+    "auto_lp_bps_of_burn": 5000
+  },
+  "token_policy": {
+    "max_transfer_fee_bps_inclusive": 100,
+    "rejected": [
+      "transfer fee above 100 bps (6032)",
+      "active transfer hook (6029)",
+      "unknown Token-2022 extension",
+      "paused mint",
+      "default frozen",
+      "non-transferable",
+      "confidential mint/burn"
+    ],
+    "classic_transfer": "instruction 12 TransferChecked",
+    "token2022_transfer": "instruction 26 sub-instruction 1 TransferCheckedWithFee. Fee is ceil(amount * bps / 10000), capped by maximum_fee. Source is debited the gross amount. Destination is credited gross minus fee.",
+    "fee_mint_claim_measured": {
+      "gross_requested": 10000,
+      "fee_bps": 100,
+      "shared_vault_landed": 9900,
+      "shared_pots": {
+        "holder": 8100,
+        "burn": 1800
+      },
+      "per_pool_second_fee_on_the_sweep": 99,
+      "per_pool_vault_landed": 9801,
+      "per_global_vault_left": 0,
+      "per_pots": {
+        "holder": 8019,
+        "burn": 1782
+      }
+    }
+  },
+  "errors_observed": {
+    "6010": "EmptyPot",
+    "6024": "BadVault",
+    "6027": "BadDest",
+    "6032": "TransferFeeTooHigh",
+    "6034": "VaultShort",
+    "6045": "BadAutoLpAccounts",
+    "6048": "QuoteStatRequired",
+    "6050": "ReserveMissing on shared, PoolVault on per-pool",
+    "6051": "ReserveMismatch on shared, LpBatchClosed on per-pool",
+    "6052": "ReserveNotLive",
+    "6053": "AlreadyImported on shared. MigrationFeeShort on per-pool.",
+    "6054": "LpBatchClosed on shared. BatchRetired on per-pool.",
+    "6023": "NotCrank. Close and reverse require admin or the crank. Refund only requires some signer.",
+    "6055": "EscrowNotClosable on shared. AlreadyMigrated on per-pool.",
+    "6056": "BatchRetired on shared. AlreadyReversed on per-pool.",
+    "6057": "CustodyNotMoved on per-pool"
+  },
+  "historical_register": {
+    "accounts": [
+      "payer signer",
+      "config record",
+      "pool record",
+      "system program",
+      "global",
+      "dbc pool",
+      "dbc config",
+      "quote mint at remaining[0]"
+    ],
+    "result_on_both_designs": "6048 QuoteStatRequired. Executed on experiment ids and on 3Evo."
+  },
+  "shared_reserve_migration": {
+    "order": [
+      "init_quote_reserve leaves state backfill and moves no tokens",
+      "import_quote_reserve once per pool, creating [qimp, pool]",
+      "a register during backfill increments pool_count and blocks seal until that pool is imported",
+      "seal_quote_reserve requires pool_count == imported and vault >= holder+burn+owed",
+      "claims before seal return 6052"
+    ],
+    "double_import_during_backfill": 6053,
+    "import_after_seal": 6052,
+    "register_without_reserve": 6050,
+    "recovery": "close_lp_escrow returns one empty escrow and keeps the batch. close_lp_batch, after every escrow is empty, returns the 564-byte batch and raises the single 17-byte lpnonce watermark. Closing a higher id retires every lower id. A lower batch that is still open can still be consumed, refunded, and closed. It cannot be opened again. There is still no close for the quote reserve or the import marker."
+  },
+  "instructions": [
+    {
+      "name": "initialize",
+      "disc": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [
+        "admin signer writable",
+        "global",
+        "system"
+      ]
+    },
+    {
+      "name": "register_pool",
+      "disc": [
+        85,
+        229,
+        114,
+        47,
+        75,
+        145,
+        166,
+        100
+      ],
+      "named": [
+        "payer",
+        "config record",
+        "pool record",
+        "system",
+        "global",
+        "dbc pool",
+        "dbc config"
+      ],
+      "remaining_shared": [
+        "quote",
+        "QuoteStat",
+        "QuoteReserve"
+      ],
+      "remaining_per": [
+        "quote",
+        "QuoteStat"
+      ]
+    },
+    {
+      "name": "init_quote_reserve",
+      "disc": [
+        11,
+        127,
+        62,
+        113,
+        165,
+        8,
+        89,
+        208
+      ],
+      "shared_only": true,
+      "accounts": [
+        "admin signer writable",
+        "global",
+        "reserve [qres, mint]",
+        "mint",
+        "system"
+      ]
+    },
+    {
+      "name": "import_quote_reserve",
+      "disc": [
+        63,
+        237,
+        29,
+        130,
+        75,
+        236,
+        148,
+        88
+      ],
+      "shared_only": true,
+      "accounts": [
+        "admin signer writable",
+        "global",
+        "reserve",
+        "pool record",
+        "owed or empty",
+        "remaining [qimp, pool]",
+        "remaining system"
+      ]
+    },
+    {
+      "name": "seal_quote_reserve",
+      "disc": [
+        145,
+        255,
+        187,
+        175,
+        182,
+        82,
+        226,
+        114
+      ],
+      "shared_only": true,
+      "accounts": [
+        "admin",
+        "global",
+        "reserve",
+        "mint",
+        "vault",
+        "token program"
+      ]
+    },
+    {
+      "name": "crank_claim",
+      "disc": [
+        193,
+        62,
+        163,
+        14,
+        168,
+        236,
+        179,
+        103
+      ],
+      "named_count": 16,
+      "remaining_shared": "live reserve",
+      "remaining_per": "pool vault. Claim still lands in the global ATA, then the received amount is moved."
+    },
+    {
+      "name": "crank_claim_damm",
+      "disc": [
+        129,
+        173,
+        59,
+        184,
+        182,
+        112,
+        147,
+        238
+      ],
+      "named_count": 18,
+      "tail": [
+        "payer signer writable",
+        "system",
+        "dbc pool",
+        "dbc config",
+        "creator owed",
+        "shared: reserve OR per: pool vault"
+      ]
+    },
+    {
+      "name": "claim_creator_share",
+      "disc": [
+        223,
+        73,
+        251,
+        122,
+        3,
+        19,
+        20,
+        33
+      ],
+      "remaining": [
+        "global",
+        "pool record",
+        "owed",
+        "dbc pool",
+        "vault",
+        "mint",
+        "creator ATA",
+        "token program",
+        "shared only: reserve"
+      ]
+    },
+    {
+      "name": "crank_pay_page_v2",
+      "disc": [
+        187,
+        255,
+        119,
+        89,
+        187,
+        17,
+        96,
+        79
+      ],
+      "named_shared": [
+        "payer",
+        "global",
+        "pool record",
+        "quote vault",
+        "token program",
+        "system",
+        "pay cursor",
+        "sol vault",
+        "unwrap",
+        "native mint",
+        "quote reserve"
+      ],
+      "named_per": [
+        "same without quote reserve. quote vault owner is the pool record"
+      ],
+      "remaining": "pairs of holder base token account and destination. wSOL destination is the holder system account."
+    },
+    {
+      "name": "crank_pay_page_v3",
+      "disc": [
+        26,
+        92,
+        113,
+        244,
+        121,
+        99,
+        140,
+        121
+      ],
+      "named_shared_ends_with": "quote reserve",
+      "named_per": "no reserve. vault owner is the pool record"
+    },
+    {
+      "name": "release_burn_pot",
+      "disc": [
+        224,
+        64,
+        74,
+        119,
+        186,
+        164,
+        250,
+        47
+      ],
+      "remaining_shared": "reserve",
+      "per": "vault owner is the pool record"
+    },
+    {
+      "name": "release_burn_pot_v2",
+      "disc": [
+        1,
+        142,
+        214,
+        119,
+        205,
+        117,
+        241,
+        120
+      ],
+      "last_shared": "reserve",
+      "per": "vault is the pool ATA"
+    },
+    {
+      "name": "crank_burn_direct",
+      "disc": [
+        118,
+        75,
+        25,
+        157,
+        201,
+        143,
+        78,
+        137
+      ],
+      "remaining_shared": "reserve",
+      "per": "vault owner is the pool record"
+    },
+    {
+      "name": "crank_auto_lp",
+      "disc": [
+        105,
+        243,
+        28,
+        82,
+        221,
+        253,
+        201,
+        200
+      ],
+      "note": "Calls the local Meteora stand-in add_liquidity and permanent_lock. That stand-in is not a mainnet lock.",
+      "shared_tail": "indexes 18 and 19 are the two reserves, then pairs of pool record and creator owed. 1 to 4 pools.",
+      "per_tail": "after the two QuoteStats, triples of pool record, pool vault, creator owed. 1 to 4 pools."
+    },
+    {
+      "name": "open_lp_reservation",
+      "disc": [
+        199,
+        255,
+        0,
+        21,
+        197,
+        1,
+        87,
+        215
+      ],
+      "note": "Moves the LP budget into an escrow owned by [lpbatch, id]. Account index 7 is the 17-byte watermark. An id at or below the watermark is rejected. Does not add liquidity.",
+      "header": [
+        "payer signer writable",
+        "global",
+        "batch",
+        "system",
+        "autolp",
+        "token program",
+        "configured DAMM pool",
+        "lpnonce watermark, account index 7, writable. Created on the first open. 17 bytes."
+      ],
+      "shared_group": [
+        "pool record",
+        "global ATA",
+        "mint",
+        "escrow ATA",
+        "reserve",
+        "configured vault"
+      ],
+      "per_group": [
+        "pool record",
+        "pool vault",
+        "mint",
+        "escrow ATA",
+        "configured vault"
+      ],
+      "vault_rule": "The vault's token owner is the DAMM pool authority, its mint is the pool quote, and its pubkey is present in the configured DAMM pool account. The pool account key equals AutoLpConfig.damm_pool and is owned by the DAMM program."
+    },
+    {
+      "name": "consume_lp_reservation",
+      "disc": [
+        79,
+        166,
+        172,
+        47,
+        219,
+        130,
+        169,
+        58
+      ],
+      "note": "Classic SPL transfer from the escrow to the vault stored at open. Not add_liquidity and not a lock.",
+      "header": [
+        "payer signer",
+        "global",
+        "batch",
+        "token program",
+        "autolp",
+        "configured DAMM pool"
+      ],
+      "pairs": [
+        "escrow",
+        "destination. Destination must equal the stored vault and still satisfy the vault rule."
+      ]
+    },
+    {
+      "name": "refund_lp_reservation",
+      "disc": [
+        42,
+        187,
+        253,
+        194,
+        9,
+        216,
+        228,
+        107
+      ],
+      "header": [
+        "payer signer",
+        "global",
+        "batch",
+        "token program"
+      ],
+      "shared_group": [
+        "escrow",
+        "source vault",
+        "pool record",
+        "reserve"
+      ],
+      "per_group": [
+        "escrow",
+        "source vault",
+        "pool record"
+      ],
+      "note": "Any signer can refund. The destination must be the source vault stored at open, and the pool account must be that pool's PDA. Tokens cannot be redirected. burn_pot is restored. On shared, the reserve burn total is credited back."
+    },
+    {
+      "name": "import_existing_pool",
+      "disc": [
+        168,
+        188,
+        249,
+        36,
+        4,
+        67,
+        3,
+        37
+      ],
+      "shared_only": true,
+      "note": "For a pool the old program already created. Increments pool_count and imported together. Does not move tokens and does not change pots or creator owed.",
+      "accounts": [
+        "admin signer writable",
+        "global",
+        "reserve",
+        "pool record",
+        "owed or empty",
+        "remaining [qimp, pool]",
+        "remaining system"
+      ]
+    },
+    {
+      "name": "close_lp_escrow",
+      "disc": [
+        55,
+        254,
+        149,
+        79,
+        122,
+        41,
+        15,
+        20
+      ],
+      "note": "Admin or crank only. Escrow amount must be 0 and the batch must be consumed or refunded. Rent goes to that admin or crank. The batch account stays until close_lp_batch.",
+      "accounts": [
+        "admin or crank signer writable",
+        "global",
+        "batch",
+        "token program",
+        "escrow"
+      ]
+    },
+    {
+      "name": "migrate_pool_custody",
+      "disc": [
+        7,
+        158,
+        186,
+        54,
+        226,
+        94,
+        254,
+        47
+      ],
+      "per_only": true,
+      "note": "Classic SPL moves holder+burn+owed when the owed account is passed, and does not change those fields. Omitting owed treats it as 0. A 1% fee mint with exactly the liability returns 6053 and moves nothing.",
+      "accounts": [
+        "admin or crank signer",
+        "global",
+        "pool record",
+        "global vault",
+        "pool vault",
+        "mint",
+        "token program",
+        "pcust marker",
+        "system program",
+        "owed, required for a correct creator amount"
+      ]
+    },
+    {
+      "name": "close_lp_batch",
+      "disc": [
+        77,
+        158,
+        87,
+        217,
+        88,
+        244,
+        144,
+        86
+      ],
+      "note": "Admin or crank only. Batch must be consumed or refunded and every escrow must be empty. Closes those escrows if they still exist, returns the 564-byte rent to the admin or crank, and raises the 17-byte watermark to the max closed id. A stranger is rejected and the batch stays.",
+      "accounts": [
+        "admin or crank signer writable",
+        "global",
+        "batch",
+        "token program",
+        "lpnonce watermark",
+        "one escrow per entry"
+      ]
+    },
+    {
+      "name": "reverse_pool_custody",
+      "disc": [
+        135,
+        74,
+        192,
+        108,
+        126,
+        50,
+        79,
+        186
+      ],
+      "per_only": true,
+      "note": "Admin or crank. The pool record PDA signs the transfer back to the global vault. Moves holder+burn+owed when owed is passed, and leaves those numbers unchanged. Does not read or write any other pool. The global balance check is this pool's liability only. Omitting owed moves only holder+burn, leaves the creator tokens in the pool vault, and still marks the custody reversed, so a second reverse is 6056. A 1% fee mint returns 6053 and moves nothing.",
+      "accounts": [
+        "admin or crank signer",
+        "global",
+        "pool record",
+        "global vault",
+        "pool vault",
+        "mint",
+        "token program",
+        "pcust marker",
+        "owed or omitted"
+      ]
+    }
+  ],
+  "rent_file": "RENT-ACCOUNTING.json",
+  "escrow": {
+    "executed_tests": {
+      "data_bytes": 165,
+      "token_program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+    },
+    "fee_mint_migration_vault": {
+      "data_bytes": 178,
+      "token_program": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+      "devnet_rent": "not in slot 519510577 report"
+    }
+  },
+  "program_source_commit": "b3911bc32a1f92f3bfd9ae1a91b7a2856e0426dc",
+  "elfs_rebuilt": false,
+  "mock_meteora": "mock_meteora moves tokens and sets two bytes. It is not add_liquidity and it is not permanent_lock on the Meteora program."
+}
