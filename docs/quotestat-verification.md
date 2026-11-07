@@ -249,6 +249,42 @@ QuoteStat counts registrations only. Claims and trades do not touch it.
 
 The crank regression the owner listed (current crank first, then auto-LP, holder gate, DBC buy/burn, permanent lock, the 56 adversarial cases, dry-run with zero sends) needs the real crank tree and Helius. This cloud session did not run it. Local tests did not sleep to imitate RPC pacing.
 
+## Transaction limits, checked against the live clusters
+
+No transaction was sent. This is a read of feature accounts plus the 18 QuoteStat accounts already on mainnet.
+
+The runtime in Agave 2.3 uses 128 locked accounts only when feature `9LZdXeKGeBV6hRLdxS1rHbHoEUsKqesCC2ZAPTPKJAbK` (`increase tx account lock limit to 128`) is active. Otherwise the limit is 64. The separate feature `CBkDroRDqm8HwHe6ak9cguPjUomrASEkfmxEaZ5CNNxz` only turns the cap on. It does not choose 128.
+
+| Cluster | Slot read | Increase-to-128 feature | Enforced cap |
+| --- | --- | --- | --- |
+| Mainnet | 466310152 | Account exists, owned by the System program, empty. Not a Feature-program activation. | 64 |
+| Devnet | 519478999 | Account absent. | 64 |
+
+Packet size is 1232 bytes. A versioned transaction with an address lookup table shrinks the message. It does not raise the 64 lock cap.
+
+Live QuoteStat accounts: 18. The `pool_count` values sum to 42. The largest group is wSOL at 13. The next are 4, 4, and 3. The burn mint has no QuoteStat in that set.
+
+`crank_auto_lp` as written on this branch uses 18 fixed remaining accounts plus one writable pool record and one `["cown", pool]` account per pool in the two quote groups. The fee payer is already inside those 18. A normal submission also locks the program id and the compute-budget program.
+
+| Combined pools in the two groups | Accounts locked | Legacy 1232 | Active cap 64 | Cap 128 (not active) |
+| --- | --- | --- | --- | --- |
+| 6 | 32 | Fits | Fits | Fits |
+| 13 (wSOL only, other mint 0) | 46 | Does not fit (~1565 bytes) | Fits | Fits |
+| 17 (wSOL 13 plus a 4-pool quote) | 54 | Does not fit | Fits | Fits |
+| 22 | 64 | Does not fit | Exact cap | Fits |
+| 23 or more | 66+ | Does not fit | Does not fit | Fits until 54 pools |
+| 42 (every live pool, not one pair) | 104 | Does not fit | Does not fit | Fits |
+
+So the pair list is not a design that can be called safe at production scale. A 13-pool SOL group already needs a versioned transaction and a lookup table, and the two groups together cannot grow past 22 pools while the 64 cap stays. Rejecting a transaction that cannot be built is not the same as protecting the vault. Auto-LP stays off. This branch does not add the same list to `release_burn_pot`, pay, or creator claim.
+
+Registration does not pass that list. A new launch is one pool plus one QuoteStat. The 22-pool figure is not a cap on launches. It would become a cap on auto-LP, and on any later outflow that required the same list.
+
+`release_burn_pot` for 13 SOL pools, with the crank signer, the compute-budget program, the program id, the QuoteStat, every pool, and every owed account, is 34 locked accounts. That is under 64 and about 3 bytes over a 1232-byte legacy message. It is not a usable release interface. No new release account list is specified for the crank. The safe small alternative is one running reserved total on the existing per-quote account, updated whenever a pot changes. That is a layout migration of the 18 live 49-byte QuoteStat accounts, not a per-pool vault migration. It is not implemented. It needs an owner decision before any code change. A wrong or missed update would drift, so it is not free of risk.
+
+## Creator fee, not changed
+
+The graduated path still takes 8% of the claim when the pool config shows the creator has no DAMM liquidity, then splits the rest 20/110 burn and 90/110 holders. A 11000 claim books creator 880, burn 1840, holder 8280. The curve claim does not take that 8%. Nothing in the attached evidence includes `creator_trading_fee_percentage` or a Meteora cache balance, so there is no proof here that the creator is paid 0.10% of volume by Meteora, or that the 8% replaces that payment rather than stacking on it. If both pay, the creator is paid twice. If only the 8% pays, it is 0.088% of volume when the claim is 1.10%, not 0.10%. That choice stays with the owner. This patch does not change the formula.
+
 ## Devnet rehearsal, not executed
 
 Do not run this.
