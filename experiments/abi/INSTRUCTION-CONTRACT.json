@@ -80,25 +80,27 @@
           "index": 0,
           "name": "admin",
           "signer": true,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
-          "writable": true,
-          "pda": [
-            "global"
-          ],
-          "init": "8+32+32+1+32+1+1, payer=admin"
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "system_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "Initialize",
+      "named_len": 3,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "per_pool.initialize",
@@ -120,25 +122,27 @@
           "index": 0,
           "name": "admin",
           "signer": true,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
-          "writable": true,
-          "pda": [
-            "global"
-          ],
-          "init": "8+32+32+1+32+1+1, payer=admin"
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "system_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "Initialize",
+      "named_len": 3,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "shared.register_config",
@@ -166,39 +170,35 @@
           "name": "payer",
           "signer": true,
           "writable": true,
-          "note": "must be global.admin"
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "config",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "config_record",
           "signer": false,
-          "writable": true,
-          "pda": [
-            "config",
-            "quote_mint"
-          ],
-          "init": "8+32+32+1"
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 4,
           "name": "system_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         }
       ],
       "remaining": [
@@ -207,7 +207,10 @@
           "name": "quote_mint",
           "writable": false
         }
-      ]
+      ],
+      "anchor_struct": "RegisterConfig",
+      "named_len": 5,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "per_pool.register_config",
@@ -235,39 +238,35 @@
           "name": "payer",
           "signer": true,
           "writable": true,
-          "note": "must be global.admin"
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "config",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "config_record",
           "signer": false,
-          "writable": true,
-          "pda": [
-            "config",
-            "quote_mint"
-          ],
-          "init": "8+32+32+1"
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 4,
           "name": "system_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         }
       ],
       "remaining": [
@@ -276,7 +275,10 @@
           "name": "quote_mint",
           "writable": false
         }
-      ]
+      ],
+      "anchor_struct": "RegisterConfig",
+      "named_len": 5,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "shared.update_config",
@@ -304,27 +306,26 @@
           "name": "global",
           "signer": false,
           "writable": true,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "admin",
           "signer": true,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "config_record",
           "signer": false,
           "writable": true,
-          "pda": [
-            "config",
-            "config_record.quote_mint"
-          ]
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "UpdateConfig",
+      "named_len": 3,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "per_pool.update_config",
@@ -352,27 +353,26 @@
           "name": "global",
           "signer": false,
           "writable": true,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "admin",
           "signer": true,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "config_record",
           "signer": false,
           "writable": true,
-          "pda": [
-            "config",
-            "config_record.quote_mint"
-          ]
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "UpdateConfig",
+      "named_len": 3,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "shared.set_burn_mint",
@@ -399,18 +399,20 @@
           "index": 0,
           "name": "admin",
           "signer": true,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": true,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "Admin",
+      "named_len": 2,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "per_pool.set_burn_mint",
@@ -437,18 +439,20 @@
           "index": 0,
           "name": "admin",
           "signer": true,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": true,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "Admin",
+      "named_len": 2,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "shared.set_paused",
@@ -476,18 +480,20 @@
           "index": 0,
           "name": "admin",
           "signer": true,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": true,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "Admin",
+      "named_len": 2,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "per_pool.set_paused",
@@ -515,18 +521,20 @@
           "index": 0,
           "name": "admin",
           "signer": true,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": true,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "Admin",
+      "named_len": 2,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "shared.migrate_global",
@@ -549,12 +557,26 @@
           "name": "global",
           "signer": false,
           "writable": true,
-          "pda": [
-            "global"
-          ],
-          "note": "body is a no-op"
+          "source": "anchor named field"
+        },
+        {
+          "index": 1,
+          "name": "admin",
+          "signer": true,
+          "writable": true,
+          "source": "anchor named field"
+        },
+        {
+          "index": 2,
+          "name": "system_program",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "MigrateGlobal",
+      "named_len": 3,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "per_pool.migrate_global",
@@ -577,12 +599,26 @@
           "name": "global",
           "signer": false,
           "writable": true,
-          "pda": [
-            "global"
-          ],
-          "note": "body is a no-op"
+          "source": "anchor named field"
+        },
+        {
+          "index": 1,
+          "name": "admin",
+          "signer": true,
+          "writable": true,
+          "source": "anchor named field"
+        },
+        {
+          "index": 2,
+          "name": "system_program",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "MigrateGlobal",
+      "named_len": 3,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "shared.mark_graduated",
@@ -605,30 +641,28 @@
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "pool_record",
           "signer": false,
           "writable": true,
-          "pda": [
-            "pool",
-            "pool_record.pool"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "dbc_pool",
           "signer": false,
           "writable": false,
-          "address": "pool_record.pool",
-          "note": "DBC is_migrated at byte 305 must be 1"
+          "source": "anchor named field"
         }
       ],
-      "note": "Identical on both designs. Discriminator is already in the saved builder. This work did not add an account."
+      "note": "Identical on both designs. Discriminator is already in the saved builder. This work did not add an account.",
+      "anchor_struct": "MarkGraduated",
+      "named_len": 3,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "handler_note": "Three named accounts, no arguments, same on both designs. The crank passes this shape."
     },
     {
       "id": "per_pool.mark_graduated",
@@ -651,30 +685,28 @@
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "pool_record",
           "signer": false,
           "writable": true,
-          "pda": [
-            "pool",
-            "pool_record.pool"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "dbc_pool",
           "signer": false,
           "writable": false,
-          "address": "pool_record.pool",
-          "note": "DBC is_migrated at byte 305 must be 1"
+          "source": "anchor named field"
         }
       ],
-      "note": "Identical on both designs. Discriminator is already in the saved builder. This work did not add an account."
+      "note": "Identical on both designs. Discriminator is already in the saved builder. This work did not add an account.",
+      "anchor_struct": "MarkGraduated",
+      "named_len": 3,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "handler_note": "Three named accounts, no arguments, same on both designs. The crank passes this shape."
     },
     {
       "id": "shared.check_quote_mint",
@@ -697,11 +729,15 @@
           "name": "mint",
           "signer": false,
           "writable": false,
-          "note": "mint_policy reads it; nothing is written"
+          "source": "anchor named field"
         }
       ],
       "return_data": "7 bytes: tier u8, decimals u8, token_2022 u8, flags u32 le",
-      "note": "Identical on both designs. Not in the saved builder sent-instruction list."
+      "note": "Identical on both designs. Not in the saved builder sent-instruction list.",
+      "anchor_struct": "CheckQuoteMint",
+      "named_len": 1,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "handler_note": "Used by the crank as a simulate-only pair gate. Not a website send. Return layout and rejecting errors are the policy."
     },
     {
       "id": "per_pool.check_quote_mint",
@@ -724,11 +760,15 @@
           "name": "mint",
           "signer": false,
           "writable": false,
-          "note": "mint_policy reads it; nothing is written"
+          "source": "anchor named field"
         }
       ],
       "return_data": "7 bytes: tier u8, decimals u8, token_2022 u8, flags u32 le",
-      "note": "Identical on both designs. Not in the saved builder sent-instruction list."
+      "note": "Identical on both designs. Not in the saved builder sent-instruction list.",
+      "anchor_struct": "CheckQuoteMint",
+      "named_len": 1,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "handler_note": "Used by the crank as a simulate-only pair gate. Not a website send. Return layout and rejecting errors are the policy."
     },
     {
       "id": "shared.close_old_checkpoints",
@@ -757,49 +797,50 @@
           "name": "signer",
           "signer": true,
           "writable": false,
-          "note": "global.admin or 2tUjZV4UX9V8P65RZxFBhTxHTDhYRhWo6MYsAGuTsn1h"
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "pool_record",
           "signer": false,
           "writable": false,
-          "pda": [
-            "pool",
-            "pool_record.pool"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "rent_receiver",
           "signer": false,
           "writable": true,
-          "address": "2tUjZV4UX9V8P65RZxFBhTxHTDhYRhWo6MYsAGuTsn1h"
+          "source": "anchor named field"
         }
       ],
       "remaining": [
         {
+          "index": "one per entry, in the same order as entries",
           "name": "checkpoint",
+          "signer": false,
           "writable": true,
+          "source": "handler remaining_accounts",
           "pda": [
             "ckpt",
             "pool",
             "round_le",
             "owner"
-          ],
-          "note": "8-byte program account. round < pool_record.round. Rent goes to rent_receiver."
+          ]
         }
       ],
-      "note": "Identical on both designs. Not in the saved builder sent-instruction list."
+      "note": "Identical on both designs. Not in the saved builder sent-instruction list.",
+      "anchor_struct": "CloseOldCheckpoints",
+      "named_len": 4,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "handler_note": "Sent by the separate checkpoint maintenance command, not by the website and not by LP batch close."
     },
     {
       "id": "per_pool.close_old_checkpoints",
@@ -828,49 +869,50 @@
           "name": "signer",
           "signer": true,
           "writable": false,
-          "note": "global.admin or 2tUjZV4UX9V8P65RZxFBhTxHTDhYRhWo6MYsAGuTsn1h"
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "pool_record",
           "signer": false,
           "writable": false,
-          "pda": [
-            "pool",
-            "pool_record.pool"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "rent_receiver",
           "signer": false,
           "writable": true,
-          "address": "2tUjZV4UX9V8P65RZxFBhTxHTDhYRhWo6MYsAGuTsn1h"
+          "source": "anchor named field"
         }
       ],
       "remaining": [
         {
+          "index": "one per entry, in the same order as entries",
           "name": "checkpoint",
+          "signer": false,
           "writable": true,
+          "source": "handler remaining_accounts",
           "pda": [
             "ckpt",
             "pool",
             "round_le",
             "owner"
-          ],
-          "note": "8-byte program account. round < pool_record.round. Rent goes to rent_receiver."
+          ]
         }
       ],
-      "note": "Identical on both designs. Not in the saved builder sent-instruction list."
+      "note": "Identical on both designs. Not in the saved builder sent-instruction list.",
+      "anchor_struct": "CloseOldCheckpoints",
+      "named_len": 4,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "handler_note": "Sent by the separate checkpoint maintenance command, not by the website and not by LP batch close."
     },
     {
       "id": "shared.set_pool_config",
@@ -892,41 +934,41 @@
           "index": 0,
           "name": "admin",
           "signer": true,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "pool_record",
           "signer": false,
           "writable": true,
-          "pda": [
-            "pool",
-            "pool_record.pool"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "dbc_pool",
           "signer": false,
           "writable": false,
-          "address": "pool_record.pool"
+          "source": "anchor named field"
         },
         {
           "index": 4,
           "name": "new_config",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "SetPoolConfig",
+      "named_len": 5,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "per_pool.set_pool_config",
@@ -948,41 +990,41 @@
           "index": 0,
           "name": "admin",
           "signer": true,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "pool_record",
           "signer": false,
           "writable": true,
-          "pda": [
-            "pool",
-            "pool_record.pool"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "dbc_pool",
           "signer": false,
           "writable": false,
-          "address": "pool_record.pool"
+          "source": "anchor named field"
         },
         {
           "index": 4,
           "name": "new_config",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "SetPoolConfig",
+      "named_len": 5,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "shared.admin_set_graduated",
@@ -1009,28 +1051,27 @@
           "index": 0,
           "name": "admin",
           "signer": true,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "pool_record",
           "signer": false,
           "writable": true,
-          "pda": [
-            "pool",
-            "pool_record.pool"
-          ]
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "AdminPool",
+      "named_len": 3,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "per_pool.admin_set_graduated",
@@ -1057,28 +1098,27 @@
           "index": 0,
           "name": "admin",
           "signer": true,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "pool_record",
           "signer": false,
           "writable": true,
-          "pda": [
-            "pool",
-            "pool_record.pool"
-          ]
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "AdminPool",
+      "named_len": 3,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "shared.init_auto_lp",
@@ -1100,33 +1140,34 @@
           "index": 0,
           "name": "admin",
           "signer": true,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "auto_lp",
           "signer": false,
-          "writable": true,
-          "pda": [
-            "autolp"
-          ]
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "system_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "InitAutoLp",
+      "named_len": 4,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "per_pool.init_auto_lp",
@@ -1148,33 +1189,34 @@
           "index": 0,
           "name": "admin",
           "signer": true,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "auto_lp",
           "signer": false,
-          "writable": true,
-          "pda": [
-            "autolp"
-          ]
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "system_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "InitAutoLp",
+      "named_len": 4,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "shared.set_auto_lp",
@@ -1218,26 +1260,26 @@
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "admin",
           "signer": true,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "auto_lp",
           "signer": false,
           "writable": true,
-          "pda": [
-            "autolp"
-          ]
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "SetAutoLp",
+      "named_len": 3,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "per_pool.set_auto_lp",
@@ -1281,26 +1323,26 @@
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "admin",
           "signer": true,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "auto_lp",
           "signer": false,
           "writable": true,
-          "pda": [
-            "autolp"
-          ]
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "SetAutoLp",
+      "named_len": 3,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "shared.set_auto_lp_share",
@@ -1328,26 +1370,26 @@
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "admin",
           "signer": true,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "auto_lp",
           "signer": false,
           "writable": true,
-          "pda": [
-            "autolp"
-          ]
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "SetAutoLpShare",
+      "named_len": 3,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "per_pool.set_auto_lp_share",
@@ -1375,26 +1417,26 @@
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "admin",
           "signer": true,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "auto_lp",
           "signer": false,
           "writable": true,
-          "pda": [
-            "autolp"
-          ]
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "SetAutoLpShare",
+      "named_len": 3,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "shared.sync_quote_stat",
@@ -1426,34 +1468,34 @@
           "index": 0,
           "name": "admin",
           "signer": true,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "quote_stat",
           "signer": false,
-          "writable": true,
-          "pda": [
-            "qstat",
-            "quote_mint"
-          ]
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "system_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "SyncQuoteStat",
+      "named_len": 4,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "per_pool.sync_quote_stat",
@@ -1485,34 +1527,34 @@
           "index": 0,
           "name": "admin",
           "signer": true,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "quote_stat",
           "signer": false,
-          "writable": true,
-          "pda": [
-            "qstat",
-            "quote_mint"
-          ]
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "system_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "SyncQuoteStat",
+      "named_len": 4,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "shared.crank_pay_page",
@@ -1539,10 +1581,13 @@
           "index": 0,
           "name": "payer",
           "signer": true,
-          "writable": true,
-          "note": "instruction always fails UsePayV2"
+          "writable": false,
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "CrankPayRetired",
+      "named_len": 1,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "per_pool.crank_pay_page",
@@ -1569,10 +1614,13 @@
           "index": 0,
           "name": "payer",
           "signer": true,
-          "writable": true,
-          "note": "instruction always fails UsePayV2"
+          "writable": false,
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "CrankPayRetired",
+      "named_len": 1,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "shared.register_pool",
@@ -1610,85 +1658,89 @@
           "index": 0,
           "name": "payer",
           "signer": true,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "config_record",
           "signer": false,
           "writable": false,
-          "pda": [
-            "config",
-            "quote_mint"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "pool_record",
           "signer": false,
-          "writable": true,
-          "pda": [
-            "pool",
-            "pool"
-          ],
-          "init": "162 bytes"
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "system_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 4,
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 5,
           "name": "dbc_pool",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 6,
           "name": "dbc_config",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         }
       ],
       "remaining": [
         {
-          "position": "remaining[0] instruction index 7",
+          "index": 0,
           "name": "quote_mint",
+          "signer": false,
           "writable": false,
-          "note": "not the LP watermark"
+          "source": "handler remaining_accounts",
+          "note": "instruction index 7. Not the LP watermark."
         },
         {
-          "position": "remaining[1] instruction index 8",
+          "index": 1,
           "name": "quote_stat",
+          "signer": false,
           "writable": true,
+          "source": "handler remaining_accounts",
           "pda": [
             "qstat",
             "quote_mint"
           ]
         },
         {
-          "position": "remaining[2] instruction index 9",
+          "index": 2,
           "name": "quote_reserve",
+          "signer": false,
           "writable": true,
+          "source": "handler remaining_accounts",
           "pda": [
             "qres",
             "quote_mint"
-          ],
-          "note": "works while backfilling and after seal"
+          ]
         }
       ],
-      "note": "Live 8-account client returns 6048. Website adds QuoteStat. Shared also adds the reserve."
+      "note": "Live 8-account client returns 6048. Website adds QuoteStat. Shared also adds the reserve.",
+      "anchor_struct": "RegisterPool",
+      "named_len": 7,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "handler_note": "Seven named accounts, then these three. The live client stops after the quote mint."
     },
     {
       "id": "per_pool.register_pool",
@@ -1726,75 +1778,78 @@
           "index": 0,
           "name": "payer",
           "signer": true,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "config_record",
           "signer": false,
           "writable": false,
-          "pda": [
-            "config",
-            "quote_mint"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "pool_record",
           "signer": false,
-          "writable": true,
-          "pda": [
-            "pool",
-            "pool"
-          ],
-          "init": "162 bytes"
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "system_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 4,
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 5,
           "name": "dbc_pool",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 6,
           "name": "dbc_config",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         }
       ],
       "remaining": [
         {
-          "position": "remaining[0] instruction index 7",
+          "index": 0,
           "name": "quote_mint",
+          "signer": false,
           "writable": false,
-          "note": "not the LP watermark"
+          "source": "handler remaining_accounts",
+          "note": "instruction index 7. Not the LP watermark."
         },
         {
-          "position": "remaining[1] instruction index 8",
+          "index": 1,
           "name": "quote_stat",
+          "signer": false,
           "writable": true,
+          "source": "handler remaining_accounts",
           "pda": [
             "qstat",
             "quote_mint"
           ]
         }
       ],
-      "note": "No reserve account. One sync per quote, then every launch only registers."
+      "note": "No reserve account. One sync per quote, then every launch only registers.",
+      "anchor_struct": "RegisterPool",
+      "named_len": 7,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "handler_note": "No quote reserve on this design."
     },
     {
       "id": "shared.crank_claim",
@@ -1826,112 +1881,131 @@
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "pool_record",
           "signer": false,
           "writable": true,
-          "pda": [
-            "pool",
-            "pool_record.pool"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "pool_authority",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "config",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 4,
           "name": "pool",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 5,
           "name": "base_dest",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 6,
           "name": "quote_vault",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 7,
           "name": "base_vault",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 8,
           "name": "quote_pool_vault",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 9,
           "name": "base_mint",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 10,
           "name": "quote_mint",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 11,
           "name": "token_base_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 12,
           "name": "token_quote_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 13,
           "name": "event_authority",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 14,
           "name": "dbc_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 15,
           "name": "token_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         }
       ],
       "remaining": [
         {
-          "position": "remaining[0]",
+          "index": 0,
           "name": "quote_reserve",
-          "writable": true
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "qres",
+            "quote_mint"
+          ]
         }
-      ]
+      ],
+      "anchor_struct": "CrankClaim",
+      "named_len": 16,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "handler_note": "16 named accounts are the DBC claim. The 17th account is the sealed reserve."
     },
     {
       "id": "per_pool.crank_claim",
@@ -1963,112 +2037,127 @@
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "pool_record",
           "signer": false,
           "writable": true,
-          "pda": [
-            "pool",
-            "pool_record.pool"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "pool_authority",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "config",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 4,
           "name": "pool",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 5,
           "name": "base_dest",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 6,
           "name": "quote_vault",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 7,
           "name": "base_vault",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 8,
           "name": "quote_pool_vault",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 9,
           "name": "base_mint",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 10,
           "name": "quote_mint",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 11,
           "name": "token_base_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 12,
           "name": "token_quote_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 13,
           "name": "event_authority",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 14,
           "name": "dbc_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 15,
           "name": "token_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         }
       ],
       "remaining": [
         {
-          "position": "remaining[0]",
+          "index": 0,
           "name": "pool_vault",
-          "writable": true
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts"
         }
-      ]
+      ],
+      "anchor_struct": "CrankClaim",
+      "named_len": 16,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "handler_note": "16 named accounts are the DBC claim. The 17th account is this pool's vault. The claim lands in the global ATA, then the net receipt is swept."
     },
     {
       "id": "shared.open_lp_reservation",
@@ -2090,71 +2179,60 @@
           "type": "u64 le"
         }
       ],
-      "accounts": [
+      "accounts": [],
+      "remaining": [
         {
-          "index": 0,
-          "name": "payer",
-          "signer": true,
-          "writable": true
-        },
-        {
-          "index": 1,
-          "name": "global",
-          "signer": false,
-          "writable": false,
-          "pda": [
-            "global"
-          ]
-        },
-        {
-          "index": 2,
-          "name": "batch",
+          "index": "8+6*i",
+          "name": "pool_record",
           "signer": false,
           "writable": true,
-          "pda": [
-            "lpbatch",
-            "id le"
-          ]
+          "source": "handler remaining_accounts"
         },
         {
-          "index": 3,
-          "name": "system_program",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 4,
-          "name": "auto_lp",
-          "signer": false,
-          "writable": false,
-          "pda": [
-            "autolp"
-          ]
-        },
-        {
-          "index": 5,
-          "name": "token_program",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 6,
-          "name": "damm_pool",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 7,
-          "name": "lpnonce",
+          "index": "9+6*i",
+          "name": "source_vault",
           "signer": false,
           "writable": true,
+          "source": "handler remaining_accounts",
+          "note": "global ATA of the pool quote"
+        },
+        {
+          "index": "10+6*i",
+          "name": "mint",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": "11+6*i",
+          "name": "escrow",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": "12+6*i",
+          "name": "quote_reserve",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
           "pda": [
-            "lpnonce"
-          ],
-          "note": "watermark. Not a register account."
+            "qres",
+            "quote_mint"
+          ]
+        },
+        {
+          "index": "13+6*i",
+          "name": "configured_vault",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts"
         }
       ],
-      "remaining": "groups of 6 after index 7: pool, global ATA, mint, escrow, reserve, configured vault"
+      "anchor_struct": "LpBatchIx",
+      "named_len": 0,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "handler_note": "Header is the 8 named-by-handler accounts in the accounts array, including lpnonce at index 7. Groups start at index 8. 1 to 4 groups."
     },
     {
       "id": "per_pool.open_lp_reservation",
@@ -2176,71 +2254,48 @@
           "type": "u64 le"
         }
       ],
-      "accounts": [
+      "accounts": [],
+      "remaining": [
         {
-          "index": 0,
-          "name": "payer",
-          "signer": true,
-          "writable": true
-        },
-        {
-          "index": 1,
-          "name": "global",
-          "signer": false,
-          "writable": false,
-          "pda": [
-            "global"
-          ]
-        },
-        {
-          "index": 2,
-          "name": "batch",
+          "index": "8+5*i",
+          "name": "pool_record",
           "signer": false,
           "writable": true,
-          "pda": [
-            "lpbatch",
-            "id le"
-          ]
+          "source": "handler remaining_accounts"
         },
         {
-          "index": 3,
-          "name": "system_program",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 4,
-          "name": "auto_lp",
-          "signer": false,
-          "writable": false,
-          "pda": [
-            "autolp"
-          ]
-        },
-        {
-          "index": 5,
-          "name": "token_program",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 6,
-          "name": "damm_pool",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 7,
-          "name": "lpnonce",
+          "index": "9+5*i",
+          "name": "pool_vault",
           "signer": false,
           "writable": true,
-          "pda": [
-            "lpnonce"
-          ],
-          "note": "watermark. Not a register account."
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": "10+5*i",
+          "name": "mint",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": "11+5*i",
+          "name": "escrow",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": "12+5*i",
+          "name": "configured_vault",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts"
         }
       ],
-      "remaining": "groups of 5 after index 7: pool, pool vault, mint, escrow, configured vault"
+      "anchor_struct": "LpBatchIx",
+      "named_len": 0,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "handler_note": "Same 8-account header. Groups of 5 start at index 8. 1 to 4 groups."
     },
     {
       "id": "shared.consume_lp_reservation",
@@ -2262,45 +2317,28 @@
           "type": "u64 le"
         }
       ],
-      "accounts": [
+      "accounts": [],
+      "remaining": [
         {
-          "index": 0,
-          "name": "payer",
-          "signer": true,
-          "writable": true
+          "index": "6+2*i",
+          "name": "escrow",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts"
         },
         {
-          "index": 1,
-          "name": "global",
+          "index": "7+2*i",
+          "name": "destination",
           "signer": false,
-          "writable": false
-        },
-        {
-          "index": 2,
-          "name": "batch",
-          "signer": false,
-          "writable": true
-        },
-        {
-          "index": 3,
-          "name": "token_program",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 4,
-          "name": "auto_lp",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 5,
-          "name": "damm_pool",
-          "signer": false,
-          "writable": false
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "note": "must equal the vault stored at open"
         }
       ],
-      "remaining": "pairs of escrow, configured destination"
+      "anchor_struct": "LpBatchIx",
+      "named_len": 0,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "handler_note": "Header accounts 0..5 are in the accounts array."
     },
     {
       "id": "shared.close_lp_escrow",
@@ -2322,38 +2360,10 @@
           "type": "u64 le"
         }
       ],
-      "accounts": [
-        {
-          "index": 0,
-          "name": "payer",
-          "signer": true,
-          "writable": true
-        },
-        {
-          "index": 1,
-          "name": "global",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 2,
-          "name": "batch",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 3,
-          "name": "token_program",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 4,
-          "name": "escrow",
-          "signer": false,
-          "writable": true
-        }
-      ]
+      "accounts": [],
+      "anchor_struct": "LpBatchIx",
+      "named_len": 0,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "shared.close_lp_batch",
@@ -2375,42 +2385,21 @@
           "type": "u64 le"
         }
       ],
-      "accounts": [
+      "accounts": [],
+      "remaining": [
         {
-          "index": 0,
-          "name": "payer",
-          "signer": true,
-          "writable": true
-        },
-        {
-          "index": 1,
-          "name": "global",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 2,
-          "name": "batch",
-          "signer": false,
-          "writable": true
-        },
-        {
-          "index": 3,
-          "name": "token_program",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 4,
-          "name": "lpnonce",
+          "index": "5+i",
+          "name": "escrow",
           "signer": false,
           "writable": true,
-          "pda": [
-            "lpnonce"
-          ]
+          "source": "handler remaining_accounts",
+          "note": "skipped if already closed; rejected if the amount is nonzero"
         }
       ],
-      "remaining": "one empty escrow per entry"
+      "anchor_struct": "LpBatchIx",
+      "named_len": 0,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "handler_note": "lpnonce is handler account 4."
     },
     {
       "id": "per_pool.consume_lp_reservation",
@@ -2432,45 +2421,27 @@
           "type": "u64 le"
         }
       ],
-      "accounts": [
+      "accounts": [],
+      "remaining": [
         {
-          "index": 0,
-          "name": "payer",
-          "signer": true,
-          "writable": true
+          "index": "6+2*i",
+          "name": "escrow",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts"
         },
         {
-          "index": 1,
-          "name": "global",
+          "index": "7+2*i",
+          "name": "destination",
           "signer": false,
-          "writable": false
-        },
-        {
-          "index": 2,
-          "name": "batch",
-          "signer": false,
-          "writable": true
-        },
-        {
-          "index": 3,
-          "name": "token_program",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 4,
-          "name": "auto_lp",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 5,
-          "name": "damm_pool",
-          "signer": false,
-          "writable": false
+          "writable": true,
+          "source": "handler remaining_accounts"
         }
       ],
-      "remaining": "pairs of escrow, configured destination"
+      "anchor_struct": "LpBatchIx",
+      "named_len": 0,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "handler_note": "Same pair layout as shared."
     },
     {
       "id": "per_pool.close_lp_escrow",
@@ -2492,38 +2463,10 @@
           "type": "u64 le"
         }
       ],
-      "accounts": [
-        {
-          "index": 0,
-          "name": "payer",
-          "signer": true,
-          "writable": true
-        },
-        {
-          "index": 1,
-          "name": "global",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 2,
-          "name": "batch",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 3,
-          "name": "token_program",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 4,
-          "name": "escrow",
-          "signer": false,
-          "writable": true
-        }
-      ]
+      "accounts": [],
+      "anchor_struct": "LpBatchIx",
+      "named_len": 0,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "per_pool.close_lp_batch",
@@ -2545,42 +2488,20 @@
           "type": "u64 le"
         }
       ],
-      "accounts": [
+      "accounts": [],
+      "remaining": [
         {
-          "index": 0,
-          "name": "payer",
-          "signer": true,
-          "writable": true
-        },
-        {
-          "index": 1,
-          "name": "global",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 2,
-          "name": "batch",
-          "signer": false,
-          "writable": true
-        },
-        {
-          "index": 3,
-          "name": "token_program",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 4,
-          "name": "lpnonce",
+          "index": "5+i",
+          "name": "escrow",
           "signer": false,
           "writable": true,
-          "pda": [
-            "lpnonce"
-          ]
+          "source": "handler remaining_accounts"
         }
       ],
-      "remaining": "one empty escrow per entry"
+      "anchor_struct": "LpBatchIx",
+      "named_len": 0,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "handler_note": "Same as shared."
     },
     {
       "id": "shared.refund_lp_reservation",
@@ -2602,34 +2523,41 @@
           "type": "u64 le"
         }
       ],
-      "accounts": [
+      "accounts": [],
+      "remaining": [
         {
-          "index": 0,
-          "name": "payer",
-          "signer": true,
-          "writable": false,
-          "note": "any signer; destination is the stored source"
+          "index": "4+4*i",
+          "name": "escrow",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts"
         },
         {
-          "index": 1,
-          "name": "global",
+          "index": "5+4*i",
+          "name": "source_vault",
           "signer": false,
-          "writable": false
+          "writable": true,
+          "source": "handler remaining_accounts"
         },
         {
-          "index": 2,
-          "name": "batch",
+          "index": "6+4*i",
+          "name": "pool_record",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "handler remaining_accounts"
         },
         {
-          "index": 3,
-          "name": "token_program",
+          "index": "7+4*i",
+          "name": "quote_reserve",
           "signer": false,
-          "writable": false
+          "writable": true,
+          "source": "handler remaining_accounts"
         }
       ],
-      "remaining": "groups of 4: escrow, source, pool record, reserve"
+      "anchor_struct": "LpBatchIx",
+      "named_len": 0,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "handler_note": "Any signer. Destination must be the source stored at open."
     },
     {
       "id": "per_pool.refund_lp_reservation",
@@ -2651,33 +2579,34 @@
           "type": "u64 le"
         }
       ],
-      "accounts": [
+      "accounts": [],
+      "remaining": [
         {
-          "index": 0,
-          "name": "payer",
-          "signer": true,
-          "writable": false
+          "index": "4+3*i",
+          "name": "escrow",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts"
         },
         {
-          "index": 1,
-          "name": "global",
+          "index": "5+3*i",
+          "name": "source_vault",
           "signer": false,
-          "writable": false
+          "writable": true,
+          "source": "handler remaining_accounts"
         },
         {
-          "index": 2,
-          "name": "batch",
+          "index": "6+3*i",
+          "name": "pool_record",
           "signer": false,
-          "writable": true
-        },
-        {
-          "index": 3,
-          "name": "token_program",
-          "signer": false,
-          "writable": false
+          "writable": true,
+          "source": "handler remaining_accounts"
         }
       ],
-      "remaining": "groups of 3: escrow, source, pool record"
+      "anchor_struct": "LpBatchIx",
+      "named_len": 0,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "handler_note": "Any signer. No reserve."
     },
     {
       "id": "shared.init_quote_reserve",
@@ -2699,41 +2628,41 @@
           "index": 0,
           "name": "admin",
           "signer": true,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "reserve",
           "signer": false,
           "writable": true,
-          "pda": [
-            "qres",
-            "mint"
-          ],
-          "init": "82"
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "mint",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 4,
           "name": "system_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "InitQuoteReserve",
+      "named_len": 5,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "shared.import_quote_reserve",
@@ -2755,54 +2684,62 @@
           "index": 0,
           "name": "admin",
           "signer": true,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "reserve",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "pool_record",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 4,
           "name": "owed",
           "signer": false,
           "writable": true,
-          "pda": [
-            "cown",
-            "pool"
-          ],
-          "note": "empty means zero; otherwise program-owned with the cown tag"
+          "source": "anchor named field"
         }
       ],
       "remaining": [
         {
-          "position": "remaining[0]",
+          "index": 0,
           "name": "qimp",
+          "signer": false,
           "writable": true,
+          "source": "handler remaining_accounts",
           "pda": [
             "qimp",
             "pool"
           ]
         },
         {
-          "position": "remaining[1]",
+          "index": 1,
           "name": "system_program",
-          "writable": false
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
         }
-      ]
+      ],
+      "anchor_struct": "ImportQuoteReserve",
+      "named_len": 5,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "handler_note": "owed is a named writable account, the canonical cown."
     },
     {
       "id": "shared.import_existing_pool",
@@ -2824,50 +2761,62 @@
           "index": 0,
           "name": "admin",
           "signer": true,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "reserve",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "pool_record",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 4,
           "name": "owed",
           "signer": false,
           "writable": true,
-          "pda": [
-            "cown",
-            "pool"
-          ],
-          "note": "empty means zero; otherwise program-owned with the cown tag"
+          "source": "anchor named field"
         }
       ],
       "remaining": [
         {
-          "position": "remaining[0]",
+          "index": 0,
           "name": "qimp",
-          "writable": true
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "qimp",
+            "pool"
+          ]
         },
         {
-          "position": "remaining[1]",
+          "index": 1,
           "name": "system_program",
-          "writable": false
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
         }
-      ]
+      ],
+      "anchor_struct": "ImportQuoteReserve",
+      "named_len": 5,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "handler_note": "Same cown rule. Also increments pool_count."
     },
     {
       "id": "shared.seal_quote_reserve",
@@ -2889,39 +2838,48 @@
           "index": 0,
           "name": "admin",
           "signer": true,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "reserve",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "mint",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 4,
           "name": "vault",
           "signer": false,
-          "writable": true
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 5,
           "name": "token_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         }
-      ]
+      ],
+      "anchor_struct": "SealQuoteReserve",
+      "named_len": 6,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "per_pool.migrate_pool_custody",
@@ -2938,84 +2896,11 @@
         47
       ],
       "args": [],
-      "accounts": [
-        {
-          "index": 0,
-          "name": "payer",
-          "signer": true,
-          "writable": true
-        },
-        {
-          "index": 1,
-          "name": "global",
-          "signer": false,
-          "writable": false,
-          "pda": [
-            "global"
-          ]
-        },
-        {
-          "index": 2,
-          "name": "pool_record",
-          "signer": false,
-          "writable": false,
-          "pda": [
-            "pool",
-            "pool"
-          ]
-        },
-        {
-          "index": 3,
-          "name": "global_vault",
-          "signer": false,
-          "writable": true
-        },
-        {
-          "index": 4,
-          "name": "pool_vault",
-          "signer": false,
-          "writable": true
-        },
-        {
-          "index": 5,
-          "name": "mint",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 6,
-          "name": "token_program",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 7,
-          "name": "pcust",
-          "signer": false,
-          "writable": true,
-          "pda": [
-            "pcust",
-            "pool"
-          ]
-        },
-        {
-          "index": 8,
-          "name": "system_program",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 9,
-          "name": "owed",
-          "signer": false,
-          "writable": true,
-          "pda": [
-            "cown",
-            "pool"
-          ]
-        }
-      ],
-      "note": "Fee on the liability returns MigrationFeeShort before any marker write."
+      "accounts": [],
+      "note": "Fee on the liability returns MigrationFeeShort before any marker write.",
+      "anchor_struct": "LpBatchIx",
+      "named_len": 0,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "per_pool.reverse_pool_custody",
@@ -3032,71 +2917,11 @@
         186
       ],
       "args": [],
-      "accounts": [
-        {
-          "index": 0,
-          "name": "payer",
-          "signer": true,
-          "writable": true
-        },
-        {
-          "index": 1,
-          "name": "global",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 2,
-          "name": "pool_record",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 3,
-          "name": "global_vault",
-          "signer": false,
-          "writable": true
-        },
-        {
-          "index": 4,
-          "name": "pool_vault",
-          "signer": false,
-          "writable": true
-        },
-        {
-          "index": 5,
-          "name": "mint",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 6,
-          "name": "token_program",
-          "signer": false,
-          "writable": false
-        },
-        {
-          "index": 7,
-          "name": "pcust",
-          "signer": false,
-          "writable": true,
-          "pda": [
-            "pcust",
-            "pool"
-          ]
-        },
-        {
-          "index": 8,
-          "name": "owed",
-          "signer": false,
-          "writable": true,
-          "pda": [
-            "cown",
-            "pool"
-          ]
-        }
-      ],
-      "note": "Canonical cown is checked before the marker can move to reversed."
+      "accounts": [],
+      "note": "Canonical cown is checked before the marker can move to reversed.",
+      "anchor_struct": "LpBatchIx",
+      "named_len": 0,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate."
     },
     {
       "id": "shared.release_burn_pot",
@@ -3119,40 +2944,55 @@
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "pool_record",
           "signer": false,
           "writable": true,
-          "pda": [
-            "pool",
-            "pool_record.pool"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "quote_vault",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "operator_token",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 4,
           "name": "token_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         }
       ],
-      "note": "Shared remaining[0] is qres and the signer is the global PDA. Per-pool vault owner is the pool record and the pool PDA signs."
+      "note": "Shared remaining[0] is qres and the signer is the global PDA. Per-pool vault owner is the pool record and the pool PDA signs.",
+      "anchor_struct": "ReleaseBurnPot",
+      "named_len": 5,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "remaining": [
+        {
+          "index": 0,
+          "name": "quote_reserve",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "qres",
+            "quote_mint"
+          ]
+        }
+      ],
+      "handler_note": "Named vault is the global ATA. The reserve is remaining, not named."
     },
     {
       "id": "per_pool.release_burn_pot",
@@ -3175,40 +3015,43 @@
           "name": "global",
           "signer": false,
           "writable": false,
-          "pda": [
-            "global"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "pool_record",
           "signer": false,
           "writable": true,
-          "pda": [
-            "pool",
-            "pool_record.pool"
-          ]
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "quote_vault",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "operator_token",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 4,
           "name": "token_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         }
       ],
-      "note": "Shared remaining[0] is qres and the signer is the global PDA. Per-pool vault owner is the pool record and the pool PDA signs."
+      "note": "Shared remaining[0] is qres and the signer is the global PDA. Per-pool vault owner is the pool record and the pool PDA signs.",
+      "anchor_struct": "ReleaseBurnPot",
+      "named_len": 5,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "remaining": [],
+      "handler_note": "No remaining account. The vault owner must be the pool record and the pool PDA signs."
     },
     {
       "id": "shared.release_burn_pot_v2",
@@ -3230,40 +3073,63 @@
           "index": 0,
           "name": "global",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "pool_record",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "quote_vault",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "quote_mint",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 4,
           "name": "operator_token",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 5,
           "name": "token_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         }
       ],
-      "note": "Shared remaining[0] is qres."
+      "note": "Shared remaining[0] is qres.",
+      "anchor_struct": "ReleaseBurnPotV2",
+      "named_len": 6,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "remaining": [
+        {
+          "index": 0,
+          "name": "quote_reserve",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "qres",
+            "quote_mint"
+          ]
+        }
+      ],
+      "handler_note": "Named field token_program must equal the quote mint's owner program."
     },
     {
       "id": "per_pool.release_burn_pot_v2",
@@ -3285,40 +3151,51 @@
           "index": 0,
           "name": "global",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "pool_record",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "quote_vault",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "quote_mint",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 4,
           "name": "operator_token",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 5,
           "name": "token_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         }
       ],
-      "note": "Shared remaining[0] is qres."
+      "note": "Shared remaining[0] is qres.",
+      "anchor_struct": "ReleaseBurnPotV2",
+      "named_len": 6,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "remaining": [],
+      "handler_note": "Vault owner is the pool record. No reserve."
     },
     {
       "id": "shared.crank_burn_direct",
@@ -3340,34 +3217,56 @@
           "index": 0,
           "name": "global",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "pool_record",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "burn_mint",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "quote_vault",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 4,
           "name": "token_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         }
       ],
-      "note": "Shared remaining[0] is qres and the vault is the global ATA. Per-pool vault owner is the pool record."
+      "note": "Shared remaining[0] is qres and the vault is the global ATA. Per-pool vault owner is the pool record.",
+      "anchor_struct": "CrankBurnDirect",
+      "named_len": 5,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "remaining": [
+        {
+          "index": 0,
+          "name": "quote_reserve",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "qres",
+            "quote_mint"
+          ]
+        }
+      ],
+      "handler_note": "Vault is the global ATA."
     },
     {
       "id": "per_pool.crank_burn_direct",
@@ -3389,34 +3288,44 @@
           "index": 0,
           "name": "global",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "pool_record",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "burn_mint",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "quote_vault",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 4,
           "name": "token_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         }
       ],
-      "note": "Shared remaining[0] is qres and the vault is the global ATA. Per-pool vault owner is the pool record."
+      "note": "Shared remaining[0] is qres and the vault is the global ATA. Per-pool vault owner is the pool record.",
+      "anchor_struct": "CrankBurnDirect",
+      "named_len": 5,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "remaining": [],
+      "handler_note": "Vault owner is the pool record. This is not the DBC buy-and-burn route."
     },
     {
       "id": "shared.crank_pay_page_v2",
@@ -3443,68 +3352,102 @@
           "index": 0,
           "name": "payer",
           "signer": true,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "pool_record",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "quote_vault",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 4,
           "name": "token_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 5,
           "name": "system_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 6,
           "name": "pay_cursor",
           "signer": false,
-          "writable": true,
-          "pda": [
-            "paycur",
-            "pool"
-          ]
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 7,
           "name": "sol_vault",
           "signer": false,
-          "writable": true
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 8,
-          "name": "unwrap",
+          "name": "unwrap_account",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 9,
           "name": "native_mint",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 10,
+          "name": "quote_reserve",
+          "signer": false,
+          "writable": true,
+          "source": "anchor named field"
         }
       ],
-      "note": "Shared appends qres. Holder pairs are remaining."
+      "note": "Shared appends qres. Holder pairs are remaining.",
+      "anchor_struct": "CrankPayV2",
+      "named_len": 11,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "remaining": [
+        {
+          "index": "2*i",
+          "name": "holder_base_account",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": "2*i+1",
+          "name": "destination",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "note": "writable. Wallet for wSOL, otherwise the holder quote account."
+        }
+      ],
+      "handler_note": "quote_reserve is named account index 10, not a remaining account. Empty remaining is the cursor-only page."
     },
     {
       "id": "per_pool.crank_pay_page_v2",
@@ -3531,68 +3474,94 @@
           "index": 0,
           "name": "payer",
           "signer": true,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "pool_record",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "quote_vault",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 4,
           "name": "token_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 5,
           "name": "system_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 6,
           "name": "pay_cursor",
           "signer": false,
-          "writable": true,
-          "pda": [
-            "paycur",
-            "pool"
-          ]
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 7,
           "name": "sol_vault",
           "signer": false,
-          "writable": true
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 8,
-          "name": "unwrap",
+          "name": "unwrap_account",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 9,
           "name": "native_mint",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         }
       ],
-      "note": "Shared appends qres. Holder pairs are remaining."
+      "note": "Shared appends qres. Holder pairs are remaining.",
+      "anchor_struct": "CrankPayV2",
+      "named_len": 10,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "remaining": [
+        {
+          "index": "2*i",
+          "name": "holder_base_account",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": "2*i+1",
+          "name": "destination",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts"
+        }
+      ],
+      "handler_note": "No quote reserve. The quote vault owner must be the pool record. The current shared-vault caller cannot pay this layout."
     },
     {
       "id": "shared.crank_pay_page_v3",
@@ -3619,50 +3588,94 @@
           "index": 0,
           "name": "payer",
           "signer": true,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "pool_record",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "quote_vault",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 4,
           "name": "quote_mint",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 5,
-          "name": "token_program",
+          "name": "quote_token_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 6,
+          "name": "base_mint",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 7,
+          "name": "system_program",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 8,
           "name": "pay_cursor",
           "signer": false,
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 9,
+          "name": "quote_reserve",
+          "signer": false,
           "writable": true,
-          "pda": [
-            "paycur",
-            "pool"
-          ]
+          "source": "anchor named field"
         }
       ],
-      "note": "Shared appends qres."
+      "note": "Shared appends qres.",
+      "anchor_struct": "CrankPayV3",
+      "named_len": 10,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "remaining": [
+        {
+          "index": "2*i",
+          "name": "holder_base_account",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": "2*i+1",
+          "name": "holder_quote_account",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts"
+        }
+      ],
+      "handler_note": "Ten named accounts. Index 5 is quote_token_program, not token_program. Index 6 is base_mint. Index 7 is system_program. Index 9 is writable quote_reserve. The current caller sends the first nine and does not send the reserve."
     },
     {
       "id": "per_pool.crank_pay_page_v3",
@@ -3689,50 +3702,87 @@
           "index": 0,
           "name": "payer",
           "signer": true,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "global",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "pool_record",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 3,
           "name": "quote_vault",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 4,
           "name": "quote_mint",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 5,
-          "name": "token_program",
+          "name": "quote_token_program",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 6,
+          "name": "base_mint",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 7,
+          "name": "system_program",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 8,
           "name": "pay_cursor",
           "signer": false,
-          "writable": true,
-          "pda": [
-            "paycur",
-            "pool"
-          ]
+          "writable": false,
+          "source": "anchor named field"
         }
       ],
-      "note": "Shared appends qres."
+      "note": "Shared appends qres.",
+      "anchor_struct": "CrankPayV3",
+      "named_len": 9,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "remaining": [
+        {
+          "index": "2*i",
+          "name": "holder_base_account",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": "2*i+1",
+          "name": "holder_quote_account",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts"
+        }
+      ],
+      "handler_note": "Nine named accounts. This matches the current v3 caller header: payer, global, pool, quote vault, quote mint, quote token program, base mint, system program, pay cursor. The vault owner must be the pool record."
     },
     {
       "id": "shared.claim_creator_share",
@@ -3750,7 +3800,92 @@
       ],
       "args": [],
       "accounts": [],
-      "note": "Remaining accounts. Per-pool: global, pool record, cown, dbc pool, pool vault, mint, creator ATA, token program; pool PDA signs. Shared adds qres at remaining[8]; global PDA signs."
+      "note": "Remaining accounts. Per-pool: global, pool record, cown, dbc pool, pool vault, mint, creator ATA, token program; pool PDA signs. Shared adds qres at remaining[8]; global PDA signs.",
+      "anchor_struct": "ClaimCreatorShare",
+      "named_len": 0,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "remaining": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 1,
+          "name": "pool_record",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "pool",
+            "pool"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "creator_owed",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "cown",
+            "pool"
+          ]
+        },
+        {
+          "index": 3,
+          "name": "dbc_pool",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 4,
+          "name": "global_vault",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "note": "owner is the global PDA"
+        },
+        {
+          "index": 5,
+          "name": "quote_mint",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 6,
+          "name": "creator_quote",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 7,
+          "name": "quote_token_program",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 8,
+          "name": "quote_reserve",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "qres",
+            "quote_mint"
+          ]
+        }
+      ],
+      "handler_note": "No named Anchor fields. Global PDA signs. Destination is the DBC pool creator's quote account."
     },
     {
       "id": "per_pool.claim_creator_share",
@@ -3768,7 +3903,81 @@
       ],
       "args": [],
       "accounts": [],
-      "note": "Remaining accounts. Per-pool: global, pool record, cown, dbc pool, pool vault, mint, creator ATA, token program; pool PDA signs. Shared adds qres at remaining[8]; global PDA signs."
+      "note": "Remaining accounts. Per-pool: global, pool record, cown, dbc pool, pool vault, mint, creator ATA, token program; pool PDA signs. Shared adds qres at remaining[8]; global PDA signs.",
+      "anchor_struct": "ClaimCreatorShare",
+      "named_len": 0,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "remaining": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 1,
+          "name": "pool_record",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "pool",
+            "pool"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "creator_owed",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "cown",
+            "pool"
+          ]
+        },
+        {
+          "index": 3,
+          "name": "dbc_pool",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 4,
+          "name": "pool_vault",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "note": "owner must be the pool record"
+        },
+        {
+          "index": 5,
+          "name": "quote_mint",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 6,
+          "name": "creator_quote",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 7,
+          "name": "quote_token_program",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        }
+      ],
+      "handler_note": "No named Anchor fields. Pool PDA signs. Vault owner is the pool record."
     },
     {
       "id": "shared.crank_claim_damm",
@@ -3790,22 +3999,191 @@
           "index": 0,
           "name": "global",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "pool_record",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "quote_vault",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
+        },
+        {
+          "index": 3,
+          "name": "pool_authority",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 4,
+          "name": "damm_pool",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 5,
+          "name": "position",
+          "signer": false,
+          "writable": true,
+          "source": "anchor named field"
+        },
+        {
+          "index": 6,
+          "name": "token_a_account",
+          "signer": false,
+          "writable": true,
+          "source": "anchor named field"
+        },
+        {
+          "index": 7,
+          "name": "token_b_account",
+          "signer": false,
+          "writable": true,
+          "source": "anchor named field"
+        },
+        {
+          "index": 8,
+          "name": "token_a_vault",
+          "signer": false,
+          "writable": true,
+          "source": "anchor named field"
+        },
+        {
+          "index": 9,
+          "name": "token_b_vault",
+          "signer": false,
+          "writable": true,
+          "source": "anchor named field"
+        },
+        {
+          "index": 10,
+          "name": "token_a_mint",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 11,
+          "name": "token_b_mint",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 12,
+          "name": "position_nft_account",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 13,
+          "name": "token_a_program",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 14,
+          "name": "token_b_program",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 15,
+          "name": "event_authority",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 16,
+          "name": "damm_program",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 17,
+          "name": "token_program",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
         }
       ],
-      "note": "Remaining begins payer, system, dbc pool, dbc config, cown. Shared index 5 is qres. Per-pool index 5 is the pool vault. mock_meteora is not a real DAMM claim."
+      "note": "Remaining begins payer, system, dbc pool, dbc config, cown. Shared index 5 is qres. Per-pool index 5 is the pool vault. mock_meteora is not a real DAMM claim.",
+      "anchor_struct": "CrankClaimDamm",
+      "named_len": 18,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "remaining": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "note": "handler requires signer and writable"
+        },
+        {
+          "index": 1,
+          "name": "system_program",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 2,
+          "name": "dbc_pool",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts",
+          "note": "must equal pool_record.pool"
+        },
+        {
+          "index": 3,
+          "name": "dbc_config",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts",
+          "note": "must equal the DBC pool config and pool_record.config"
+        },
+        {
+          "index": 4,
+          "name": "creator_owed",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "cown",
+            "pool"
+          ],
+          "note": "written when the 8 percent creator share is nonzero"
+        },
+        {
+          "index": 5,
+          "name": "quote_reserve",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "qres",
+            "quote_mint"
+          ],
+          "note": "shared only. The current 18+5 caller does not pass this account."
+        }
+      ],
+      "handler_note": "Named header is 18 accounts, the same 18 the current caller sends. The five creator extras follow. A sixth remaining account, the quote reserve, is required by this source and is not in that 18+5 call."
     },
     {
       "id": "per_pool.crank_claim_damm",
@@ -3827,22 +4205,183 @@
           "index": 0,
           "name": "global",
           "signer": false,
-          "writable": false
+          "writable": false,
+          "source": "anchor named field"
         },
         {
           "index": 1,
           "name": "pool_record",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
         },
         {
           "index": 2,
           "name": "quote_vault",
           "signer": false,
-          "writable": true
+          "writable": true,
+          "source": "anchor named field"
+        },
+        {
+          "index": 3,
+          "name": "pool_authority",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 4,
+          "name": "damm_pool",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 5,
+          "name": "position",
+          "signer": false,
+          "writable": true,
+          "source": "anchor named field"
+        },
+        {
+          "index": 6,
+          "name": "token_a_account",
+          "signer": false,
+          "writable": true,
+          "source": "anchor named field"
+        },
+        {
+          "index": 7,
+          "name": "token_b_account",
+          "signer": false,
+          "writable": true,
+          "source": "anchor named field"
+        },
+        {
+          "index": 8,
+          "name": "token_a_vault",
+          "signer": false,
+          "writable": true,
+          "source": "anchor named field"
+        },
+        {
+          "index": 9,
+          "name": "token_b_vault",
+          "signer": false,
+          "writable": true,
+          "source": "anchor named field"
+        },
+        {
+          "index": 10,
+          "name": "token_a_mint",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 11,
+          "name": "token_b_mint",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 12,
+          "name": "position_nft_account",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 13,
+          "name": "token_a_program",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 14,
+          "name": "token_b_program",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 15,
+          "name": "event_authority",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 16,
+          "name": "damm_program",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
+        },
+        {
+          "index": 17,
+          "name": "token_program",
+          "signer": false,
+          "writable": false,
+          "source": "anchor named field"
         }
       ],
-      "note": "Remaining begins payer, system, dbc pool, dbc config, cown. Shared index 5 is qres. Per-pool index 5 is the pool vault. mock_meteora is not a real DAMM claim."
+      "note": "Remaining begins payer, system, dbc pool, dbc config, cown. Shared index 5 is qres. Per-pool index 5 is the pool vault. mock_meteora is not a real DAMM claim.",
+      "anchor_struct": "CrankClaimDamm",
+      "named_len": 18,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "remaining": [
+        {
+          "index": 0,
+          "name": "payer",
+          "signer": true,
+          "writable": true,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 1,
+          "name": "system_program",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 2,
+          "name": "dbc_pool",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 3,
+          "name": "dbc_config",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 4,
+          "name": "creator_owed",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "cown",
+            "pool"
+          ]
+        },
+        {
+          "index": 5,
+          "name": "pool_vault",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "note": "per-pool only. ATA of the pool record. The current 18+5 caller does not pass this account."
+        }
+      ],
+      "handler_note": "Named header is 18 accounts. The five creator extras follow. A sixth remaining account, the pool vault, is required by this source and is not in that 18+5 call."
     },
     {
       "id": "shared.crank_auto_lp",
@@ -3873,7 +4412,203 @@
         }
       ],
       "accounts": [],
-      "note": "mock_meteora only. Not add_liquidity and not permanent_lock."
+      "note": "mock_meteora only. Not add_liquidity and not permanent_lock.",
+      "anchor_struct": "CrankAutoLp",
+      "named_len": 0,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "remaining": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 1,
+          "name": "auto_lp",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "autolp"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "payer",
+          "signer": true,
+          "writable": false,
+          "source": "handler remaining_accounts",
+          "note": "admin or crank. Handler checks is_signer, not writability."
+        },
+        {
+          "index": 3,
+          "name": "damm_pool",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 4,
+          "name": "position",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 5,
+          "name": "position_nft_account",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 6,
+          "name": "token_a_account",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "note": "global ATA of token_a_mint"
+        },
+        {
+          "index": 7,
+          "name": "token_b_account",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "note": "global ATA of token_b_mint"
+        },
+        {
+          "index": 8,
+          "name": "token_a_vault",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 9,
+          "name": "token_b_vault",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 10,
+          "name": "token_a_mint",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 11,
+          "name": "token_b_mint",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 12,
+          "name": "token_a_program",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 13,
+          "name": "token_b_program",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 14,
+          "name": "event_authority",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 15,
+          "name": "damm_program",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts",
+          "address": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+        },
+        {
+          "index": 16,
+          "name": "quote_stat_a",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "qstat",
+            "token_a_mint"
+          ]
+        },
+        {
+          "index": 17,
+          "name": "quote_stat_b",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "qstat",
+            "token_b_mint"
+          ]
+        },
+        {
+          "index": 18,
+          "name": "quote_reserve_a",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "qres",
+            "token_a_mint"
+          ]
+        },
+        {
+          "index": 19,
+          "name": "quote_reserve_b",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "qres",
+            "token_b_mint"
+          ]
+        },
+        {
+          "index": "20+2*i",
+          "name": "pool_record",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "pool",
+            "pool"
+          ],
+          "note": "then creator owed. 1 to 4 pools total across both mints."
+        },
+        {
+          "index": "21+2*i",
+          "name": "creator_owed",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "cown",
+            "pool"
+          ],
+          "note": "empty means owed 0. Writable is not required by the handler."
+        }
+      ],
+      "handler_note": "Anchor context has no named fields. Every account is remaining, in this order. At most 4 pools. The CPI target in these tests is mock_meteora, not Meteora."
     },
     {
       "id": "per_pool.crank_auto_lp",
@@ -3904,7 +4639,848 @@
         }
       ],
       "accounts": [],
-      "note": "mock_meteora only. Not add_liquidity and not permanent_lock."
+      "note": "mock_meteora only. Not add_liquidity and not permanent_lock.",
+      "anchor_struct": "CrankAutoLp",
+      "named_len": 0,
+      "schema": "custom raw ABI derived from the experimental source. Not a generated Anchor IDL. cargo-build-sbf did not emit an IDL for this crate.",
+      "remaining": [
+        {
+          "index": 0,
+          "name": "global",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "global"
+          ]
+        },
+        {
+          "index": 1,
+          "name": "auto_lp",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "autolp"
+          ]
+        },
+        {
+          "index": 2,
+          "name": "payer",
+          "signer": true,
+          "writable": false,
+          "source": "handler remaining_accounts",
+          "note": "admin or crank. Handler checks is_signer, not writability."
+        },
+        {
+          "index": 3,
+          "name": "damm_pool",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 4,
+          "name": "position",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 5,
+          "name": "position_nft_account",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 6,
+          "name": "token_a_account",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "note": "global ATA of token_a_mint"
+        },
+        {
+          "index": 7,
+          "name": "token_b_account",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "note": "global ATA of token_b_mint"
+        },
+        {
+          "index": 8,
+          "name": "token_a_vault",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 9,
+          "name": "token_b_vault",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 10,
+          "name": "token_a_mint",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 11,
+          "name": "token_b_mint",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 12,
+          "name": "token_a_program",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 13,
+          "name": "token_b_program",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 14,
+          "name": "event_authority",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts"
+        },
+        {
+          "index": 15,
+          "name": "damm_program",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts",
+          "address": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+        },
+        {
+          "index": 16,
+          "name": "quote_stat_a",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "qstat",
+            "token_a_mint"
+          ]
+        },
+        {
+          "index": 17,
+          "name": "quote_stat_b",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "qstat",
+            "token_b_mint"
+          ]
+        },
+        {
+          "index": "18+3*i",
+          "name": "pool_record",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "pool",
+            "pool"
+          ]
+        },
+        {
+          "index": "19+3*i",
+          "name": "pool_vault",
+          "signer": false,
+          "writable": true,
+          "source": "handler remaining_accounts",
+          "note": "ATA of that pool record"
+        },
+        {
+          "index": "20+3*i",
+          "name": "creator_owed",
+          "signer": false,
+          "writable": false,
+          "source": "handler remaining_accounts",
+          "pda": [
+            "cown",
+            "pool"
+          ],
+          "note": "empty means owed 0"
+        }
+      ],
+      "handler_note": "Anchor context has no named fields. Header matches shared through the two QuoteStats. The tail is pool, pool vault, creator owed, at most 4 pools. No quote reserve. The CPI target in these tests is mock_meteora."
     }
-  ]
+  ],
+  "schema": "custom raw ABI read from the experimental Rust source at commit 380a54d. Not a generated Anchor IDL. The sbf build does not emit one.",
+  "elfs_unchanged": {
+    "shared_3evo_sha256": "d87ce272c943bb7b115cc7c2555f1977e38244d2beac576d727d4a7347f834b6",
+    "shared_3evo_bytes": 621672,
+    "per_pool_3evo_sha256": "225c7768650666540c5f66d82ea2c4ac2be7567f9189ff998648abc1cc63fba9",
+    "per_pool_3evo_bytes": 607824,
+    "shared_experiment_sha256": "cb0b1d4952e8123a29a2e8cd80d243faab4c8be54c90cb07b215ae0de4ada92c",
+    "shared_experiment_bytes": 620392,
+    "per_pool_experiment_sha256": "321acc6eedf0d8a510c968eac64a6e853e75f3a6138a3625d18eeb7f5fff13bf",
+    "per_pool_experiment_bytes": 606544
+  },
+  "deliberate_incompatibility": [
+    "Shared crank_pay_page_v3 has 10 named accounts. The current caller sends 9. The tenth is the writable quote reserve. Per-pool has those same 9 and no reserve.",
+    "crank_claim_damm has 18 named accounts on both designs, then 5 creator extras, then one design account: quote reserve on shared, pool vault on per-pool. A caller that stops at 18+5 is short one account.",
+    "crank_auto_lp has no named accounts. Shared and per-pool tails differ after the two QuoteStats.",
+    "Per-pool pay, burn, and release require the quote vault owner to be the pool record. Shared requires the global ATA.",
+    "check_quote_mint is a simulate-only crank gate. close_old_checkpoints is a separate maintenance send. Neither is a website instruction, and neither is unused."
+  ],
+  "errors": {
+    "shared": [
+      {
+        "code": 6000,
+        "name": "BadMint",
+        "message": "mint is unset or default"
+      },
+      {
+        "code": 6001,
+        "name": "BadPool",
+        "message": "pool is unset"
+      },
+      {
+        "code": 6002,
+        "name": "QuoteMismatch",
+        "message": "quote mint does not match the config"
+      },
+      {
+        "code": 6003,
+        "name": "BurnMintLocked",
+        "message": "burn mint is already set"
+      },
+      {
+        "code": 6004,
+        "name": "Paused",
+        "message": "crank is paused"
+      },
+      {
+        "code": 6005,
+        "name": "UseDammPath",
+        "message": "pool has graduated, use the DAMM path"
+      },
+      {
+        "code": 6006,
+        "name": "Math",
+        "message": "math overflow"
+      },
+      {
+        "code": 6007,
+        "name": "NothingToClaim",
+        "message": "nothing was claimed"
+      },
+      {
+        "code": 6008,
+        "name": "BadTotal",
+        "message": "eligible total must be greater than zero"
+      },
+      {
+        "code": 6009,
+        "name": "BadPage",
+        "message": "holder page must be pairs of accounts"
+      },
+      {
+        "code": 6010,
+        "name": "EmptyPot",
+        "message": "pot is empty"
+      },
+      {
+        "code": 6011,
+        "name": "OwnerMismatch",
+        "message": "base and quote owner differ"
+      },
+      {
+        "code": 6012,
+        "name": "ZeroBalance",
+        "message": "zero balance"
+      },
+      {
+        "code": 6013,
+        "name": "BurnMintUnset",
+        "message": "burn mint is not set"
+      },
+      {
+        "code": 6014,
+        "name": "NeedsSwap",
+        "message": "quote is not the burn mint, leave it for the swap"
+      },
+      {
+        "code": 6015,
+        "name": "ClaimFailed",
+        "message": "meteora claim failed"
+      },
+      {
+        "code": 6016,
+        "name": "BadCheckpoint",
+        "message": "checkpoint account is not the expected pda"
+      },
+      {
+        "code": 6017,
+        "name": "BurnOperatorLocked",
+        "message": "burn operator is already set"
+      },
+      {
+        "code": 6018,
+        "name": "BurnOperatorUnset",
+        "message": "burn operator is not set"
+      },
+      {
+        "code": 6019,
+        "name": "NotDbcAccount",
+        "message": "account is not the expected Meteora DBC account"
+      },
+      {
+        "code": 6020,
+        "name": "ConfigMismatch",
+        "message": "config does not match the DBC pool's config"
+      },
+      {
+        "code": 6021,
+        "name": "BadFeeClaimer",
+        "message": "DBC config fee claimer is not the Global PDA"
+      },
+      {
+        "code": 6022,
+        "name": "NotMigrated",
+        "message": "DBC pool has not migrated yet"
+      },
+      {
+        "code": 6023,
+        "name": "NotCrank",
+        "message": "only the admin or the crank may pay holders"
+      },
+      {
+        "code": 6024,
+        "name": "BadVault",
+        "message": "token account is not the Global vault for this mint"
+      },
+      {
+        "code": 6025,
+        "name": "UsePayV2",
+        "message": "crank_pay_page is retired, use crank_pay_page_v2"
+      },
+      {
+        "code": 6026,
+        "name": "BadRound",
+        "message": "round is not valid for this action"
+      },
+      {
+        "code": 6027,
+        "name": "BadDest",
+        "message": "destination account is not allowed"
+      },
+      {
+        "code": 6028,
+        "name": "UnsupportedMint",
+        "message": "this token is not supported as a pair (non-transferable, confidential mint/burn, Token-2022 wSOL or >18 decimals)"
+      },
+      {
+        "code": 6029,
+        "name": "HookActive",
+        "message": "the token has an active transfer hook: Meteora cannot release its fees; pair suspended"
+      },
+      {
+        "code": 6030,
+        "name": "MintPaused",
+        "message": "the token is paused by its issuer; pair suspended until unpaused"
+      },
+      {
+        "code": 6031,
+        "name": "DefaultFrozen",
+        "message": "the token's new accounts start frozen; not supported"
+      },
+      {
+        "code": 6032,
+        "name": "TransferFeeTooHigh",
+        "message": "the token's transfer fee is above the 1% cap"
+      },
+      {
+        "code": 6033,
+        "name": "UnknownExtension",
+        "message": "the token has a Token-2022 extension this program does not know; needs review"
+      },
+      {
+        "code": 6034,
+        "name": "VaultShort",
+        "message": "the Global vault holds less than this payout (tokens were moved out by the issuer?)"
+      },
+      {
+        "code": 6035,
+        "name": "WrongTokenProgram",
+        "message": "token program does not match the mint's owner program"
+      },
+      {
+        "code": 6036,
+        "name": "VaultMissing",
+        "message": "the Global vault for this token does not exist yet (create the ATA first)"
+      },
+      {
+        "code": 6037,
+        "name": "NotAdmin",
+        "message": "only the admin may do this"
+      },
+      {
+        "code": 6038,
+        "name": "BadTokenAccount",
+        "message": "not a valid token account"
+      },
+      {
+        "code": 6039,
+        "name": "UseSplitPath",
+        "message": "crank_claim_damm needs the 5 creator-share accounts (payer, system program, dbc pool, dbc config, creator_owed)"
+      },
+      {
+        "code": 6040,
+        "name": "BadCreator",
+        "message": "creator account is not the pool creator's token account, or the pool/config does not match"
+      },
+      {
+        "code": 6041,
+        "name": "NoCreatorShare",
+        "message": "no creator share is waiting"
+      },
+      {
+        "code": 6042,
+        "name": "CreatorAtaUnusable",
+        "message": "the creator's token account is missing, frozen or not usable; create it and try again"
+      },
+      {
+        "code": 6043,
+        "name": "AutoLpNotReady",
+        "message": "auto-LP is not configured yet (set the $FUSED DAMM pool after graduation)"
+      },
+      {
+        "code": 6044,
+        "name": "BadAutoLpShare",
+        "message": "auto-LP share must be 0..=10000 basis points"
+      },
+      {
+        "code": 6045,
+        "name": "BadAutoLpAccounts",
+        "message": "auto-LP accounts are missing or do not match the configured pool/position"
+      },
+      {
+        "code": 6046,
+        "name": "BadAutoLpAmounts",
+        "message": "auto-LP liquidity delta or thresholds must be greater than zero"
+      },
+      {
+        "code": 6047,
+        "name": "AutoLpCpiFailed",
+        "message": "DAMM add_liquidity or permanent_lock_position CPI failed"
+      },
+      {
+        "code": 6048,
+        "name": "QuoteStatRequired",
+        "message": "register_pool requires writable QuoteStat PDA at remaining_accounts[1]"
+      },
+      {
+        "code": 6049,
+        "name": "QuoteStatUninitialized",
+        "message": "QuoteStat is missing; sync the absolute pool count before register_pool"
+      },
+      {
+        "code": 6050,
+        "name": "ReserveMissing",
+        "message": "the quote reserve account is missing"
+      },
+      {
+        "code": 6051,
+        "name": "ReserveMismatch",
+        "message": "the quote reserve does not match this mint or is not writable"
+      },
+      {
+        "code": 6052,
+        "name": "ReserveNotLive",
+        "message": "the quote reserve is not sealed; claims and payouts are closed"
+      },
+      {
+        "code": 6053,
+        "name": "AlreadyImported",
+        "message": "this pool was already imported into the quote reserve"
+      },
+      {
+        "code": 6054,
+        "name": "LpBatchClosed",
+        "message": "the LP reservation is not open"
+      },
+      {
+        "code": 6055,
+        "name": "EscrowNotClosable",
+        "message": "the escrow still holds tokens or the batch is not finished"
+      },
+      {
+        "code": 6056,
+        "name": "BatchRetired",
+        "message": "this LP batch id was already closed"
+      }
+    ],
+    "per_pool": [
+      {
+        "code": 6000,
+        "name": "BadMint",
+        "message": "mint is unset or default"
+      },
+      {
+        "code": 6001,
+        "name": "BadPool",
+        "message": "pool is unset"
+      },
+      {
+        "code": 6002,
+        "name": "QuoteMismatch",
+        "message": "quote mint does not match the config"
+      },
+      {
+        "code": 6003,
+        "name": "BurnMintLocked",
+        "message": "burn mint is already set"
+      },
+      {
+        "code": 6004,
+        "name": "Paused",
+        "message": "crank is paused"
+      },
+      {
+        "code": 6005,
+        "name": "UseDammPath",
+        "message": "pool has graduated, use the DAMM path"
+      },
+      {
+        "code": 6006,
+        "name": "Math",
+        "message": "math overflow"
+      },
+      {
+        "code": 6007,
+        "name": "NothingToClaim",
+        "message": "nothing was claimed"
+      },
+      {
+        "code": 6008,
+        "name": "BadTotal",
+        "message": "eligible total must be greater than zero"
+      },
+      {
+        "code": 6009,
+        "name": "BadPage",
+        "message": "holder page must be pairs of accounts"
+      },
+      {
+        "code": 6010,
+        "name": "EmptyPot",
+        "message": "pot is empty"
+      },
+      {
+        "code": 6011,
+        "name": "OwnerMismatch",
+        "message": "base and quote owner differ"
+      },
+      {
+        "code": 6012,
+        "name": "ZeroBalance",
+        "message": "zero balance"
+      },
+      {
+        "code": 6013,
+        "name": "BurnMintUnset",
+        "message": "burn mint is not set"
+      },
+      {
+        "code": 6014,
+        "name": "NeedsSwap",
+        "message": "quote is not the burn mint, leave it for the swap"
+      },
+      {
+        "code": 6015,
+        "name": "ClaimFailed",
+        "message": "meteora claim failed"
+      },
+      {
+        "code": 6016,
+        "name": "BadCheckpoint",
+        "message": "checkpoint account is not the expected pda"
+      },
+      {
+        "code": 6017,
+        "name": "BurnOperatorLocked",
+        "message": "burn operator is already set"
+      },
+      {
+        "code": 6018,
+        "name": "BurnOperatorUnset",
+        "message": "burn operator is not set"
+      },
+      {
+        "code": 6019,
+        "name": "NotDbcAccount",
+        "message": "account is not the expected Meteora DBC account"
+      },
+      {
+        "code": 6020,
+        "name": "ConfigMismatch",
+        "message": "config does not match the DBC pool's config"
+      },
+      {
+        "code": 6021,
+        "name": "BadFeeClaimer",
+        "message": "DBC config fee claimer is not the Global PDA"
+      },
+      {
+        "code": 6022,
+        "name": "NotMigrated",
+        "message": "DBC pool has not migrated yet"
+      },
+      {
+        "code": 6023,
+        "name": "NotCrank",
+        "message": "only the admin or the crank may pay holders"
+      },
+      {
+        "code": 6024,
+        "name": "BadVault",
+        "message": "token account is not the Global vault for this mint"
+      },
+      {
+        "code": 6025,
+        "name": "UsePayV2",
+        "message": "crank_pay_page is retired, use crank_pay_page_v2"
+      },
+      {
+        "code": 6026,
+        "name": "BadRound",
+        "message": "round is not valid for this action"
+      },
+      {
+        "code": 6027,
+        "name": "BadDest",
+        "message": "destination account is not allowed"
+      },
+      {
+        "code": 6028,
+        "name": "UnsupportedMint",
+        "message": "this token is not supported as a pair (non-transferable, confidential mint/burn, Token-2022 wSOL or >18 decimals)"
+      },
+      {
+        "code": 6029,
+        "name": "HookActive",
+        "message": "the token has an active transfer hook: Meteora cannot release its fees; pair suspended"
+      },
+      {
+        "code": 6030,
+        "name": "MintPaused",
+        "message": "the token is paused by its issuer; pair suspended until unpaused"
+      },
+      {
+        "code": 6031,
+        "name": "DefaultFrozen",
+        "message": "the token's new accounts start frozen; not supported"
+      },
+      {
+        "code": 6032,
+        "name": "TransferFeeTooHigh",
+        "message": "the token's transfer fee is above the 1% cap"
+      },
+      {
+        "code": 6033,
+        "name": "UnknownExtension",
+        "message": "the token has a Token-2022 extension this program does not know; needs review"
+      },
+      {
+        "code": 6034,
+        "name": "VaultShort",
+        "message": "the Global vault holds less than this payout (tokens were moved out by the issuer?)"
+      },
+      {
+        "code": 6035,
+        "name": "WrongTokenProgram",
+        "message": "token program does not match the mint's owner program"
+      },
+      {
+        "code": 6036,
+        "name": "VaultMissing",
+        "message": "the Global vault for this token does not exist yet (create the ATA first)"
+      },
+      {
+        "code": 6037,
+        "name": "NotAdmin",
+        "message": "only the admin may do this"
+      },
+      {
+        "code": 6038,
+        "name": "BadTokenAccount",
+        "message": "not a valid token account"
+      },
+      {
+        "code": 6039,
+        "name": "UseSplitPath",
+        "message": "crank_claim_damm needs the 5 creator-share accounts (payer, system program, dbc pool, dbc config, creator_owed)"
+      },
+      {
+        "code": 6040,
+        "name": "BadCreator",
+        "message": "creator account is not the pool creator's token account, or the pool/config does not match"
+      },
+      {
+        "code": 6041,
+        "name": "NoCreatorShare",
+        "message": "no creator share is waiting"
+      },
+      {
+        "code": 6042,
+        "name": "CreatorAtaUnusable",
+        "message": "the creator's token account is missing, frozen or not usable; create it and try again"
+      },
+      {
+        "code": 6043,
+        "name": "AutoLpNotReady",
+        "message": "auto-LP is not configured yet (set the $FUSED DAMM pool after graduation)"
+      },
+      {
+        "code": 6044,
+        "name": "BadAutoLpShare",
+        "message": "auto-LP share must be 0..=10000 basis points"
+      },
+      {
+        "code": 6045,
+        "name": "BadAutoLpAccounts",
+        "message": "auto-LP accounts are missing or do not match the configured pool/position"
+      },
+      {
+        "code": 6046,
+        "name": "BadAutoLpAmounts",
+        "message": "auto-LP liquidity delta or thresholds must be greater than zero"
+      },
+      {
+        "code": 6047,
+        "name": "AutoLpCpiFailed",
+        "message": "DAMM add_liquidity or permanent_lock_position CPI failed"
+      },
+      {
+        "code": 6048,
+        "name": "QuoteStatRequired",
+        "message": "register_pool requires writable QuoteStat PDA at remaining_accounts[1]"
+      },
+      {
+        "code": 6049,
+        "name": "QuoteStatUninitialized",
+        "message": "QuoteStat is missing; sync the absolute pool count before register_pool"
+      },
+      {
+        "code": 6050,
+        "name": "PoolVault",
+        "message": "the pool vault is missing or is not owned by the pool record"
+      },
+      {
+        "code": 6051,
+        "name": "LpBatchClosed",
+        "message": "the LP reservation is not open"
+      },
+      {
+        "code": 6052,
+        "name": "EscrowNotClosable",
+        "message": "the escrow still holds tokens or the batch is not finished"
+      },
+      {
+        "code": 6053,
+        "name": "MigrationFeeShort",
+        "message": "moving this fee-mint balance would deliver less than the existing liabilities"
+      },
+      {
+        "code": 6054,
+        "name": "BatchRetired",
+        "message": "this LP batch id was already closed"
+      },
+      {
+        "code": 6055,
+        "name": "AlreadyMigrated",
+        "message": "this pool's custody is already in the pool vault"
+      },
+      {
+        "code": 6056,
+        "name": "AlreadyReversed",
+        "message": "this pool's custody is already back in the global vault"
+      },
+      {
+        "code": 6057,
+        "name": "CustodyNotMoved",
+        "message": "this pool has not been moved into its own vault"
+      }
+    ],
+    "numbering": "Anchor starts at 6000. The two programs share codes through 6049. From 6050 the variants differ."
+  },
+  "mint_policy": {
+    "check_quote_mint_return": "7 bytes: tier u8, decimals u8, is_token_2022 u8, flags u32 le",
+    "flags": {
+      "1": "F_TOKEN_2022",
+      "2": "F_FREEZE_AUTHORITY",
+      "4": "F_PERMANENT_DELEGATE",
+      "8": "F_PAUSABLE",
+      "16": "F_HOOK_AUTHORITY",
+      "32": "F_TRANSFER_FEE",
+      "64": "F_DEFAULT_ACCOUNT_STATE",
+      "128": "F_SCALED_OR_INTEREST",
+      "256": "F_CONFIDENTIAL",
+      "512": "F_CLOSE_AUTHORITY"
+    },
+    "tier_1_if_any_of": "freeze authority, permanent delegate, pausable, hook authority, transfer fee, default account state. Tier 1 does not by itself reject the mint.",
+    "rejects": [
+      {
+        "error": "WrongTokenProgram",
+        "code": 6035,
+        "when": "mint owner is not Tokenkeg or Token-2022"
+      },
+      {
+        "error": "BadMint",
+        "code": 6000,
+        "when": "mint data shorter than 82, initialized flag not 1, or a Token-2022 TLV entry is truncated"
+      },
+      {
+        "error": "UnsupportedMint",
+        "code": 6028,
+        "when": "decimals above 18, the Token-2022 wSOL mint, NonTransferable, or ConfidentialMintBurn"
+      },
+      {
+        "error": "HookActive",
+        "code": 6029,
+        "when": "TransferHook program id is not all zeros"
+      },
+      {
+        "error": "MintPaused",
+        "code": 6030,
+        "when": "Pausable extension paused byte is not 0"
+      },
+      {
+        "error": "DefaultFrozen",
+        "code": 6031,
+        "when": "DefaultAccountState is Frozen (2)"
+      },
+      {
+        "error": "TransferFeeTooHigh",
+        "code": 6032,
+        "when": "current or scheduled transfer fee is above 100 bps"
+      },
+      {
+        "error": "UnknownExtension",
+        "code": 6033,
+        "when": "any other Token-2022 extension type"
+      }
+    ],
+    "caller": "The crank pair check builds this instruction and simulates it. It is not a website send. A successful simulation is the gate; a rejecting error suspends the pair."
+  },
+  "check_quote_mint_and_close_old_checkpoints": "The crank simulates check_quote_mint before a pair is allowed. close_old_checkpoints is sent by its own maintenance command. The earlier handoff sentence that called them unused is wrong."
 }

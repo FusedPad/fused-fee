@@ -1676,7 +1676,23 @@ fn abi_has_accounts(design: &str, name: &str, accounts: &[&str]) {
     }
 }
 
+fn abi_named_len(design: &str, name: &str) -> usize {
+    let id = format!("\"id\": \"{design}.{name}\"");
+    let at = ABI_TEXT.find(&id).unwrap_or_else(|| panic!("ABI missing {id}"));
+    let window = &ABI_TEXT[at..at + 12000];
+    let key = "\"named_len\": ";
+    let i = window.find(key).unwrap_or_else(|| panic!("named_len {id}"));
+    window[i + key.len()..].chars().take_while(|c| c.is_ascii_digit()).collect::<String>().parse().unwrap()
+}
+
 async fn retained_three(rt: &mut Rt, prog: Pubkey, g: &Pubkey, admin: &Pubkey, pool: &Pubkey, prec: &Pubkey, quote: &Pubkey, design: &str, rows: &mut Vec<Rec>) {
+    assert_eq!(abi_named_len("shared", "crank_claim_damm"), 18);
+    assert_eq!(abi_named_len("per_pool", "crank_claim_damm"), 18);
+    assert_eq!(abi_named_len("shared", "crank_pay_page_v3"), 10);
+    assert_eq!(abi_named_len("per_pool", "crank_pay_page_v3"), 9);
+    assert_eq!(abi_named_len(design, "crank_auto_lp"), 0);
+    assert!(ABI_TEXT.contains("quote_token_program"));
+    assert!(ABI_TEXT.contains("MigrationFeeShort"));
     for (n, accts) in [
         ("mark_graduated", &["global", "pool_record", "dbc_pool"][..]),
         ("check_quote_mint", &["mint"][..]),

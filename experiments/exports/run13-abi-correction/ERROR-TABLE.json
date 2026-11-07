@@ -1,0 +1,641 @@
+{
+  "shared": [
+    {
+      "code": 6000,
+      "name": "BadMint",
+      "message": "mint is unset or default"
+    },
+    {
+      "code": 6001,
+      "name": "BadPool",
+      "message": "pool is unset"
+    },
+    {
+      "code": 6002,
+      "name": "QuoteMismatch",
+      "message": "quote mint does not match the config"
+    },
+    {
+      "code": 6003,
+      "name": "BurnMintLocked",
+      "message": "burn mint is already set"
+    },
+    {
+      "code": 6004,
+      "name": "Paused",
+      "message": "crank is paused"
+    },
+    {
+      "code": 6005,
+      "name": "UseDammPath",
+      "message": "pool has graduated, use the DAMM path"
+    },
+    {
+      "code": 6006,
+      "name": "Math",
+      "message": "math overflow"
+    },
+    {
+      "code": 6007,
+      "name": "NothingToClaim",
+      "message": "nothing was claimed"
+    },
+    {
+      "code": 6008,
+      "name": "BadTotal",
+      "message": "eligible total must be greater than zero"
+    },
+    {
+      "code": 6009,
+      "name": "BadPage",
+      "message": "holder page must be pairs of accounts"
+    },
+    {
+      "code": 6010,
+      "name": "EmptyPot",
+      "message": "pot is empty"
+    },
+    {
+      "code": 6011,
+      "name": "OwnerMismatch",
+      "message": "base and quote owner differ"
+    },
+    {
+      "code": 6012,
+      "name": "ZeroBalance",
+      "message": "zero balance"
+    },
+    {
+      "code": 6013,
+      "name": "BurnMintUnset",
+      "message": "burn mint is not set"
+    },
+    {
+      "code": 6014,
+      "name": "NeedsSwap",
+      "message": "quote is not the burn mint, leave it for the swap"
+    },
+    {
+      "code": 6015,
+      "name": "ClaimFailed",
+      "message": "meteora claim failed"
+    },
+    {
+      "code": 6016,
+      "name": "BadCheckpoint",
+      "message": "checkpoint account is not the expected pda"
+    },
+    {
+      "code": 6017,
+      "name": "BurnOperatorLocked",
+      "message": "burn operator is already set"
+    },
+    {
+      "code": 6018,
+      "name": "BurnOperatorUnset",
+      "message": "burn operator is not set"
+    },
+    {
+      "code": 6019,
+      "name": "NotDbcAccount",
+      "message": "account is not the expected Meteora DBC account"
+    },
+    {
+      "code": 6020,
+      "name": "ConfigMismatch",
+      "message": "config does not match the DBC pool's config"
+    },
+    {
+      "code": 6021,
+      "name": "BadFeeClaimer",
+      "message": "DBC config fee claimer is not the Global PDA"
+    },
+    {
+      "code": 6022,
+      "name": "NotMigrated",
+      "message": "DBC pool has not migrated yet"
+    },
+    {
+      "code": 6023,
+      "name": "NotCrank",
+      "message": "only the admin or the crank may pay holders"
+    },
+    {
+      "code": 6024,
+      "name": "BadVault",
+      "message": "token account is not the Global vault for this mint"
+    },
+    {
+      "code": 6025,
+      "name": "UsePayV2",
+      "message": "crank_pay_page is retired, use crank_pay_page_v2"
+    },
+    {
+      "code": 6026,
+      "name": "BadRound",
+      "message": "round is not valid for this action"
+    },
+    {
+      "code": 6027,
+      "name": "BadDest",
+      "message": "destination account is not allowed"
+    },
+    {
+      "code": 6028,
+      "name": "UnsupportedMint",
+      "message": "this token is not supported as a pair (non-transferable, confidential mint/burn, Token-2022 wSOL or >18 decimals)"
+    },
+    {
+      "code": 6029,
+      "name": "HookActive",
+      "message": "the token has an active transfer hook: Meteora cannot release its fees; pair suspended"
+    },
+    {
+      "code": 6030,
+      "name": "MintPaused",
+      "message": "the token is paused by its issuer; pair suspended until unpaused"
+    },
+    {
+      "code": 6031,
+      "name": "DefaultFrozen",
+      "message": "the token's new accounts start frozen; not supported"
+    },
+    {
+      "code": 6032,
+      "name": "TransferFeeTooHigh",
+      "message": "the token's transfer fee is above the 1% cap"
+    },
+    {
+      "code": 6033,
+      "name": "UnknownExtension",
+      "message": "the token has a Token-2022 extension this program does not know; needs review"
+    },
+    {
+      "code": 6034,
+      "name": "VaultShort",
+      "message": "the Global vault holds less than this payout (tokens were moved out by the issuer?)"
+    },
+    {
+      "code": 6035,
+      "name": "WrongTokenProgram",
+      "message": "token program does not match the mint's owner program"
+    },
+    {
+      "code": 6036,
+      "name": "VaultMissing",
+      "message": "the Global vault for this token does not exist yet (create the ATA first)"
+    },
+    {
+      "code": 6037,
+      "name": "NotAdmin",
+      "message": "only the admin may do this"
+    },
+    {
+      "code": 6038,
+      "name": "BadTokenAccount",
+      "message": "not a valid token account"
+    },
+    {
+      "code": 6039,
+      "name": "UseSplitPath",
+      "message": "crank_claim_damm needs the 5 creator-share accounts (payer, system program, dbc pool, dbc config, creator_owed)"
+    },
+    {
+      "code": 6040,
+      "name": "BadCreator",
+      "message": "creator account is not the pool creator's token account, or the pool/config does not match"
+    },
+    {
+      "code": 6041,
+      "name": "NoCreatorShare",
+      "message": "no creator share is waiting"
+    },
+    {
+      "code": 6042,
+      "name": "CreatorAtaUnusable",
+      "message": "the creator's token account is missing, frozen or not usable; create it and try again"
+    },
+    {
+      "code": 6043,
+      "name": "AutoLpNotReady",
+      "message": "auto-LP is not configured yet (set the $FUSED DAMM pool after graduation)"
+    },
+    {
+      "code": 6044,
+      "name": "BadAutoLpShare",
+      "message": "auto-LP share must be 0..=10000 basis points"
+    },
+    {
+      "code": 6045,
+      "name": "BadAutoLpAccounts",
+      "message": "auto-LP accounts are missing or do not match the configured pool/position"
+    },
+    {
+      "code": 6046,
+      "name": "BadAutoLpAmounts",
+      "message": "auto-LP liquidity delta or thresholds must be greater than zero"
+    },
+    {
+      "code": 6047,
+      "name": "AutoLpCpiFailed",
+      "message": "DAMM add_liquidity or permanent_lock_position CPI failed"
+    },
+    {
+      "code": 6048,
+      "name": "QuoteStatRequired",
+      "message": "register_pool requires writable QuoteStat PDA at remaining_accounts[1]"
+    },
+    {
+      "code": 6049,
+      "name": "QuoteStatUninitialized",
+      "message": "QuoteStat is missing; sync the absolute pool count before register_pool"
+    },
+    {
+      "code": 6050,
+      "name": "ReserveMissing",
+      "message": "the quote reserve account is missing"
+    },
+    {
+      "code": 6051,
+      "name": "ReserveMismatch",
+      "message": "the quote reserve does not match this mint or is not writable"
+    },
+    {
+      "code": 6052,
+      "name": "ReserveNotLive",
+      "message": "the quote reserve is not sealed; claims and payouts are closed"
+    },
+    {
+      "code": 6053,
+      "name": "AlreadyImported",
+      "message": "this pool was already imported into the quote reserve"
+    },
+    {
+      "code": 6054,
+      "name": "LpBatchClosed",
+      "message": "the LP reservation is not open"
+    },
+    {
+      "code": 6055,
+      "name": "EscrowNotClosable",
+      "message": "the escrow still holds tokens or the batch is not finished"
+    },
+    {
+      "code": 6056,
+      "name": "BatchRetired",
+      "message": "this LP batch id was already closed"
+    }
+  ],
+  "per_pool": [
+    {
+      "code": 6000,
+      "name": "BadMint",
+      "message": "mint is unset or default"
+    },
+    {
+      "code": 6001,
+      "name": "BadPool",
+      "message": "pool is unset"
+    },
+    {
+      "code": 6002,
+      "name": "QuoteMismatch",
+      "message": "quote mint does not match the config"
+    },
+    {
+      "code": 6003,
+      "name": "BurnMintLocked",
+      "message": "burn mint is already set"
+    },
+    {
+      "code": 6004,
+      "name": "Paused",
+      "message": "crank is paused"
+    },
+    {
+      "code": 6005,
+      "name": "UseDammPath",
+      "message": "pool has graduated, use the DAMM path"
+    },
+    {
+      "code": 6006,
+      "name": "Math",
+      "message": "math overflow"
+    },
+    {
+      "code": 6007,
+      "name": "NothingToClaim",
+      "message": "nothing was claimed"
+    },
+    {
+      "code": 6008,
+      "name": "BadTotal",
+      "message": "eligible total must be greater than zero"
+    },
+    {
+      "code": 6009,
+      "name": "BadPage",
+      "message": "holder page must be pairs of accounts"
+    },
+    {
+      "code": 6010,
+      "name": "EmptyPot",
+      "message": "pot is empty"
+    },
+    {
+      "code": 6011,
+      "name": "OwnerMismatch",
+      "message": "base and quote owner differ"
+    },
+    {
+      "code": 6012,
+      "name": "ZeroBalance",
+      "message": "zero balance"
+    },
+    {
+      "code": 6013,
+      "name": "BurnMintUnset",
+      "message": "burn mint is not set"
+    },
+    {
+      "code": 6014,
+      "name": "NeedsSwap",
+      "message": "quote is not the burn mint, leave it for the swap"
+    },
+    {
+      "code": 6015,
+      "name": "ClaimFailed",
+      "message": "meteora claim failed"
+    },
+    {
+      "code": 6016,
+      "name": "BadCheckpoint",
+      "message": "checkpoint account is not the expected pda"
+    },
+    {
+      "code": 6017,
+      "name": "BurnOperatorLocked",
+      "message": "burn operator is already set"
+    },
+    {
+      "code": 6018,
+      "name": "BurnOperatorUnset",
+      "message": "burn operator is not set"
+    },
+    {
+      "code": 6019,
+      "name": "NotDbcAccount",
+      "message": "account is not the expected Meteora DBC account"
+    },
+    {
+      "code": 6020,
+      "name": "ConfigMismatch",
+      "message": "config does not match the DBC pool's config"
+    },
+    {
+      "code": 6021,
+      "name": "BadFeeClaimer",
+      "message": "DBC config fee claimer is not the Global PDA"
+    },
+    {
+      "code": 6022,
+      "name": "NotMigrated",
+      "message": "DBC pool has not migrated yet"
+    },
+    {
+      "code": 6023,
+      "name": "NotCrank",
+      "message": "only the admin or the crank may pay holders"
+    },
+    {
+      "code": 6024,
+      "name": "BadVault",
+      "message": "token account is not the Global vault for this mint"
+    },
+    {
+      "code": 6025,
+      "name": "UsePayV2",
+      "message": "crank_pay_page is retired, use crank_pay_page_v2"
+    },
+    {
+      "code": 6026,
+      "name": "BadRound",
+      "message": "round is not valid for this action"
+    },
+    {
+      "code": 6027,
+      "name": "BadDest",
+      "message": "destination account is not allowed"
+    },
+    {
+      "code": 6028,
+      "name": "UnsupportedMint",
+      "message": "this token is not supported as a pair (non-transferable, confidential mint/burn, Token-2022 wSOL or >18 decimals)"
+    },
+    {
+      "code": 6029,
+      "name": "HookActive",
+      "message": "the token has an active transfer hook: Meteora cannot release its fees; pair suspended"
+    },
+    {
+      "code": 6030,
+      "name": "MintPaused",
+      "message": "the token is paused by its issuer; pair suspended until unpaused"
+    },
+    {
+      "code": 6031,
+      "name": "DefaultFrozen",
+      "message": "the token's new accounts start frozen; not supported"
+    },
+    {
+      "code": 6032,
+      "name": "TransferFeeTooHigh",
+      "message": "the token's transfer fee is above the 1% cap"
+    },
+    {
+      "code": 6033,
+      "name": "UnknownExtension",
+      "message": "the token has a Token-2022 extension this program does not know; needs review"
+    },
+    {
+      "code": 6034,
+      "name": "VaultShort",
+      "message": "the Global vault holds less than this payout (tokens were moved out by the issuer?)"
+    },
+    {
+      "code": 6035,
+      "name": "WrongTokenProgram",
+      "message": "token program does not match the mint's owner program"
+    },
+    {
+      "code": 6036,
+      "name": "VaultMissing",
+      "message": "the Global vault for this token does not exist yet (create the ATA first)"
+    },
+    {
+      "code": 6037,
+      "name": "NotAdmin",
+      "message": "only the admin may do this"
+    },
+    {
+      "code": 6038,
+      "name": "BadTokenAccount",
+      "message": "not a valid token account"
+    },
+    {
+      "code": 6039,
+      "name": "UseSplitPath",
+      "message": "crank_claim_damm needs the 5 creator-share accounts (payer, system program, dbc pool, dbc config, creator_owed)"
+    },
+    {
+      "code": 6040,
+      "name": "BadCreator",
+      "message": "creator account is not the pool creator's token account, or the pool/config does not match"
+    },
+    {
+      "code": 6041,
+      "name": "NoCreatorShare",
+      "message": "no creator share is waiting"
+    },
+    {
+      "code": 6042,
+      "name": "CreatorAtaUnusable",
+      "message": "the creator's token account is missing, frozen or not usable; create it and try again"
+    },
+    {
+      "code": 6043,
+      "name": "AutoLpNotReady",
+      "message": "auto-LP is not configured yet (set the $FUSED DAMM pool after graduation)"
+    },
+    {
+      "code": 6044,
+      "name": "BadAutoLpShare",
+      "message": "auto-LP share must be 0..=10000 basis points"
+    },
+    {
+      "code": 6045,
+      "name": "BadAutoLpAccounts",
+      "message": "auto-LP accounts are missing or do not match the configured pool/position"
+    },
+    {
+      "code": 6046,
+      "name": "BadAutoLpAmounts",
+      "message": "auto-LP liquidity delta or thresholds must be greater than zero"
+    },
+    {
+      "code": 6047,
+      "name": "AutoLpCpiFailed",
+      "message": "DAMM add_liquidity or permanent_lock_position CPI failed"
+    },
+    {
+      "code": 6048,
+      "name": "QuoteStatRequired",
+      "message": "register_pool requires writable QuoteStat PDA at remaining_accounts[1]"
+    },
+    {
+      "code": 6049,
+      "name": "QuoteStatUninitialized",
+      "message": "QuoteStat is missing; sync the absolute pool count before register_pool"
+    },
+    {
+      "code": 6050,
+      "name": "PoolVault",
+      "message": "the pool vault is missing or is not owned by the pool record"
+    },
+    {
+      "code": 6051,
+      "name": "LpBatchClosed",
+      "message": "the LP reservation is not open"
+    },
+    {
+      "code": 6052,
+      "name": "EscrowNotClosable",
+      "message": "the escrow still holds tokens or the batch is not finished"
+    },
+    {
+      "code": 6053,
+      "name": "MigrationFeeShort",
+      "message": "moving this fee-mint balance would deliver less than the existing liabilities"
+    },
+    {
+      "code": 6054,
+      "name": "BatchRetired",
+      "message": "this LP batch id was already closed"
+    },
+    {
+      "code": 6055,
+      "name": "AlreadyMigrated",
+      "message": "this pool's custody is already in the pool vault"
+    },
+    {
+      "code": 6056,
+      "name": "AlreadyReversed",
+      "message": "this pool's custody is already back in the global vault"
+    },
+    {
+      "code": 6057,
+      "name": "CustodyNotMoved",
+      "message": "this pool has not been moved into its own vault"
+    }
+  ],
+  "mint_policy": {
+    "check_quote_mint_return": "7 bytes: tier u8, decimals u8, is_token_2022 u8, flags u32 le",
+    "flags": {
+      "1": "F_TOKEN_2022",
+      "2": "F_FREEZE_AUTHORITY",
+      "4": "F_PERMANENT_DELEGATE",
+      "8": "F_PAUSABLE",
+      "16": "F_HOOK_AUTHORITY",
+      "32": "F_TRANSFER_FEE",
+      "64": "F_DEFAULT_ACCOUNT_STATE",
+      "128": "F_SCALED_OR_INTEREST",
+      "256": "F_CONFIDENTIAL",
+      "512": "F_CLOSE_AUTHORITY"
+    },
+    "tier_1_if_any_of": "freeze authority, permanent delegate, pausable, hook authority, transfer fee, default account state. Tier 1 does not by itself reject the mint.",
+    "rejects": [
+      {
+        "error": "WrongTokenProgram",
+        "code": 6035,
+        "when": "mint owner is not Tokenkeg or Token-2022"
+      },
+      {
+        "error": "BadMint",
+        "code": 6000,
+        "when": "mint data shorter than 82, initialized flag not 1, or a Token-2022 TLV entry is truncated"
+      },
+      {
+        "error": "UnsupportedMint",
+        "code": 6028,
+        "when": "decimals above 18, the Token-2022 wSOL mint, NonTransferable, or ConfidentialMintBurn"
+      },
+      {
+        "error": "HookActive",
+        "code": 6029,
+        "when": "TransferHook program id is not all zeros"
+      },
+      {
+        "error": "MintPaused",
+        "code": 6030,
+        "when": "Pausable extension paused byte is not 0"
+      },
+      {
+        "error": "DefaultFrozen",
+        "code": 6031,
+        "when": "DefaultAccountState is Frozen (2)"
+      },
+      {
+        "error": "TransferFeeTooHigh",
+        "code": 6032,
+        "when": "current or scheduled transfer fee is above 100 bps"
+      },
+      {
+        "error": "UnknownExtension",
+        "code": 6033,
+        "when": "any other Token-2022 extension type"
+      }
+    ],
+    "caller": "The crank pair check builds this instruction and simulates it. It is not a website send. A successful simulation is the gate; a rejecting error suspends the pair."
+  },
+  "numbering": "Anchor starts at 6000. The two programs share codes through 6049. From 6050 the variants differ."
+}
