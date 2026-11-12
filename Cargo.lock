@@ -1749,6 +1749,7 @@ dependencies = [
  "solana-program-test",
  "solana-pubkey",
  "solana-rent",
+ "solana-security-txt",
  "solana-signer",
  "solana-system-interface",
  "solana-transaction",

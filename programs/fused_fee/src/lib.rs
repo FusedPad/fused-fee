@@ -8,6 +8,15 @@ declare_id!("AZY2uXFPUfgTkhoNaXNL3oaZMdb4r3NfHYymA3s4mMw9");
 #[cfg(feature = "devnet")]
 declare_id!("8U45yvkgMohJBqCrd3uepXEsuVTfFY9Ak8Lu3ZU9Rm9F"); // DEVNET_PROGRAM_ID: replaced by the runbook
 
+#[cfg(not(feature = "no-entrypoint"))]
+solana_security_txt::security_txt! {
+    name: "FusedPad fee program",
+    project_url: "https://fusedpad.com",
+    contacts: "email:hello@fusedpad.com",
+    policy: "Please report security issues privately to hello@fusedpad.com. Do not exploit or publicly disclose a vulnerability before it is fixed.",
+    source_code: "https://github.com/FusedPad/fused-fee"
+}
+
 /// Partner share of volume is 1.10%. Of that, 0.90 goes to holders and 0.20 burns.
 const HOLDER_NUM: u64 = 90;
 const BURN_NUM: u64 = 20;
