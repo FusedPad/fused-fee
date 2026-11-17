@@ -1,6 +1,8 @@
 # QuoteStat auto-count handoff
 
-Narrow change only. `register_pool` now increments the canonical QuoteStat exactly once for each pool that is successfully registered. This is not a deployment and it is not mainnet-ready. The live website still sends 8 accounts and was not modified.
+The rollout section below is historical. The upgrade recorded in `docs/mainnet-upgrade-manifest.md` has already landed. Do not follow that section as current procedure. Solana Verify and the Solscan badge are still pending.
+
+Narrow change only. `register_pool` now increments an existing QuoteStat exactly once.
 
 ## Pins
 
