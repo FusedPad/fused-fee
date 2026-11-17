@@ -1,5 +1,7 @@
 # Mainnet upgrade manifest
 
+Historical 8 November record. Superseded by [17 November deployment and successful verification](2026-11-17/README.md).
+
 Public record of the QuoteStat counter upgrade. Docker verification and the Solscan badge are pending. This file does not authorize another deployment.
 
 ## Deployed build
