@@ -8,6 +8,15 @@ declare_id!("AZY2uXFPUfgTkhoNaXNL3oaZMdb4r3NfHYymA3s4mMw9");
 #[cfg(feature = "devnet")]
 declare_id!("8U45yvkgMohJBqCrd3uepXEsuVTfFY9Ak8Lu3ZU9Rm9F"); // DEVNET_PROGRAM_ID: replaced by the runbook
 
+#[cfg(not(feature = "no-entrypoint"))]
+solana_security_txt::security_txt! {
+    name: "FusedPad fee program",
+    project_url: "https://fusedpad.com",
+    contacts: "email:hello@fusedpad.com",
+    policy: "Please report security issues privately to hello@fusedpad.com. Do not exploit or publicly disclose a vulnerability before it is fixed.",
+    source_code: "https://github.com/FusedPad/fused-fee"
+}
+
 /// Partner share of volume is 1.10%. Of that, 0.90 goes to holders and 0.20 burns.
 const HOLDER_NUM: u64 = 90;
 const BURN_NUM: u64 = 20;
@@ -144,11 +153,27 @@ pub mod fused_fee {
         require_keys_eq!(real_base_mint, base_mint, FusedError::BadMint);
         require_keys_eq!(ctx.accounts.dbc_config.key(), real_config, FusedError::ConfigMismatch);
         check_dbc_config(&ctx.accounts.dbc_config, &quote_mint, &ctx.accounts.global.key())?;
-        // V3: optional remaining_accounts[0] = quote mint -> refuse unsupported pairs at registration.
-        if let Some(mint_ai) = ctx.remaining_accounts.first() {
-            require_keys_eq!(mint_ai.key(), quote_mint, FusedError::BadMint);
-            mint_policy(mint_ai)?;
-        }
+        // QuoteStat is not a named account: the 7-account prefix stays the same.
+        // It cannot stay optional. A successful registration has to update the quote
+        // counter in this instruction, and Solana will not write a PDA the caller left out.
+        // Omission used to commit the PoolRecord and leave pool_count stale.
+        //   remaining_accounts[0] = quote mint (pair policy)
+        //   remaining_accounts[1] = writable QuoteStat PDA ["qstat", quote_mint]
+        // Missing, read-only, wrong PDA, wrong mint, wrong owner, or overflow aborts
+        // the instruction, so the new PoolRecord is not committed.
+        // An existing QuoteStat is incremented by exactly 1. An empty PDA is rejected:
+        // inventing count=1 would hide pools registered before the counter existed.
+        // Admin sync_quote_stat sets the absolute baseline first (0 when the quote is new).
+        // Registering the same pool again fails at `init` and does not increment.
+        // This instruction does not arm auto-LP.
+        require!(ctx.remaining_accounts.len() >= 2, FusedError::QuoteStatRequired);
+        let mint_ai = &ctx.remaining_accounts[0];
+        require_keys_eq!(mint_ai.key(), quote_mint, FusedError::BadMint);
+        mint_policy(mint_ai)?;
+        let payer_ai = ctx.accounts.payer.to_account_info();
+        let sys_ai = ctx.accounts.system_program.to_account_info();
+        let qs_ai = ctx.remaining_accounts[1].clone();
+        bump_quote_stat_from_remaining(&payer_ai, &sys_ai, &qs_ai, &quote_mint, ctx.program_id)?;
         let p = &mut ctx.accounts.pool_record;
         p.pool = pool;
         p.base_mint = base_mint;
@@ -159,27 +184,6 @@ pub mod fused_fee {
         p.holder_pot = 0;
         p.burn_pot = 0;
         p.bump = ctx.bumps.pool_record;
-        // PERFECT + launch-compat: QuoteStat is NOT a named account.
-        // Live launch (/api/launch, Matchbox, coin-page Register) sends exactly the live 7 named
-        // accounts + quote mint at remaining_accounts[0]. Keeping named accounts identical to
-        // 539d50a means those clients keep working unchanged.
-        // Optional remaining_accounts[1] = QuoteStat PDA ["qstat", quote_mint] (writable):
-        // create-if-empty + increment. If omitted, register still succeeds and pool_count goes
-        // stale → crank_auto_lp fails closed (BadAutoLpAccounts 6045) until admin sync_quote_stat.
-        if ctx.remaining_accounts.len() >= 2 {
-            let payer_ai = ctx.accounts.payer.to_account_info();
-            let sys_ai = ctx.accounts.system_program.to_account_info();
-            let qs_ai = ctx.remaining_accounts[1].clone();
-            bump_quote_stat_from_remaining(
-                &payer_ai,
-                &sys_ai,
-                &qs_ai,
-                &quote_mint,
-                ctx.program_id,
-            )?;
-        } else {
-            msg!("quote_stat omitted at rem[1]; pool_count stale until sync_quote_stat");
-        }
         Ok(())
     }
 
@@ -947,8 +951,10 @@ pub mod fused_fee {
         Ok(())
     }
 
-    /// PERFECT: admin sets/repairs QuoteStat.pool_count after upgrade (existing pools were
-    /// registered before the counter existed). New registers increment via register_pool.
+    /// Admin sets the absolute QuoteStat.pool_count (migration and repair).
+    /// Pools registered before register_pool required the counter are not included until
+    /// this is set to the exact live total. A later register_pool increments that total
+    /// by one. This overwrites; it does not add.
     pub fn sync_quote_stat(ctx: Context<SyncQuoteStat>, quote_mint: Pubkey, pool_count: u64) -> Result<()> {
         require!(quote_mint != Pubkey::default(), FusedError::BadMint);
         let qs = &mut ctx.accounts.quote_stat;
@@ -1305,6 +1311,224 @@ pub mod fused_fee {
         );
         Ok(())
     }
+
+    /// T22-SOL: pay one page of holders for ANY base token program (classic SPL or Token-2022),
+    /// with v2's plain-SOL payout for wSOL-quoted pools. This is crank_pay_page_v3 plus the
+    /// plain-SOL path of crank_pay_page_v2; v2 and v3 themselves are unchanged.
+    /// Same cursor (PayCursor PDA), same share maths, same exclusions and same contract as v2/v3,
+    /// so a wallet can never be paid twice in a round across v2, v3 and v4.
+    /// Remaining accounts are PAIRS: [holder_base_token_account, destination, ...].
+    /// destination = the holder's wallet (system-owned) for plain SOL (wSOL-quoted pools only), or
+    /// the holder's quote token account (any pool; frozen or memo-required ones are carried forward).
+    /// Returns (return data) the base amount actually paid in this page (u64 LE).
+    pub fn crank_pay_page_v4<'info>(
+        ctx: Context<'_, '_, 'info, 'info, CrankPayV4<'info>>,
+        eligible_total: u64,
+    ) -> Result<()> {
+        require!(!ctx.accounts.global.paused, FusedError::Paused);
+        let payer_key = ctx.accounts.payer.key();
+        require!(
+            payer_key == ctx.accounts.global.admin || payer_key == CRANK_AUTHORITY,
+            FusedError::NotCrank
+        );
+        require!(ctx.remaining_accounts.len() % 2 == 0, FusedError::BadPage);
+
+        let round = ctx.accounts.pool_record.round;
+        let pool_key = ctx.accounts.pool_record.pool;
+        let quote_mint = ctx.accounts.pool_record.quote_mint;
+        let base_mint = ctx.accounts.pool_record.base_mint;
+        let global_key = ctx.accounts.global.key();
+        let qprog = *ctx.accounts.quote_mint.owner;
+        let bprog = *ctx.accounts.base_mint.owner;
+        require_keys_eq!(ctx.accounts.quote_token_program.key(), qprog, FusedError::WrongTokenProgram);
+        require!(is_token_program(&bprog), FusedError::WrongTokenProgram);
+        let vault_amount = check_vault(&ctx.accounts.quote_vault, &global_key, &quote_mint, &qprog)?;
+        let mi = mint_policy(&ctx.accounts.quote_mint)?;
+
+        sync_cursor(&mut ctx.accounts.pay_cursor, pool_key, round, ctx.bumps.pay_cursor)?;
+        if ctx.remaining_accounts.is_empty() {
+            return Ok(());
+        }
+        require!(round > 0, FusedError::BadRound);
+        require!(eligible_total > 0, FusedError::BadTotal);
+        let pot = ctx.accounts.pool_record.holder_pot;
+        require!(pot > 0, FusedError::EmptyPot);
+
+        let is_sol = quote_mint == NATIVE_MINT;
+        let rent = Rent::get()?;
+        let wallet_min = rent.minimum_balance(0);
+        let sol_vault_key = ctx.accounts.sol_vault.key();
+        let unwrap_key = ctx.accounts.unwrap_account.key();
+
+        // ---- pass 1: validate every pair and work out shares. No money moves here.
+        let mut last = ctx.accounts.pay_cursor.last_owner;
+        let mut lamport_pays: Vec<(usize, u64)> = Vec::new();
+        let mut token_pays: Vec<(usize, u64)> = Vec::new();
+        let mut lamport_total: u64 = 0;
+        let mut token_total: u64 = 0;
+        let mut paid_base: u64 = 0;
+        let mut i = 0;
+        while i < ctx.remaining_accounts.len() {
+            let base_ai = &ctx.remaining_accounts[i];
+            let dest_ai = &ctx.remaining_accounts[i + 1];
+            let dest_idx = i + 1;
+            i += 2;
+
+            let base = read_token_account(base_ai, &bprog)?;
+            require!(base.mint == base_mint, FusedError::BadMint);
+            let wallet = base.owner;
+            if wallet <= last {
+                continue; // already handled this round (or out of order): never paid twice
+            }
+            last = wallet;
+            if base.amount == 0 {
+                continue;
+            }
+            // never pay the curve's vault authority, the DAMM authority, Global or our own PDAs
+            if wallet == DBC_POOL_AUTHORITY
+                || wallet == DAMM_POOL_AUTHORITY
+                || wallet == global_key
+                || wallet == sol_vault_key
+                || wallet == unwrap_key
+            {
+                msg!("skip excluded holder {}", wallet);
+                continue;
+            }
+            let share = ((pot as u128)
+                .checked_mul(base.amount as u128)
+                .ok_or(FusedError::Math)?
+                / (eligible_total as u128)) as u64;
+            if share == 0 {
+                continue;
+            }
+
+            if *dest_ai.owner == anchor_lang::system_program::ID {
+                // plain-SOL path (same rules as crank_pay_page_v2)
+                require!(is_sol, FusedError::BadDest);
+                require_keys_eq!(dest_ai.key(), wallet, FusedError::OwnerMismatch);
+                require!(dest_ai.is_writable, FusedError::BadDest);
+                require!(!dest_ai.executable && dest_ai.data_is_empty(), FusedError::BadDest);
+                if dest_ai.lamports().saturating_add(share) < wallet_min {
+                    msg!("carry forward {} lamports for wallet {} (would stay below rent-exempt)", share, wallet);
+                    continue; // stays in the pot for a later round
+                }
+                lamport_pays.push((dest_idx, share));
+                lamport_total = lamport_total.checked_add(share).ok_or(FusedError::Math)?;
+            } else {
+                // token path (same rules as crank_pay_page_v3)
+                let q = read_token_account(dest_ai, &qprog).map_err(|_| error!(FusedError::BadDest))?;
+                require!(q.mint == quote_mint, FusedError::BadMint);
+                require_keys_eq!(q.owner, wallet, FusedError::OwnerMismatch);
+                require!(dest_ai.is_writable, FusedError::BadDest);
+                if q.state != 1 || q.memo_required {
+                    msg!("carry forward {} for wallet {} (destination frozen or memo-required)", share, wallet);
+                    continue;
+                }
+                token_pays.push((dest_idx, share));
+                token_total = token_total.checked_add(share).ok_or(FusedError::Math)?;
+            }
+            paid_base = paid_base.checked_add(base.amount).ok_or(FusedError::Math)?;
+        }
+        let total = lamport_total.checked_add(token_total).ok_or(FusedError::Math)?;
+        require!(total <= pot, FusedError::Math);
+        require!(total <= vault_amount, FusedError::VaultShort);
+
+        let gbump = ctx.accounts.global.bump;
+        let gseeds: &[&[u8]] = &[b"global", &[gbump]];
+
+        // ---- pass 2a: token payouts (transfer_checked, any token program)
+        for (idx, share) in token_pays.iter() {
+            transfer_checked_signed(
+                &ctx.accounts.quote_token_program,
+                &ctx.accounts.quote_vault,
+                &ctx.accounts.quote_mint,
+                &ctx.remaining_accounts[*idx],
+                &ctx.accounts.global.to_account_info(),
+                *share,
+                mi.decimals,
+                gseeds,
+            )?;
+        }
+
+        // ---- pass 2b: unwrap ONLY this page's lamport total, then pay wallets directly (as v2)
+        if lamport_total > 0 {
+            // wSOL is a classic SPL mint; the temp account is a classic token account.
+            require_keys_eq!(qprog, anchor_spl::token::ID, FusedError::WrongTokenProgram);
+            let sol_vault_ai = ctx.accounts.sol_vault.to_account_info();
+            let unwrap_ai = ctx.accounts.unwrap_account.to_account_info();
+            let payer_ai = ctx.accounts.payer.to_account_info();
+            let vault_before = sol_vault_ai.lamports();
+            let temp_rent = rent.minimum_balance(TOKEN_ACCOUNT_LEN as usize);
+            let ubump = ctx.bumps.unwrap_account;
+            let useeds: &[&[u8]] = &[b"unwrap", pool_key.as_ref(), &[ubump]];
+
+            create_pda_account(
+                &payer_ai,
+                &unwrap_ai,
+                &ctx.accounts.system_program.to_account_info(),
+                temp_rent,
+                TOKEN_ACCOUNT_LEN,
+                &anchor_spl::token::ID,
+                useeds,
+            )?;
+            token::initialize_account3(CpiContext::new(
+                ctx.accounts.quote_token_program.to_account_info(),
+                InitializeAccount3 {
+                    account: unwrap_ai.clone(),
+                    mint: ctx.accounts.quote_mint.to_account_info(),
+                    authority: ctx.accounts.global.to_account_info(),
+                },
+            ))?;
+            transfer_checked_signed(
+                &ctx.accounts.quote_token_program,
+                &ctx.accounts.quote_vault,
+                &ctx.accounts.quote_mint,
+                &unwrap_ai,
+                &ctx.accounts.global.to_account_info(),
+                lamport_total,
+                mi.decimals,
+                gseeds,
+            )?;
+            let unwrap_lamports = unwrap_ai.lamports();
+            token::close_account(CpiContext::new_with_signer(
+                ctx.accounts.quote_token_program.to_account_info(),
+                CloseAccount {
+                    account: unwrap_ai.clone(),
+                    destination: sol_vault_ai.clone(),
+                    authority: ctx.accounts.global.to_account_info(),
+                },
+                &[gseeds],
+            ))?;
+            require!(
+                sol_vault_ai.lamports()
+                    == vault_before.checked_add(unwrap_lamports).ok_or(FusedError::Math)?,
+                FusedError::Math
+            );
+            for (idx, share) in lamport_pays.iter() {
+                let dest = &ctx.remaining_accounts[*idx];
+                **sol_vault_ai.try_borrow_mut_lamports()? -= *share;
+                **dest.try_borrow_mut_lamports()? += *share;
+            }
+            // anything left above the vault's own balance (the temp account's rent) goes back to the payer
+            let back = sol_vault_ai
+                .lamports()
+                .checked_sub(vault_before)
+                .ok_or(FusedError::Math)?;
+            **sol_vault_ai.try_borrow_mut_lamports()? -= back;
+            **payer_ai.try_borrow_mut_lamports()? += back;
+            require!(sol_vault_ai.lamports() == vault_before, FusedError::Math);
+        }
+
+        let p = &mut ctx.accounts.pool_record;
+        p.holder_pot = p.holder_pot.checked_sub(total).ok_or(FusedError::Math)?;
+        let c = &mut ctx.accounts.pay_cursor;
+        c.last_owner = last;
+        c.paid_base = c.paid_base.checked_add(paid_base).ok_or(FusedError::Math)?;
+        c.paid_amount = c.paid_amount.checked_add(total).ok_or(FusedError::Math)?;
+        msg!("paid_base={} paid_amount={} lamports={} tokens={}", paid_base, total, lamport_total, token_total);
+        anchor_lang::solana_program::program::set_return_data(&paid_base.to_le_bytes());
+        Ok(())
+    }
 }
 
 /// FIX: read (config, base_mint, is_migrated) from a Meteora DBC VirtualPool account.
@@ -1360,30 +1584,30 @@ fn write_owed(ai: &AccountInfo, pool: &Pubkey, owed: u64, paid: u64) -> Result<(
     Ok(())
 }
 
-/// PERFECT (compat): create-or-increment QuoteStat when launch/crank passes it at rem[1].
-/// Rejects a wrong key (must be PDA ["qstat", quote_mint]). Space = 8 disc + QuoteStat::LEN.
-const QSTAT_TAG: [u8; 8] = [196, 19, 91, 20, 68, 151, 114, 86]; // sha256("account:QuoteStat")[0..8]
+/// Increment the QuoteStat passed at remaining_accounts[1].
+/// The account must already exist. sync_quote_stat creates it and sets the absolute
+/// baseline. Rejects a wrong PDA, a read-only account, an empty account, a non-program
+/// owner, a mismatched mint, or an overflowing count.
+const QSTAT_TAG: [u8; 8] = {
+    let d = <QuoteStat as anchor_lang::Discriminator>::DISCRIMINATOR;
+    [d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]]
+};
 const QSTAT_LEN: usize = 8 + QuoteStat::LEN; // disc + mint + count + bump
 fn bump_quote_stat_from_remaining<'info>(
-    payer: &AccountInfo<'info>,
-    sys: &AccountInfo<'info>,
+    _payer: &AccountInfo<'info>,
+    _sys: &AccountInfo<'info>,
     ai: &AccountInfo<'info>,
     quote_mint: &Pubkey,
     program_id: &Pubkey,
 ) -> Result<()> {
-    let (key, bump) = Pubkey::find_program_address(&[b"qstat", quote_mint.as_ref()], program_id);
+    let (key, _bump) = Pubkey::find_program_address(&[b"qstat", quote_mint.as_ref()], program_id);
     require_keys_eq!(ai.key(), key, FusedError::QuoteMismatch);
     require!(ai.is_writable, FusedError::BadMint);
     if ai.data_is_empty() {
-        let lamports = Rent::get()?.minimum_balance(QSTAT_LEN);
-        let seeds: &[&[u8]] = &[b"qstat", quote_mint.as_ref(), &[bump]];
-        create_pda_account(payer, ai, sys, lamports, QSTAT_LEN as u64, program_id, seeds)?;
-        let mut d = ai.try_borrow_mut_data()?;
-        d[..8].copy_from_slice(&QSTAT_TAG);
-        d[8..40].copy_from_slice(quote_mint.as_ref());
-        d[40..48].copy_from_slice(&1u64.to_le_bytes());
-        d[48] = bump;
-        msg!("quote_stat created mint={} count=1", quote_mint);
+        // Do not invent a count. A brand-new quote is sync_quote_stat(..., 0) first;
+        // a quote that already has pools is sync_quote_stat(..., exact_total) first.
+        msg!("quote_stat uninitialized mint={}", quote_mint);
+        return err!(FusedError::QuoteStatUninitialized);
     } else {
         require_keys_eq!(*ai.owner, *program_id, FusedError::QuoteMismatch);
         let mut d = ai.try_borrow_mut_data()?;
@@ -2089,8 +2313,9 @@ pub struct RegisterPool<'info> {
     pub dbc_pool: UncheckedAccount<'info>,
     /// CHECK: Meteora DBC PoolConfig; checked in check_dbc_config
     pub dbc_config: UncheckedAccount<'info>,
-    // PERFECT (compat): QuoteStat is NOT named here — live clients send 7 accounts + rem[0]=mint.
-    // Optional rem[1]=QuoteStat PDA handled in register_pool body (bump_quote_stat_from_remaining).
+    // QuoteStat is intentionally not named. Live clients keep this 7-account prefix and
+    // pass the quote mint at remaining_accounts[0] plus the writable QuoteStat PDA at
+    // remaining_accounts[1]. The handler rejects the registration if that PDA is absent.
 }
 
 #[derive(Accounts)]
@@ -2460,6 +2685,12 @@ pub enum FusedError {
     BadAutoLpAmounts,
     #[msg("DAMM add_liquidity or permanent_lock_position CPI failed")]
     AutoLpCpiFailed,
+    // QuoteStat auto-count: appended so existing error numbers do not change (6048).
+    #[msg("register_pool requires writable QuoteStat PDA at remaining_accounts[1]")]
+    QuoteStatRequired,
+    // Appended (6049). Empty QuoteStat is not created here; sync the absolute count first.
+    #[msg("QuoteStat is missing; sync the absolute pool count before register_pool")]
+    QuoteStatUninitialized,
 }
 
 #[derive(Accounts)]
@@ -2550,4 +2781,116 @@ pub struct MigrateGlobal<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
     pub system_program: Program<'info, System>,
+}
+
+/// T22-SOL: v4 pay page = the 9 CrankPayV3 accounts (same order) + sol_vault + unwrap_account.
+/// Shares the PayCursor PDA with crank_pay_page_v2 / v3, and the sol_vault / unwrap PDAs with v2.
+#[derive(Accounts)]
+pub struct CrankPayV4<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(seeds = [b"global"], bump = global.bump)]
+    pub global: Account<'info, Global>,
+    #[account(mut, seeds = [b"pool", pool_record.pool.as_ref()], bump = pool_record.bump)]
+    pub pool_record: Account<'info, PoolRecord>,
+    /// CHECK: ATA(Global, quote mint, quote token program); checked in check_vault
+    #[account(mut)]
+    pub quote_vault: UncheckedAccount<'info>,
+    /// CHECK: this pool's quote mint; read by mint_policy (for SOL pools this is the wSOL mint)
+    #[account(address = pool_record.quote_mint @ FusedError::BadMint)]
+    pub quote_mint: UncheckedAccount<'info>,
+    /// CHECK: must equal the quote mint's owner program (checked in handler)
+    pub quote_token_program: UncheckedAccount<'info>,
+    /// CHECK: this pool's base mint (its owner program decides which holder accounts are valid)
+    #[account(address = pool_record.base_mint @ FusedError::BadMint)]
+    pub base_mint: UncheckedAccount<'info>,
+    pub system_program: Program<'info, System>,
+    #[account(
+        init_if_needed,
+        payer = payer,
+        space = 8 + PayCursor::LEN,
+        seeds = [b"paycur", pool_record.pool.as_ref()],
+        bump
+    )]
+    pub pay_cursor: Account<'info, PayCursor>,
+    #[account(
+        init_if_needed,
+        payer = payer,
+        space = 8,
+        seeds = [b"sol_vault"],
+        bump
+    )]
+    pub sol_vault: Account<'info, SolVault>,
+    /// CHECK: temp wSOL account, created and closed inside one instruction (same PDA as v2)
+    #[account(mut, seeds = [b"unwrap", pool_record.pool.as_ref()], bump)]
+    pub unwrap_account: UncheckedAccount<'info>,
+}
+
+#[cfg(test)]
+mod quotestat_unit {
+    use super::*;
+    use anchor_lang::Discriminator;
+
+    #[test]
+    fn quote_stat_discriminator_matches_manual_layout() {
+        assert_eq!(&QSTAT_TAG[..], QuoteStat::DISCRIMINATOR);
+        assert_eq!(QSTAT_LEN, 8 + QuoteStat::LEN);
+        assert_eq!(QuoteStat::LEN, 32 + 8 + 1);
+    }
+
+    #[test]
+    fn register_pool_instruction_discriminator() {
+        assert_eq!(
+            <crate::instruction::RegisterPool as Discriminator>::DISCRIMINATOR,
+            &[85, 229, 114, 47, 75, 145, 166, 100]
+        );
+        assert_eq!(
+            <crate::instruction::SyncQuoteStat as Discriminator>::DISCRIMINATOR,
+            &[130, 168, 89, 25, 125, 164, 73, 104]
+        );
+        assert_eq!(ConfigRecord::DISCRIMINATOR, &[176, 40, 195, 139, 54, 176, 82, 177]);
+        assert_eq!(PoolRecord::DISCRIMINATOR, &[117, 217, 136, 145, 181, 104, 107, 17]);
+    }
+
+    #[test]
+    fn pay_page_discriminators() {
+        // v2 / v3 unchanged; v4 is new (sha256("global:crank_pay_page_v4")[..8]).
+        assert_eq!(
+            <crate::instruction::CrankPayPageV2 as Discriminator>::DISCRIMINATOR,
+            &[187, 255, 119, 89, 187, 17, 96, 79]
+        );
+        assert_eq!(
+            <crate::instruction::CrankPayPageV3 as Discriminator>::DISCRIMINATOR,
+            &[26, 92, 113, 244, 121, 99, 140, 121]
+        );
+        assert_eq!(
+            <crate::instruction::CrankPayPageV4 as Discriminator>::DISCRIMINATOR,
+            &[110, 93, 44, 108, 85, 172, 61, 155]
+        );
+        assert_eq!(PayCursor::DISCRIMINATOR, &[200, 6, 157, 115, 81, 135, 216, 227]);
+        assert_eq!(PayCursor::LEN, 32 + 8 + 32 + 8 + 8 + 1);
+        assert_eq!(SolVault::DISCRIMINATOR, &[21, 132, 230, 103, 19, 209, 129, 248]);
+    }
+
+    #[test]
+    fn economics_constants_unchanged() {
+        assert_eq!(HOLDER_NUM, 90);
+        assert_eq!(BURN_NUM, 20);
+        assert_eq!(SPLIT_DENOM, 110);
+        assert_eq!(CREATOR_SHARE_NUM, 8);
+        assert_eq!(CREATOR_SHARE_DENOM, 100);
+        assert_eq!(DEFAULT_AUTO_LP_BPS, 5_000);
+        // Curve split of a 1.10% partner claim: 0.90 holder / 0.20 burn, dust to holders.
+        let delta: u64 = 1_100_000;
+        let burn = delta * BURN_NUM / SPLIT_DENOM;
+        let holder = delta - burn;
+        assert_eq!(burn, 200_000);
+        assert_eq!(holder, 900_000);
+        assert_eq!(burn + holder, delta);
+        // Default auto-LP takes half of the burn pot (0.10 of volume if burn is 0.20).
+        let burn_pot: u64 = 2_000;
+        let lp_budget = burn_pot * DEFAULT_AUTO_LP_BPS as u64 / 10_000;
+        assert_eq!(lp_budget, 1_000);
+        assert_eq!(burn_pot - lp_budget, 1_000);
+    }
 }
